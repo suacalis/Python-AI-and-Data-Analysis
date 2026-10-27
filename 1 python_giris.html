@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Giriş</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+<style>
+:root{
+  --bg:#f7f5f0; --paper:#ffffff; --ink:#1d1f24; --muted:#5d6270; --line:#e2ded4;
+  --accent:#1f5f8b; --accent-soft:#e3eef6; --warn:#9a5b00; --warn-soft:#fbf1dc;
+  --code-bg:#f2f0ea; --code-ink:#22252b; --ok:#2f7a4a; --err:#b3261e;
+  --prompt-bg:#efece4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+    --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+    --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+  --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+  --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Serif 4",Georgia,serif;font-size:18px;line-height:1.65}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1200px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:28px 18px;border-right:1px solid var(--line);font-family:Inter,sans-serif;font-size:14px}
+nav.toc .brand{font-weight:600;color:var(--accent);font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;padding:6px 8px;border-radius:6px}
+nav.toc a:hover,nav.toc a.active{background:var(--accent-soft);color:var(--ink)}
+.status{margin-top:22px;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;color:var(--muted);background:var(--paper)}
+.status b{color:var(--ink)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#999;margin-right:6px;vertical-align:middle}
+.dot.loading{background:var(--warn);animation:pulse 1s infinite}
+.dot.ready{background:var(--ok)}
+@keyframes pulse{50%{opacity:.3}}
+.toc button,.btn{font-family:Inter,sans-serif;font-size:13px;font-weight:500;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:6px 12px;border-radius:6px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.5;cursor:wait}
+main{padding:40px 48px 120px;min-width:0}
+article{max-width:780px}
+h1{font-size:2.4rem;line-height:1.15;margin:0 0 .3em;color:var(--accent)}
+h2{font-size:1.55rem;margin:2.6em 0 .6em;padding-top:.4em;border-top:1px solid var(--line);color:var(--accent)}
+h3{font-size:1.2rem;margin:2em 0 .5em;color:var(--ink);font-family:Inter,sans-serif;font-weight:600}
+h2 .num{font-family:Inter,sans-serif;font-weight:600;font-size:.8em;color:var(--muted);margin-right:.4em}
+.lead{font-style:italic;color:var(--muted);font-size:1.08rem;border-left:3px solid var(--accent);padding-left:16px;margin:1.2em 0 2em}
+code{font-family:"JetBrains Mono",monospace;font-size:.82em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.terms{display:grid;gap:12px;margin:1.2em 0}
+.term{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+.term b{font-family:Inter,sans-serif;color:var(--accent)}
+.note{background:var(--warn-soft);border-left:3px solid var(--warn);padding:12px 16px;border-radius:0 8px 8px 0;font-size:.95rem;margin:1.2em 0}
+.formula{font-family:"JetBrains Mono",monospace;background:var(--paper);border:1px dashed var(--line);padding:12px 16px;border-radius:8px;text-align:center;font-size:.95rem;margin:1em 0;overflow-x:auto}
+.prompt{background:var(--prompt-bg);border-radius:10px;padding:14px 18px;margin:1.2em 0;font-size:.95rem}
+.prompt .lbl{font-family:Inter,sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.prompt em{display:block;margin-top:6px}
+/* Kod hücresi */
+.cell{margin:1.3em 0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--paper)}
+.cell-head{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--code-bg);border-bottom:1px solid var(--line);font-family:Inter,sans-serif;font-size:12px;color:var(--muted)}
+.cell-head .title{flex:1}
+.cell textarea{display:block;width:100%;border:0;resize:vertical;padding:14px 16px;background:var(--code-bg);color:var(--code-ink);font-family:"JetBrains Mono",monospace;font-size:13.5px;line-height:1.55;tab-size:4;outline:none;min-height:80px;white-space:pre;overflow:auto}
+.out{display:none;border-top:1px solid var(--line);padding:12px 16px;font-family:"JetBrains Mono",monospace;font-size:13px;white-space:pre-wrap;overflow-x:auto}
+.out.show{display:block}
+.out.err{color:var(--err)}
+.out img{max-width:100%;background:#fff;border-radius:6px;margin-top:8px;display:block}
+.out table{border-collapse:collapse;font-size:12.5px;margin:6px 0;white-space:nowrap}
+.out th,.out td{border:1px solid var(--line);padding:3px 8px;text-align:right}
+.out th{background:var(--code-bg)}
+/* Tablo */
+table.data{border-collapse:collapse;font-family:Inter,sans-serif;font-size:14px;margin:1em 0}
+table.data th,table.data td{border:1px solid var(--line);padding:6px 10px}
+table.data th{background:var(--code-bg)}
+.caption{font-family:Inter,sans-serif;font-size:13px;color:var(--muted);margin-top:-4px}
+/* Widget */
+.widget{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px;margin:1.5em 0}
+.widget h4{margin:0 0 6px;font-family:Inter,sans-serif;font-size:14px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.widget .ctrl{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-family:Inter,sans-serif;font-size:14px;margin:10px 0}
+.widget svg{width:100%;height:auto;display:block}
+.widget .readout{font-family:Inter,sans-serif;font-size:15px}
+.widget .readout b{color:var(--accent)}
+input[type=range]{accent-color:var(--accent)}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  main{padding:24px 16px 80px}
+  h1{font-size:1.9rem}
+}
+h3{font-size:1.15rem;margin:2em 0 .5em;color:var(--ink);font-family:Inter,sans-serif;font-weight:600}
+kbd{font-family:"JetBrains Mono",monospace;font-size:.8em;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--paper)}
+input[type=number]{padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:"JetBrains Mono",monospace}
+@media (max-width:700px){.wh-grid{grid-template-columns:1fr !important}}
+.ro{margin:1.3em 0;border:1px dashed var(--line);border-radius:10px;overflow:hidden;background:var(--paper)}
+.ro-head{padding:6px 12px;background:var(--warn-soft);color:var(--warn);font-family:Inter,sans-serif;font-size:12px;font-weight:600}
+.ro pre{margin:0;padding:12px 16px;background:var(--code-bg);color:var(--code-ink);font-family:"JetBrains Mono",monospace;font-size:13px;line-height:1.5;overflow-x:auto}
+.ro-out{padding:8px 16px;border-top:1px solid var(--line);font-family:Inter,sans-serif;font-size:13px}
+.ro-out pre{background:none;padding:4px 0}
+.ro-tag{background:var(--warn-soft);color:var(--warn);font-family:Inter,sans-serif;font-size:12px;font-weight:600;padding:1px 6px;border-radius:4px}
+.sel{padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink)}
+.h-grid iframe{min-width:0}
+@media (max-width:760px){.h-grid{grid-template-columns:1fr !important}}
+@media (max-width:700px){table.data{display:block;overflow-x:auto;max-width:100%}}
+pre.plain{background:var(--code-bg);color:var(--code-ink);font-family:"JetBrains Mono",monospace;font-size:13px;line-height:1.5;padding:10px 14px;border-radius:8px;overflow-x:auto}
+h3{font-family:Inter,sans-serif;font-size:1.05rem;margin:1.6em 0 .4em}
+.answer{border-left:4px solid var(--line);padding:10px 18px;margin:-.6em 0 1.2em;font-size:.95rem}
+article p code,article li code{overflow-wrap:anywhere}
+.cin{width:100%;box-sizing:border-box;margin-top:3px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:Inter,sans-serif;font-size:13px}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" id="toc">
+  <div class="brand">Bölüm 1</div>
+  <a href="#giris">Giriş</a>
+  <a href="#s11">1.1 Geleceğin becerisi</a>
+  <a href="#s12">1.2 Python</a>
+  <a href="#s13">1.3 Yapay zekâ</a>
+  <a href="#s14">1.4 Makine öğrenmesi</a>
+  <a href="#s15">1.5 YZ ile programlama</a>
+  <a href="#s16">1.6 İstem mühendisliği</a>
+  <div class="status">
+    <div><span class="dot" id="pyDot"></span><b id="pyState">Python yüklenmedi</b></div>
+    <div id="pyMsg" style="margin:6px 0 8px">Kodlar tarayıcıda Pyodide ile çalışır; ilk hücrede Python indirilir.</div>
+    <button class="btn" id="preload">Python'u şimdi yükle</button>
+    <div style="margin-top:8px"><button class="btn" id="themeBtn">Tema değiştir</button></div>
+  </div>
+  <div class="status">
+    <b>Dosyalar</b> <span style="font-size:11.5px">(hücrelerin oluşturduğu dosyalar)</span>
+    <div id="fileList" style="margin:6px 0;max-height:180px;overflow:auto"><i>Python yüklenince görünür.</i></div>
+    <button class="btn" id="fileRefresh">Yenile</button>
+    <pre id="filePeek" style="display:none;margin:8px 0 0;max-height:220px;overflow:auto;font-size:11px;background:var(--code-bg);padding:6px;border-radius:6px;white-space:pre-wrap"></pre>
+  </div>
+</nav>
+
+<main><article>
+<h1 id="giris">1 · Giriş</h1>
+<p class="lead">Programlama, BT dışında da kilit bir beceri hâline geliyor. Eskiden uzmanlık bilgisi olan şey, artık gündelik ofis yaşamında pratik bir araç. Çoğu zaman veriyi analiz etmek ya da süreçleri otomatikleştirmek için birkaç satır kod yeterli. Python'un bu kadar popüler olmasının nedeni de tam olarak bu!</p>
+
+<p>1990'larda ya da 2000'lerde programlamayı öğrenmek sizi neredeyse bir "inek" yapıyordu. Birkaç yıl sonra programlama bilmek çoktan çok daha "havalı" hâle gelmişti, çünkü İnternet ve bilgisayarlarla —ve daha sonra akıllı telefonlarla— çalışmak yaygınlaşmıştı. Zaten her gün çevrimiçi olup uygulamalar kullandığınıza göre web sitelerini ve uygulamaları kendiniz oluşturabilseniz harika olmaz mıydı? Ancak o zamanlar programlamayı esas olarak bilgisayar bilimciler yapıyordu (örneğin uygulama geliştirme alanında yetişmiş BT uzmanları ya da üniversite diplomalı yazılım geliştiriciler) —ve bugün farklı olan tam olarak bu. Bugün programlama becerileri bilgisayar bilimi alanının dışında da yararlıdır ve bu kitap tam olarak bu kitleye yöneliktir.</p>
+
+<div class="note"><b>Bu sayfa hakkında.</b> Kitabın bu giriş bölümünde Python kodu yok; kavramları anlatıyor. Sayfayı etkileşimli kılmak için anlatılan her fikrin yanına, işaretli <b>Ek</b> hücreler koydum: Kitapta adı geçen örnek kişilerin işlerini, ELIZA benzeri kural tabanlı bir sohbet botunu, "sonraki sözcüğü tahmin eden" küçük bir dil modelini ve 1.4'teki bahçe ürünleri öneri sistemini Python'da deneyebilirsiniz. Kodlar tarayıcıda <b>Pyodide</b> ile çalışır; hiçbir şey kurmanız gerekmez. Henüz Python bilmiyorsanız kodu anlamaya çalışmadan <b>▶ Çalıştır</b>'a basıp sonucu izlemek de yeterli. Sonraki bölümlerde hepsi tek tek açıklanıyor.</div>
+
+<!-- ====================== 1.1 ====================== -->
+<h2 id="s11"><span class="num">1.1</span>Geleceğin Becerisi: Programlama</h2>
+
+<p>İş yeri daha dijital, daha veri odaklı ve daha bağlantılı hâle geliyor. Çok çeşitli görevler küçük programlar kullanılarak otomatikleştirilebilir, basitleştirilebilir ya da yaratıcı biçimde çözülebilir. Biraz bile programlama bilen biri zaman kazanır, veriyi daha iyi anlar, BT departmanlarına daha az bağımlı olur ve kendi fikirlerini daha hızlı hayata geçirebilir.</p>
+
+<p>Birbirinden çok farklı alanlardan birkaç gerçek dünya örneğine bakalım:</p>
+<div class="terms">
+<div class="term"><b>Bilim insanı</b> — Andrea biyoloji alanında doktora yapıyor ve büyük miktarda veriyle çalışıyor. Belirli genlerin stres koşulları altındaki bitkilerde nasıl davrandığını araştırıyor. Eskiden Excel kullanıyordu, ama birkaç bin gen ve sayısız ölçüm noktasıyla işler hızla karmaşık ve hataya açık hâle geldi. Python'u kendi kendine öğrendikten sonra artık veriyi verimli biçimde yükleyip süzen, zaman serisi grafiklerini ve diğer görselleştirmeleri otomatik olarak üreten basit betikler oluşturabiliyor. Kısa süre sonra da laboratuvar cihazlarının çıktı dosyalarından dizi verisini doğrudan işlemesini ve özellikle dizi örüntülerini aramasını sağlayan özel biyoinformatik kütüphanelerini kullanmaya başladı.</div>
+<div class="term"><b>Veri analisti</b> — Julian orta ölçekli bir perakende şirketinde iş analisti olarak çalışıyor. Her ay çeşitli departmanlardan —çoğu zaman çelişkili ya da eksik bilgi içeren— büyük dosyalar alıyor. Eskiden veriyi elle temizliyordu. Bu hem uzun sürüyor hem de hataya açıktı ve her ay aynı adımlar ve aynı sorunlar tekrarlanıyordu. Artık veriyi otomatik olarak denetleyip temizlemek için basit betikler kullanmayı öğrendi. Eksik değerleri tespit edebiliyor, geçersiz girdileri ayıklayabiliyor ve biçimleri standartlaştırabiliyor. Ayrıca yönetim için düzenli olarak grafikler üretiyor ve artık daha karmaşık alışveriş sepeti analizleri ve tahminler de yapabiliyor.</div>
+<div class="term"><b>Etkinlik ve iletişim yöneticisi</b> — Clara, düzenli olarak etkinlikler düzenleyen ve pek çok gönüllüyle iletişim kuran küçük bir kâr amacı gütmeyen kuruluşta çalışıyor. Eskiden tüm e-postaları elle gönderiyordu. Katılımcı listelerini gözden geçiriyor, metin bloklarını kopyalıyor ve adları ekliyordu. Bu süreç hem zaman alıcı hem de hataya açıktı —bazen e-postalar yanlış alıcıya gidiyor ya da hâlâ bir önceki bültendeki adı içeriyordu. Bu yüzden kendi kendine bazı temel programlama tekniklerini öğrendi. Bugün bir listeden doğru hitap, tarihler ve yer ayrıntılarıyla kişiselleştirilmiş e-postaları otomatik olarak üretiyor. Hatırlatmalar da artık bir gün önce, ilgili etkinliğe özel bilgilerle otomatik olarak gönderiliyor.</div>
+</div>
+
+<p>Bu üç örnekte Python'un neye benzediğini görmek için her biri için küçük bir program hazırladım. Önce Julian'ın sorunu: departmanlardan gelen tutarsız bir tablo.</p>
+
+<div class="cell" data-title="Ek · Julian: dağınık veriyi denetlemek ve temizlemek"><textarea>import pandas as pd
+
+# Departmanlardan gelen dağınık veri (tarihler, adlar ve tutarlar farklı biçimlerde)
+raw = pd.DataFrame({
+    "date":   ["2026-01-03", "03.01.2026", "2026/01/04", None, "2026-01-05", "2026-01-05"],
+    "store":  ["Ankara", "ankara ", "İZMİR", "Izmir", "Ankara", "Ankara"],
+    "amount": ["120.50", "99,90", "-15", "80", "abc", "75.00"],
+})
+print("Ham veri:")
+print(raw, "\n")
+
+df = raw.copy()
+df["store"] = (df["store"].str.strip().str.replace("İ", "I").str.lower()
+               .str.title().replace({"Izmir": "İzmir"}))
+df["amount"] = pd.to_numeric(df["amount"].str.replace(",", "."), errors="coerce")
+# Tüm tarihleri tek biçime getir: 03.01.2026 → 2026-01-03, 2026/01/04 → 2026-01-04
+iso = (df["date"].str.replace(r"^(\d{2})\.(\d{2})\.(\d{4})$", r"\3-\2-\1", regex=True)
+                 .str.replace("/", "-"))
+df["date"] = pd.to_datetime(iso, format="%Y-%m-%d", errors="coerce")
+
+print("Eksik değerler:", df.isna().sum().to_dict())
+invalid = df["amount"].isna() | (df["amount"] &lt; 0) | df["date"].isna()
+print("Geçersiz satır sayısı:", invalid.sum())
+
+clean = df[~invalid].drop_duplicates()
+print("\nTemizlenmiş veri:")
+clean</textarea></div>
+
+<p>Clara'nın işi: bir katılımcı listesinden kişiselleştirilmiş e-postalar üretmek ("adres-mektup birleştirme").</p>
+
+<div class="cell" data-title="Ek · Clara: listeden kişiselleştirilmiş e-postalar"><textarea>from datetime import date, timedelta
+
+volunteers = [
+    {"name": "Ayşe",  "gender": "f", "event": "Ağaç dikme günü", "date": date(2026, 11, 14), "place": "Sapanca Gölü kıyısı"},
+    {"name": "Mehmet","gender": "m", "event": "Kitap bağış standı", "date": date(2026, 11, 21), "place": "Belediye meydanı"},
+    {"name": "Deniz", "gender": "x", "event": "Ağaç dikme günü", "date": date(2026, 11, 14), "place": "Sapanca Gölü kıyısı"},
+]
+
+def salutation(person):
+    return {"f": f"Sevgili {person['name']} Hanım", "m": f"Sevgili {person['name']} Bey"}.get(
+        person["gender"], f"Merhaba {person['name']}")
+
+for p in volunteers:
+    reminder = p["date"] - timedelta(days=1)
+    print(f"""{salutation(p)},
+
+{p['date']:%d.%m.%Y} tarihindeki "{p['event']}" etkinliğimize katıldığınız için teşekkürler.
+Buluşma yeri: {p['place']}. Size {reminder:%d.%m.%Y} günü bir hatırlatma göndereceğiz.
+
+Sevgiler,
+Clara
+{'-' * 60}""")</textarea></div>
+
+<p>Andrea'nın işi: binlerce ölçümü yüklemek, süzmek ve otomatik grafik çizmek. (Veriler gerçek değil, rastgele üretilmiş bir örnek.)</p>
+
+<div class="cell" data-title="Ek · Andrea: gen ifadesini süzmek ve çizmek"><textarea>import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(42)
+hours = np.arange(0, 49, 4)
+genes = [f"GEN{i:04d}" for i in range(2000)]                 # 2000 gen
+effect = rng.normal(0, 0.03, len(genes))                      # çoğu gen stresten etkilenmez…
+effect[:5] = [0.9, 0.7, -0.6, 0.5, -0.8]                      # …ama birkaçı güçlü tepki verir
+data = pd.DataFrame(np.outer(effect, np.log1p(hours)) + rng.normal(0, 0.15, (len(genes), len(hours))),
+                    index=genes, columns=[f"{h} sa" for h in hours])
+
+change = data.iloc[:, -1] - data.iloc[:, 0]
+top = change.abs().sort_values(ascending=False).head(5).index
+print("En güçlü tepki veren 5 gen (2000 gen arasından):", list(top))
+
+data.loc[top].T.plot(marker="o", figsize=(8, 3.6))
+plt.axhline(0, color="gray", lw=0.8)
+plt.xlabel("Stres süresi"); plt.ylabel("log ifade değişimi")
+plt.title("Stres altında en çok değişen genler")
+plt.tight_layout()</textarea></div>
+
+<p>Üç örneğin ortak noktası Andrea'nın, Julian'ın ya da Clara'nın eğitimli bilgisayar bilimciler olmamasıdır. Belki biri ya da diğeri okulda bazı bilgisayar dersleri almış, hatta üniversite düzeyinde bir programlama dersi görmüştü, ama çoğunlukla programlamayı kendi kendilerine öğrendiler. Bugünün dünyasında, İnternet'teki örnekler ve ChatGPT gibi araçların yardımıyla bu her zamankinden daha kolay. Bu kitap, başlangıcı sizin için daha da basitleştiren bir hızlandırıcı daha olmayı amaçlıyor.</p>
+
+<p>İster bilim, iş dünyası ya da mühendislik alanlarından gelin; ister tarım, finans ya da doğa bilimlerinde çalışın; ister eğitim, medya, araştırma, ulaştırma ya da bambaşka bir şeyle uğraşın; bu kitabı seçerek programlamayı öğrenmeye ve işinizi bir üst düzeye taşımaya karar verdiniz. Daha önce yalnızca özel yazılımlarla —böyle bir yazılım özel kullanım durumunuz için var olsa bile— mümkün olan şeyleri başarabileceksiniz. Programlamayı bildiğinizde sınır yoktur. Her şeyi tam istediğiniz gibi geliştirebilir, betikleyebilir ve otomatikleştirebilirsiniz!</p>
+
+<!-- ====================== 1.2 ====================== -->
+<h2 id="s12"><span class="num">1.2</span>Python</h2>
+
+<p>Odak noktanıza ve uygulama alanınıza bağlı olarak pek çok modern <em>programlama dili</em> arasından seçim yapabilirsiniz. Karmaşık kurumsal uygulamalar ya da mobil uygulamalar geliştiriyorsanız Java en iyi seçeneğiniz olabilir. Donanım düzeyinde —cihaz yazılımı ya da oyunlar gibi— programlama yapıyorsanız C ya da C++'ı seçmeniz daha iyi olabilir. Ancak ne Java ne de C++ öğrenmesi pek kolay değildir. Python daha iyi bir seçimdir. Python küçük ve büyük programlar, veri analizi ve otomasyon için uygundur. Daha sonra başka bir programlama diliyle çalışmaya karar verirseniz —örneğin JavaScript ile etkileşimli web siteleri geliştirmek için— kavramların çoğu birbirine çok benzediği için bu kitaptaki kavramların çoğu Python'dan diğer programlama dillerine aktarılabilir.</p>
+
+<p>Aynı küçük görevi —1'den 10'a kadar çift sayıların karelerini yazdırmak— üç dilde karşılaştırın. Python sürümünü çalıştırıp değiştirebilirsiniz:</p>
+
+<div class="widget" id="langWidget">
+  <h4>Aynı görev, üç dil</h4>
+  <div class="ctrl" style="gap:6px" id="langTabs"></div>
+  <pre id="langCode" style="background:var(--code-bg);color:var(--code-ink);padding:12px 16px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;margin:0;overflow-x:auto"></pre>
+  <div class="readout" id="langNote" style="font-size:13px;color:var(--muted);margin-top:6px"></div>
+</div>
+
+<div class="cell" data-title="Ek · Python sürümü"><textarea>for number in range(1, 11):
+    if number % 2 == 0:
+        print(number, "→", number ** 2)</textarea></div>
+
+<p>Bu kitapta Python öğreneceksiniz, çünkü basittir, okunması ve anlaşılması kolaydır ve arkasında devasa bir topluluk vardır. Ne yapmayı planlıyorsanız planlayın, çevrimiçi olarak zaten çok sayıda örnek ve eğitim vardır; en özel durumlar için bile Python için kapsamlı kütüphaneler mevcuttur. Programlamada bir <em>kütüphane</em>, başka biri onu zaten geliştirip herkesin kullanımına sunduğu için kolayca kullanabileceğiniz işlevler içeren bir pakettir. Örneğin Python kullanarak İnternet'ten hava durumu verisine erişmek istiyorsanız <code>requests</code> kütüphanesini kullanabilirsiniz. <code>requests</code> modülünü içe aktarır, <code>requests.get("http://api.openweathermap.org/…")</code> girersiniz ve en güncel hava durumu verisini indirmiş olursunuz. Elbette bunların hepsini kitabın ilerleyen bölümlerinde ele alacağız. Diğer kütüphaneler matematiksel hesaplamalarda ya da veri analizinde size yardımcı olur. Özellikle yapay zekâ (YZ) alanında kullanımı kolay pek çok kütüphane mevcuttur.</p>
+
+<p>OpenWeatherMap bir API anahtarı istediği için aşağıdaki deneme, anahtar gerektirmeyen Open-Meteo hizmetini kullanıyor (Bölüm 9'da ayrıntılı ele alınıyor). Bağlantı yoksa örnek bir yanıt gösterilir:</p>
+
+<div class="cell" data-title="Ek · requests ile anlık hava durumu"><textarea>import requests
+
+url = "https://api.open-meteo.com/v1/forecast"
+params = {"latitude": 41.01, "longitude": 28.98, "current": "temperature_2m,wind_speed_10m"}
+data = requests.get(url, params=params).json()
+
+print("İstanbul'da şu an:", data["current"]["temperature_2m"], "°C,",
+      "rüzgâr", data["current"]["wind_speed_10m"], "km/sa")
+print("Ölçüm zamanı (UTC):", data["current"]["time"])</textarea></div>
+
+<p>Python'un tasarım felsefesi dilin içine bile gömülüdür. Bu küçük "paskalya yumurtası", Python'un okunabilirliğe neden bu kadar önem verdiğini özetler:</p>
+<div class="cell" data-title="Ek · import this"><textarea>import this</textarea></div>
+
+<!-- ====================== 1.3 ====================== -->
+<h2 id="s13"><span class="num">1.3</span>Yapay Zekâ</h2>
+
+<p>YZ alanı 50 yaşını çoktan geçmiş olsa da ancak son yıllarda GPT-5 gibi büyük dil modellerinin (BDM'ler; İng. LLM) yükselişiyle geniş kamuoyunun ilgisini çekti. Bu kitapta YZ'yi iki farklı açıdan inceleyeceğiz: Birincisi, YZ algoritmalarını Python'da nasıl kullanacağınızı öğreneceksiniz; örneğin verideki örüntüleri tanımak ya da tahminler yapmak için. İkincisi, YZ'yi bir programlama yardımcısı olarak da kullanabilirsiniz; örneğin ChatGPT'ye kavramları açıklatmak ya da programınızın neden hata verdiğini ve bunu nasıl düzeltebileceğinizi hızla anlamak için. Ayrıca YZ araçları eksiksiz ve çalışan program kodu üretmekte çok iyidir. Bu konuyu —ChatGPT'nin bir programlama yardımcısı olarak nasıl kullanılacağını— birazdan ele alacağız. Önce YZ ile yapabileceğiniz tüm şeylere bir göz atalım.</p>
+
+<p>ChatGPT gibi BDM'ler <em>veri odaklı YZ</em> kategorisine girer. Açık kurallara dayanmadan, devasa miktarda eğitim verisindeki örüntüleri tanımlayan ve analiz eden istatistiksel yöntemlere dayanırlar. Bu onları uzun süre araştırmanın odağında olan <em>sembolik YZ</em>'den ayırır. Sembolik YZ, bilgiyi eğer-ise kuralları biçiminde temsil etmeye çalışır. Bu tür sistemler dünya açıkça yapılandırılmış olduğu sürece iyi çalışır; örneğin satranç programlarında ya da tıptaki uzman sistemlerde. Metin üreten ve görüntülerdeki nesneleri tanıyan YZ araçları sembolik yaklaşımlarla hızla sınırlarına ulaşırdı.</p>
+
+<p>İster bir sohbet botu, ister bir satranç bilgisayarı, ister görüntülerde cilt kanserini tespit edebilen bir YZ olsun, bunların hepsine <em>zayıf YZ</em> (weak AI) deriz. Bu terim, belirli bir görevi otomatik olarak çözmek ya da bizim adımıza kararlar vermek için tasarlanmış algoritmaları ve programları ifade eder. <em>Güçlü YZ</em> (yapay genel zekâ; AGI) ise bir insan gibi düşünebilen ve bilinmeyen ya da yeni her türlü soruna uygulanabilen bir sistem olurdu. Güçlü YZ henüz yok. Bir gün var olup olmayacağı konusunda da bir uzlaşı bulunmuyor. ChatGPT bugün neredeyse her şeyi yapabiliyor ve biliyormuş gibi görünse de güçlü YZ'den hâlâ çok uzağız. ChatGPT devasa miktarda metinden yalnızca hangi sözcüklerin birbirini izleme olasılığının en yüksek olduğunu öğrendi. Bu bilgiyle yeni metinler üretebiliyor —hem de çok iyi.</p>
+
+<p>"Hangi sözcüğün bir sonraki gelme olasılığı en yüksek?" fikrini en basit hâliyle deneyebiliriz. Aşağıdaki program bu sayfadaki metni okur ve her sözcükten sonra hangi sözcüklerin kaç kez geldiğini sayar (bir <em>bigram modeli</em>). ChatGPT bunun milyarlarca kat büyüğünü ve çok daha gelişmiş bir yöntemle (sinir ağlarıyla) yapar, ama ilke akrabadır:</p>
+
+<div class="cell" data-title="Ek · Minik bir dil modeli: sonraki sözcüğü tahmin etmek"><textarea>import re, random
+from collections import Counter, defaultdict
+
+text = PAGE_TEXT.replace("İ", "i").replace("I", "ı").lower()                      # bu sayfanın metni (sayfa tarafından hazırlandı)
+words = re.findall(r"[a-zçğıöşüâî]+", text)
+print(len(words), "sözcükle 'eğitildi'.\n")
+
+following = defaultdict(Counter)
+for w1, w2 in zip(words, words[1:]):
+    following[w1][w2] += 1
+
+for w in ["python", "yapay", "veri", "programlama"]:
+    print(f"{w!r} sözcüğünden sonra en olası:", following[w].most_common(3))
+
+# Metin üretmek: her adımda olasılığa göre bir sonraki sözcüğü seç
+random.seed(7)
+w, out = "python", ["python"]
+for _ in range(14):
+    if not following[w]:
+        break
+    choices, weights = zip(*following[w].items())
+    w = random.choices(choices, weights)[0]
+    out.append(w)
+print("\nÜretilen metin:", " ".join(out))</textarea></div>
+
+<div class="widget" id="bigramWidget">
+  <h4>Etkileşimli: otomatik tamamlama gibi</h4>
+  <div style="font-family:Inter,sans-serif;font-size:13px;color:var(--muted);margin-bottom:6px">Bir sözcük yazın; model bu sayfanın metninden öğrendiği en olası sonraki sözcükleri önerir. Bir öneriye tıklayarak cümleyi uzatın.</div>
+  <div class="ctrl"><input type="text" id="bgIn" value="yapay" style="flex:1;min-width:200px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);font-family:Inter,sans-serif"> <button class="btn" id="bgClear">Temizle</button></div>
+  <div id="bgSug" class="ctrl" style="gap:6px"></div>
+  <div class="readout" id="bgInfo" style="font-size:13px;color:var(--muted)"></div>
+</div>
+
+<p>İlk YZ sohbet botlarından biri, 1966'da Joseph Weizenbaum tarafından geliştirilen ELIZA'ydı. Program esasen kullanıcının cümlelerini yeniden ifade ediyor ve sorudaki belirli anahtar sözcüklere belirli yanıtlarla karşılık veriyordu. Bugün ChatGPT ve benzer sistemler kadar iyi çalışmasa da yine de bir ölçüde insansı görünüyordu ve epey ses getirdi. 1970'lerde insan uzmanlığını haritalayan ve bunu örneğin tıbbi teşhis koymak için kullanabilen çeşitli YZ algoritmaları geliştirildi. Ancak bu sistemler çoğu zaman "öğrenmiyordu"; bunun yerine bir dizi eğer-ise kuralı kullanılarak programlanmış sembolik YZ'lerdi. Belirli bir çıktının hangi koşullarda ortaya çıkacağı basitçe programa sabit olarak kodlanmıştı.</p>
+
+<p>Aşağıda ELIZA'nın tarzında küçük, kural tabanlı bir sohbet botu var. Tüm "zekâsı" birkaç anahtar sözcük kuralından ibaret; yine de kısa bir süre için şaşırtıcı biçimde insansı görünebilir:</p>
+
+<div class="cell" data-title="Ek · Kural tabanlı (sembolik) bir sohbet botu"><textarea>import re, random
+
+RULES = [
+    (r"\b(merhaba|selam)\b",              ["Merhaba! Bugün sizi buraya ne getirdi?"]),
+    (r"\bben (.+)",                        ["Neden \"{0}\" diyorsunuz?", "Bu durum ne zamandır böyle?"]),
+    (r"\b(anne|baba|kardeş|aile)\w*",     ["Bana ailenizden biraz daha söz eder misiniz?"]),
+    (r"\b(üzgün|mutsuz|yorgun|stres)\w*", ["Bunu yaşadığınızı duyduğuma üzüldüm. Neden böyle hissediyorsunuz?"]),
+    (r"\b(çünkü|zira)\b",                  ["Gerçek neden bu mu?", "Başka nedenler de olabilir mi?"]),
+    (r"\b(bilgisayar|python|program)\w*", ["Bilgisayarlar sizi endişelendiriyor mu?", "Programlama hakkında ne hissediyorsunuz?"]),
+    (r"\?$",                               ["Bunu neden soruyorsunuz?", "Sizce yanıt ne olmalı?"]),
+]
+DEFAULT = ["Devam edin lütfen.", "Bu sizin için ne anlama geliyor?", "Anlıyorum. Biraz daha açar mısınız?"]
+
+def eliza(sentence):
+    s = sentence.lower().strip()
+    for pattern, answers in RULES:
+        m = re.search(pattern, s)
+        if m:
+            return random.choice(answers).format(*m.groups())
+    return random.choice(DEFAULT)
+
+random.seed(1)
+for msg in ["Merhaba", "Ben biraz yorgunum", "Çünkü çok çalışıyorum", "Python öğrenmeli miyim?", "Hava güzel"]:
+    print("Siz   :", msg)
+    print("ELIZA :", eliza(msg), "\n")</textarea></div>
+
+<div class="widget" id="elizaWidget">
+  <h4>Etkileşimli: ELIZA ile konuşun</h4>
+  <div id="elLog" style="max-height:260px;overflow:auto;font-family:Inter,sans-serif;font-size:14px;padding:6px 2px"></div>
+  <div class="ctrl"><input type="text" id="elIn" placeholder="Bir şey yazın ve Enter'a basın…" style="flex:1;min-width:200px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);font-family:Inter,sans-serif"> <button class="btn primary" id="elSend">Gönder</button></div>
+  <div class="readout" style="font-size:12.5px;color:var(--muted)">Yanıtları yukarıdaki hücredeki <code>eliza()</code> işlevi üretir. Hücredeki kuralları değiştirip yeniden çalıştırırsanız bot da değişir. Hangi kuralın tetiklendiği yanıtın yanında gösterilir: sembolik YZ'nin her kararı izlenebilir.</div>
+</div>
+
+<p>YZ tarihinde bir dönüm noktası, 1997'de dünya satranç şampiyonu Garry Kasparov'u yenen IBM'in süper bilgisayarı Deep Blue'ydu. Deep Blue bunu yalnızca o dönem için muazzam olan bir hesaplama gücüne sahip olarak, yüz milyonlarca hamleyi hesaplayarak başardı. Sonra her zaman kazanma olasılığı en yüksek hamleyi seçti. Burada zekâdan söz edilemez. AlphaGo ile durum oldukça farklıydı: 2016'da bu YZ, Go masa oyununda profesyonel oyuncu Lee Sedol'u yenmeyi başardı. Go'da oyunun yüksek karmaşıklığı nedeniyle tüm olası hamleleri hesaplamak mümkün olmazdı. Burada YZ'nin stratejisi önce kendisine karşı sayısız oyun oynamak ve onlardan öğrenmekti. Büyüleyici olan, o dönemin dünyanın en iyi Go oyuncusuna karşı oynadığı maçta AlphaGo'nun başta insanlara anlamsız gelen ama sonunda YZ'yi zafere götüren hamleler yapmasıydı.</p>
+
+<p>"Tüm olası hamleleri hesaplamak" neden Go'da imkânsız? Kabaca bir hesap (ortalama hamle seçeneği<sup>oyun uzunluğu</sup>, yaygın kullanılan yaklaşık değerlerle):</p>
+
+<div class="cell" data-title="Ek · Satranç ve Go: oyun ağacının büyüklüğü"><textarea>import math
+
+games = {"Satranç": (35, 80), "Go (19×19)": (250, 150)}   # (ortalama seçenek, ortalama hamle sayısı) — yaklaşık
+for name, (b, d) in games.items():
+    print(f"{name:11}: yaklaşık 10^{d * math.log10(b):.0f} olası oyun")
+
+print(f"\nKarşılaştırma: evrendeki atom sayısı ≈ 10^80")
+print("Deep Blue saniyede ~200 milyon pozisyon değerlendiriyordu:",
+      f"satrançta bile tüm oyunları denemek ~10^{80*math.log10(35) - math.log10(2e8) - math.log10(3.15e7):.0f} yıl sürerdi.")
+print("Bu yüzden ikisi de yalnızca 'umut verici' dalları inceler; AlphaGo hangi dalların umut verici olduğunu öğrendi.")</textarea></div>
+
+<!-- ====================== 1.4 ====================== -->
+<h2 id="s14"><span class="num">1.4</span>Makine Öğrenmesi</h2>
+
+<p>AlphaGo'da, ChatGPT'de ve pek çok modern YZ uygulamasında bir örüntü görebiliriz: YZ kurallara dayanarak programlanmaz. Bunun yerine öğrenebileceği eğitim verisine ve örneklere ihtiyaç duyar. YZ'nin bu alanına <em>makine öğrenmesi</em> de denir. (<em>Derin öğrenme</em>, <em>sinir ağları</em> ve <em>pekiştirmeli öğrenme</em> gibi terimlerin hepsi bu yönü işaret eder, ama burada ayrıntıları açıklamak önemli değil.)</p>
+
+<p>Buraya nasıl geldiğimizi öğrendiğimize göre biraz uygulamalı deneyim kazanalım ve bir öneri sistemi tasarlayalım! Bahçe malzemeleri satan bir şirkette çalıştığınızı düşünün. Şimdi bir bültende müşterilerinize yeni çıkan üç ürünü tanıtmak istiyorsunuz: bir çit budama makası, katlanır balkon mobilyası ve profesyonel bir çapa makinesi. Çit makası ve profesyonel çapa makinesi yalnızca balkonu olan müşterilerin pek ilgisini çekmediği ve katlanır balkon mobilyası da profesyonel bahçıvanların hiç ilgisini çekmediği için her müşteriye yalnızca en uygun ürün önerilmelidir.</p>
+
+<p>Bunu kurallar kullanarak uygulayabilirsiniz: Müşteri büyük bir şehirde yaşıyorsa ya da geçmişte şunu veya bunu satın aldıysa katlanır balkon mobilyasını öner; aksi hâlde önerme. Bunu programlamak yalnızca çok zaman almakla kalmaz, aynı zamanda balkon mobilyasının onunla hiç ilgilenmeyen müşterilere önerilmesine (yanlış pozitif) ve onu satın alacak müşterilere önerilmemesine (yanlış negatif) yol açar. Amazon'daki gibi yüz milyonlarca ürünle uğraşıyorsak kural tabanlı bir yaklaşım zaten hedefe ulaşamaz.</p>
+
+<p>Makine öğrenmesi tam da burada devreye girer. Kitabın ilerleyen bölümlerinde YZ algoritmalarını kullanarak veriyi sınıflandırma ve tahmin amaçlarıyla nasıl analiz edeceğinizi öğreneceksiniz. İlke her zaman aynıdır: YZ'ye öğrenebileceği yeterli veriyi —örneğin müşterilerin konumlarını ve sipariş geçmişlerini— verin; ardından algoritmayı yeni, bilinmeyen verilere uygulayıp öneriler ve tahminler hesaplayabilirsiniz. Bizim durumumuzda YZ artık her müşteriye satın alma olasılığı en yüksek ürünü önerebilir. Ancak çit makasının neden sonunda belirli bir müşteriye önerildiği genellikle artık izlenebilir değildir. Bu, açık kurallar yerine makine öğrenmesi kullanıldığında sık görülen tipik bir etkidir.</p>
+
+<p>Bu senaryoyu deneyelim. Önce geçmiş satın almalardan oluşan bir veri seti üretiyoruz (gerçek değil; arka planda karmaşık, "gizli" bir davranış kalıbıyla rastgele üretildi):</p>
+
+<div class="cell" data-title="Ek · Geçmiş satın almalar (sentetik veri)"><textarea>import numpy as np
+import pandas as pd
+
+rng = np.random.default_rng(0)
+n = 600
+customers = pd.DataFrame({
+    "big_city":      rng.random(n) &lt; 0.5,                       # büyük şehirde mi yaşıyor?
+    "garden_m2":     np.round(rng.lognormal(4.2, 1.1, n)),      # bahçe büyüklüğü (0 = yalnızca balkon)
+    "age":           rng.integers(20, 80, n),
+    "bought_tools":  rng.random(n) &lt; 0.35,                      # daha önce el aleti aldı mı?
+    "orders_per_yr": rng.poisson(3, n),
+})
+customers.loc[rng.random(n) &lt; 0.3, "garden_m2"] = 0
+
+# "Gerçek" davranış (modelin bilmediği gizli kalıp)
+balcony = (customers.garden_m2 &lt; 20) &amp; ((customers.age &lt; 55) | customers.big_city)
+tiller = (customers.garden_m2 &gt; 400) | (customers.bought_tools &amp; (customers.garden_m2 &gt; 150) &amp; (customers.orders_per_yr &gt; 3))
+product = np.where(balcony, "Balkon mobilyası", np.where(tiller, "Çapa makinesi", "Çit makası"))
+noise = rng.random(n) &lt; 0.08                                     # biraz da rastlantı
+product[noise] = rng.choice(["Balkon mobilyası", "Çapa makinesi", "Çit makası"], noise.sum())
+customers["bought"] = product
+
+print(customers["bought"].value_counts(), "\n")
+customers.head(8)</textarea></div>
+
+<p>Şimdi iki yaklaşımı karşılaştıralım: elle yazılmış kurallar ve verilerden öğrenen bir karar ağacı. İkisini de eğitimde görmedikleri müşteriler üzerinde sınıyoruz:</p>
+
+<div class="cell" data-title="Ek · Kurallar mı, makine öğrenmesi mi?"><textarea>from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+
+X = customers.drop(columns="bought")
+y = customers["bought"]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=1)
+
+# 1) Kural tabanlı yaklaşım (bir insanın aklına gelebilecek kurallar)
+def rules(c):
+    if c.big_city:
+        return "Balkon mobilyası"
+    if c.garden_m2 &gt; 500:
+        return "Çapa makinesi"
+    return "Çit makası"
+pred_rules = X_test.apply(rules, axis=1)
+
+# 2) Makine öğrenmesi: kurallar verilmez, örneklerden öğrenilir
+model = DecisionTreeClassifier(max_depth=4, random_state=0).fit(X_train, y_train)
+pred_ml = model.predict(X_test)
+
+print(f"Kurallarla doğru öneri oranı : {accuracy_score(y_test, pred_rules):.0%}")
+print(f"Makine öğrenmesiyle          : {accuracy_score(y_test, pred_ml):.0%}\n")
+
+# Balkon mobilyası için yanlış pozitif / yanlış negatif
+for name, pred in [("Kurallar", pred_rules), ("ML", pred_ml)]:
+    fp = ((pred == "Balkon mobilyası") &amp; (y_test != "Balkon mobilyası")).sum()
+    fn = ((pred != "Balkon mobilyası") &amp; (y_test == "Balkon mobilyası")).sum()
+    print(f"{name:9} → balkon mobilyası: {fp} yanlış pozitif, {fn} yanlış negatif")</textarea></div>
+
+<p>Kitabın son cümlesine dikkat: Bu basit karar ağacı aslında hâlâ okunabilir (aşağıda). Ama gerçek sistemlerde yüzlerce ağaçtan oluşan topluluklar ya da milyonlarca parametreli sinir ağları kullanılır ve "neden bu öneri?" sorusunun yanıtı böyle okunamaz hâle gelir:</p>
+
+<div class="cell" data-title="Ek · Model ne öğrendi?"><textarea>from sklearn.tree import export_text
+print(export_text(model, feature_names=list(X.columns), max_depth=3))</textarea></div>
+
+<div class="widget" id="recWidget">
+  <h4>Etkileşimli: yeni bir müşteri için öneri</h4>
+  <div class="ctrl">
+    <label><input type="checkbox" id="rCity" checked> Büyük şehirde</label>
+    <label><input type="checkbox" id="rTools"> Daha önce el aleti aldı</label>
+  </div>
+  <div class="ctrl">
+    <label>Bahçe: <b id="rGv">0</b> m² <input type="range" id="rGarden" min="0" max="1500" step="10" value="0"></label>
+    <label>Yaş: <b id="rAv">35</b> <input type="range" id="rAge" min="20" max="80" value="35"></label>
+    <label>Sipariş/yıl: <b id="rOv">3</b> <input type="range" id="rOrd" min="0" max="10" value="3"></label>
+  </div>
+  <div class="ctrl"><button class="btn primary" id="rRun">Öner</button> <span style="font-size:12.5px;color:var(--muted)">(Önce yukarıdaki iki hücreyi çalıştırın.)</span></div>
+  <div id="rOut"></div>
+</div>
+
+<p>Ürün önerisi örneği pek çok farklı senaryoya uygulanabilir:</p>
+<div class="terms">
+<div class="term"><b>Yayın hizmetlerinde müzik ve film önerileri</b> — Kullanıcılara geçmiş davranışlarına göre öneriler ve akıllı çalma listeleri sunulur.</div>
+<div class="term"><b>E-posta sınıflandırma</b> — YZ istenmeyen e-postaları (spam) tanımayı öğrenir ve bu bilgiyi yeni e-postaları otomatik olarak spam klasörüne ayırmak için kullanır.</div>
+<div class="term"><b>Kestirimci bakım</b> — Endüstride YZ, bir makinenin ne zaman bakıma ihtiyaç duyduğunu gösteren örüntüleri tanımlar.</div>
+<div class="term"><b>Stok yönetimi ve lojistik</b> — YZ bir üründen kaç adet stokta tutulması gerektiğini ve teslimatın ne kadar süreceğini belirler.</div>
+<div class="term"><b>Tıp</b> — YZ fiziksel verilere ve önceden var olan durumlara göre kişiselleştirilmiş ilaç önerileri ve dozajlar sunar.</div>
+<div class="term"><b>Teşhis</b> — YZ'ye tümörlü ve tümörsüz görüntüler verilir ve yeni görüntülerdeki tümörleri tanımayı bunlardan öğrenir.</div>
+</div>
+
+<p>Bu kitaptaki bilgiyi muhtemelen kanser teşhisi koymak için kullanmak istemezsiniz (yoksa ister misiniz?), ama belki de YZ'nin verilerinizden öğrenmenize ve ardından öğrendiklerine dayanarak otomatik kararlar vermenize nasıl yardımcı olabileceğine dair fikirleriniz vardır bile.</p>
+
+<!-- ====================== 1.5 ====================== -->
+<h2 id="s15"><span class="num">1.5</span>YZ Yardımıyla Programlama</h2>
+
+<p>ChatGPT gibi YZ araçları, özellikle yeni başlıyorsanız, programlamada çok büyük bir yardımdır. Yapmanız gereken tek şey ne istediğinizi yazmaktır; ChatGPT size açıklamalarla birlikte eksiksiz bir Python programı verir.</p>
+
+<p>Şimdi neden programlamayı öğrenmeniz gerektiğini merak ediyor olabilirsiniz. Bu kitabı atlayamaz mıydınız? Bu size zaman ve para kazandırmaz mıydı? Para belki —ama zaman kesinlikle hayır! Programlama bilmiyor ve temel kavramları anlamıyorsanız ChatGPT ve benzeri araçlara tam olarak ne yapmaya çalıştığınızı ve programınızın ne yapması gerektiğini açıklamakta zorlanırsınız. İkincisi, YZ tarafından üretilen program kodunu önce denetlemeden basitçe çalıştırmak çok kötü bir fikirdir. Her şeyin ilk bakışta iyi görünmesi, kodun her koşulda doğru şeyi yapacağı anlamına gelmez. Bu yüzden YZ'ye program kodu ürettirmekten ve kendi kodunuzu analiz edip iyileştirtmekten çekinmeyin, ama ortaya çıkan koda her zaman yakından bakın, anlamaya çalışın ve şüphe durumunda açıklama isteyin. YZ'nin size verdiği ilk program kodu nadiren tam olarak ihtiyacınız olan şeydir. Çoğu zaman isteminizi (prompt) —YZ aracına soru olarak girdiğiniz şeyi— gözden geçirmeniz gerekir ve hedefinize ulaşmak için çoğu zaman bir iki ek soru gerekir. Elbette kodda kendiniz elle düzeltmeler de yapabilirsiniz. Çünkü sonunda programlamayı yapan hâlâ sizsiniz! YZ yalnızca size yardım etmek için orada.</p>
+
+<p>"İlk bakışta iyi görünmek" ne demek, küçük bir örnekle görelim. Bir YZ'den "not listesinin ortalamasını hesaplayan bir işlev" istediğinizi ve şunu aldığınızı düşünün. Hücreyi çalıştırın:</p>
+
+<div class="cell" data-title="Ek · İlk bakışta doğru görünen kod"><textarea>def average(grades):
+    return sum(grades) / len(grades)
+
+print(average([1, 2, 3]))        # 2.0 — doğru görünüyor
+print(average([2, 3]))           # 2.5 — bu da
+print(average([]))               # peki öğrenci henüz hiç not almadıysa?</textarea></div>
+
+<p>Kod tipik durumlarda kusursuz çalışıyor, ama boş listeyle <code>ZeroDivisionError</code> veriyor. "Değerlendir" adımı tam olarak bu tür kenar durumları (edge cases) düşünmektir. Düzeltilmiş bir sürüm:</p>
+
+<div class="cell" data-title="Ek · Kenar durumunu ele almak"><textarea>def average(grades):
+    if not grades:
+        return None               # ya da açık bir hata mesajı
+    return sum(grades) / len(grades)
+
+for g in [[1, 2, 3], [2, 3], []]:
+    print(g, "→", average(g))</textarea></div>
+
+<p>YZ, onsuz da çözebileceğiniz görevleri sizin için üstlenmekte en iyisidir. Yalnızca işinizi muazzam ölçüde hızlandırır. Google'da daha az arama yapmanız ve doğru komutları belgelerde daha az aramanız gerekir; belirli bir sorunu nasıl çözeceğiniz ya da bir hatayı nasıl düzelteceğiniz konusunda daha hızlı yönlendirme alırsınız. Dolayısıyla bir strateji, önce kendinize ChatGPT kullanmayı yasaklamak, her şeyi anladıktan sonra da size yardım etmesi ve destek olması için YZ'den yararlanmaktır. Bu, üniversitedeki bir bilgisayar bilimi programında da aşağı yukarı böyle işleyebilir. Orada önce her şeyi kendi başınıza çözmek mantıklıdır, çünkü yazılı sınavda da ChatGPT'ye izin verilmez.</p>
+
+<p>Ama bu kitabı sorunlarınızı hızla çözmek için satın aldınız ve YZ'nin en başından size yardım etmesine izin vermek kesinlikle sorun değil. Bu, hayal kırıklığını önleyebilir ve ilerlemenizi büyük ölçüde hızlandırabilir. Bu kitapta programlama kavramlarını, bir tanımı ardı ardına okumanız gereken geleneksel bir ders kitabı gibi sunmayacağız; bunun yerine YZ tarafından üretilen örneklere bakacağız. Bu yolla Python programlama dilinin kavramlarını ve dil öğelerini pratik, somut örneklerle öğrenecek ve YZ'yi program kodu üretmek için kendiniz nasıl kullanabileceğinizi ve üretilen kodu sonunda anlamak için nasıl eleştirel biçimde değerlendireceğinizi göreceksiniz. Bu kitapta YZ'ye her soru sorulduğunda istemi ve YZ'nin yanıtını bunun gibi kutularda göreceksiniz:</p>
+
+<div class="prompt"><div class="lbl">İstem</div><em>Python neden aslında Python olarak adlandırılıyor?</em></div>
+<div class="answer">Python bu şekilde adlandırılmıştır, çünkü mucidi Guido van Rossum komedi grubu Monty Python'un hayranıydı.</div>
+
+<p>YZ'nin aynı sorulara çoğu zaman farklı yanıtlar verdiğini unutmayın. Dolayısıyla yeni GPT sürümleri nedeniyle ya da basitçe tesadüfen ChatGPT'nin size bu kitapta gördüğünüzden biraz farklı bir yanıt vermesi mümkündür. Ayrıca eğitsel nedenlerle ve okunabilirliği artırmak için bu kitapta bazı şeyler zaman zaman basitleştirilmiş ya da kısaltılmıştır. Örneğin önceki istem, ChatGPT'nin uzun ve ayrıntılı bir yanıt vermesini önlemek için "Çok kısa yanıtla" talimatını içeriyordu.</p>
+
+<p>"Aynı soruya farklı yanıt" neden olur? Dil modelleri her adımda sonraki sözcüğü bir <em>olasılık dağılımından</em> seçer. Yukarıdaki minik dil modelinde de aynısı geçerli: Tohumu (<code>seed</code>) değiştirince aynı başlangıçtan farklı metinler çıkar.</p>
+
+<div class="cell" data-title="Ek · Aynı istem, farklı yanıtlar"><textarea>import random
+for seed in range(4):
+    random.seed(seed)
+    w, out = "python", ["python"]
+    for _ in range(10):
+        if not following[w]:
+            break
+        choices, weights = zip(*following[w].items())
+        w = random.choices(choices, weights)[0]
+        out.append(w)
+    print(f"seed={seed}:", " ".join(out))
+print("\n(Önce 1.3'teki 'Minik bir dil modeli' hücresini çalıştırın.)")</textarea></div>
+
+<!-- ====================== 1.6 ====================== -->
+<h2 id="s16"><span class="num">1.6</span>İstem Mühendisliği (Prompt Engineering)</h2>
+
+<p>Bir sonraki bölümde Python'u bilgisayarınıza nasıl kuracağınızı öğreneceksiniz. Doğrudan ChatGPT'ye soralım:</p>
+<div class="prompt"><div class="lbl">İstem</div><em>Python'u nasıl kurarım?</em></div>
+
+<p>Ama durun! Bu istemi bir YZ aracına girmeden önce doğru istem yazmayı öğrenelim. Bu, özellikle ileride program kodu üretirken ve hata ayıklarken yararlı olacak. Ayrıca istem mühendisliği disiplininden edindiğiniz içgörüleri ChatGPT ve benzer araçlarla yapacağınız diğer projelere de uygulayabilirsiniz. Eğitimde yenilik uzmanı Tom Barrett, istem mühendisliği stratejilerini <em>clarity</em> (açıklık), <em>relevant info</em> (ilgili bilgi), <em>examples</em> (örnekler), <em>avoid ambiguity</em> (belirsizlikten kaçınma), <em>tinker</em> (kurcalama) ve <em>evaluate</em> (değerlendirme) sözcüklerinin baş harflerinden oluşan bir CREATE çerçevesinde topladı (bkz. <a href="https://edte.ch/blog/create-framework/" target="_blank" rel="noopener">https://edte.ch/blog/create-framework/</a>). Bu çerçeveyi akılda tutarak işte birkaç temel kural:</p>
+<ol>
+<li><b>C</b> — Ne yapmak istediğinizi açıkça tanımlayın.</li>
+<li><b>R</b> — Tüm ilgili bilgileri isteme ekleyin.</li>
+<li><b>E</b> — İsteme örnekler ekleyin.</li>
+<li><b>A</b> — Çelişkili bilgilerden kaçının.</li>
+<li><b>T</b> — Sonuçtan memnun kalana kadar kurcalayın, istemi gözden geçirin ve ek sorular sorun.</li>
+<li><b>E</b> — YZ'nin yanıtının doğru olup olmadığını ve sorununuzu gerçekten çözüp çözmediğini değerlendirin ve doğrulayın.</li>
+</ol>
+
+<p>Daha sonra program kodu ürettiğimizde CREATE çerçevesinin <em>örnekler</em> kısmı kilit bir rol oynayacak, çünkü zaten elinizde olan program kodunu isteme eklemeniz ChatGPT'ye muazzam ölçüde yardımcı olur. O zaman ChatGPT onu bir referans olarak kullanabilir ve programınızda genel olarak neyi başarmaya çalıştığınızı çok daha iyi anlar. Önceki istemimizde ("Python'u nasıl kurarım?") <em>ilgili bilgi</em> kısmı özellikle yararlıdır, çünkü yanıt ancak ChatGPT'ye hangi işletim sistemini kullandığınızı söylerseniz işe yarar. Söylemezseniz ChatGPT size genellikle aynı anda üç kurulum kılavuzu sunar: biri Windows, biri Mac ve biri Linux için. Açıkçası örnekler ve ilgili bilgiler eksikse ChatGPT tahmin etmek zorunda kalır ve bu genellikle optimal olmayan sonuçlar verir.</p>
+
+<p>Birkaç yıl öncesinin aksine ChatGPT artık geçmiş istemlerinizden bazı ayrıntıları "hatırlayabiliyor". Yani YZ Windows kullandığınızı zaten biliyorsa teorik olarak bunu artık belirtmeniz gerekmez. Yine de işi sağlama almak için bu istem mühendisliği stratejilerini bilmeli ve kullanmalısınız.</p>
+
+<div class="widget" id="createWidget">
+  <h4>Etkileşimli: CREATE istem kurucu</h4>
+  <div style="font-family:Inter,sans-serif;font-size:13px;color:var(--muted);margin-bottom:8px">Alanları doldurun; sağda istem oluşur ve CREATE ölçütlerine göre basit bir denetim yapılır. Hazır örneklerle başlayabilirsiniz.</div>
+  <div class="ctrl" style="gap:6px" id="cEx"></div>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px" class="h-grid">
+    <div style="display:flex;flex-direction:column;gap:8px;font-family:Inter,sans-serif;font-size:13px">
+      <label><b>C</b> · Ne istiyorsunuz? (açık görev)<textarea id="cC" rows="2" class="cin"></textarea></label>
+      <label><b>R</b> · İlgili bilgi (sistem, sürüm, veri, hedef kitle…)<textarea id="cR" rows="2" class="cin"></textarea></label>
+      <label><b>E</b> · Örnek (mevcut kod, girdi/çıktı örneği)<textarea id="cE" rows="3" class="cin" style="font-family:'JetBrains Mono',monospace"></textarea></label>
+      <label><b>A</b> · Kısıtlar / biçim (belirsizliği gideren)<textarea id="cA" rows="2" class="cin"></textarea></label>
+      <label><input type="checkbox" id="cQ"> "Önce bana 10 soru sor" ekle (süper istem)</label>
+    </div>
+    <div>
+      <pre id="cOut" style="background:var(--prompt-bg);padding:12px;border-radius:8px;white-space:pre-wrap;font-family:Inter,sans-serif;font-size:13.5px;min-height:180px;margin:0"></pre>
+      <div class="ctrl"><button class="btn primary" id="cCopy">Kopyala</button> <span id="cMsg" style="font-size:12.5px;color:var(--muted)"></span></div>
+      <div id="cCheck" style="font-family:Inter,sans-serif;font-size:13px"></div>
+    </div>
+  </div>
+</div>
+
+<p>Son olarak bir <em>süper istem hilesi</em>: Tüm ilgili bilgiyi isteme sığdırmak çoğu zaman o kadar kolay değildir, çünkü başka neyin ilgili olabileceğini gözden kaçırma eğilimindesinizdir. Bu durumda ChatGPT'den size ek sorular sormasını basitçe şöyle isteyebilirsiniz:</p>
+
+<div class="prompt"><div class="lbl">İstem</div><em>Python için hangi düzenleyiciyi ya da IDE'yi kullanmalıyım? Soruma olabildiğince iyi yanıt verebilmen için bana önceden 10 ek soru sor.</em></div>
+
+<p>ChatGPT size o zaman 10 soruyu gösterir. Hepsini yanıtlamanız gerekmez, ama işiniz bittiğinde YZ'den genellikle bu süper istem hilesi olmadan alacağınızdan çok daha iyi bir yanıt alırsınız. 10 soruyu yanıtlayarak sonuçta daha fazla ilgili bilgi sağlamış olursunuz.</p>
+
+</article></main>
+</div>
+
+<script>
+/* ---------- Tema ---------- */
+(function(){
+  const root=document.documentElement;
+  let saved=null; try{saved=localStorage.getItem('ml-theme')}catch(e){}
+  if(saved) root.setAttribute('data-theme',saved);
+  document.getElementById('themeBtn').onclick=()=>{
+    const dark = root.getAttribute('data-theme')==='dark' ||
+      (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    const next = dark?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem('ml-theme',next)}catch(e){}
+  };
+})();
+
+/* ---------- Pyodide ---------- */
+let pyodide=null, pyReady=null, runFn=null;
+const dot=document.getElementById('pyDot'), st=document.getElementById('pyState'), msg=document.getElementById('pyMsg');
+function errMsg(e){ if(!e) return 'bilinmeyen hata'; if(e.message) return e.message; if(e.errno!==undefined) return 'Pyodide dosya sistemi hatası (errno '+e.errno+')'; try{ return JSON.stringify(e); }catch(_){ return String(e); } }
+function setState(s,t,m){dot.className='dot '+s; st.textContent=t; if(m!==undefined) msg.textContent=m;}
+
+const SETUP = "import os, sys, json, re\nimport pyodide_http\npyodide_http.patch_all()\nimport requests\n\nPAGE_TEXT = \"\"\n\nclass _SampleResponse:\n    status_code = 200\n    ok = True\n    def __init__(self, data, url):\n        self._d, self.url = data, url\n        self.text = json.dumps(data)\n    def json(self):\n        return self._d\n    def raise_for_status(self):\n        pass\n\n_real_get = requests.get\ndef _get(url, *a, **k):\n    sample = None\n    if \"open-meteo.com\" in url:\n        sample = _SampleResponse({\"current\": {\"time\": \"2026-10-27T06:00\", \"temperature_2m\": 14.2,\n                                              \"wind_speed_10m\": 11.5}}, url)\n    try:\n        r = _real_get(url, *a, **k)\n    except Exception as e:\n        if sample is None:\n            raise\n        print(f\"[sayfa] Canl\u0131 istek yap\u0131lamad\u0131 ({type(e).__name__}); \u00f6rnek yan\u0131t kullan\u0131ld\u0131.\")\n        return sample\n    if r.status_code >= 400 and sample is not None:\n        print(f\"[sayfa] Canl\u0131 istek {r.status_code} d\u00f6nd\u00fcrd\u00fc; \u00f6rnek yan\u0131t kullan\u0131ld\u0131.\")\n        return sample\n    return r\nrequests.get = _get\n";
+
+const HELPER = `import sys, io, ast, base64, traceback, json, inspect, os, warnings
+os.environ['MPLBACKEND'] = 'AGG'
+warnings.filterwarnings('ignore', message='.*non-interactive.*')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+NS = {"__name__": "__main__"}
+_FLAGS = ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
+
+async def _run_cell(code):
+    buf = io.StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    sys.stdout = sys.stderr = buf
+    html = None; ok = True
+    try:
+        tree = ast.parse(code)
+        last = None
+        if tree.body and isinstance(tree.body[-1], ast.Expr):
+            last = ast.Expression(tree.body.pop().value)
+        r = eval(compile(tree, "<hücre>", "exec", flags=_FLAGS), NS)
+        if inspect.iscoroutine(r):
+            await r
+        if last is not None:
+            val = eval(compile(last, "<hücre>", "eval", flags=_FLAGS), NS)
+            if inspect.iscoroutine(val):
+                val = await val
+            if val is not None:
+                if hasattr(val, "to_html"):
+                    html = val.to_html(max_rows=40)
+                else:
+                    print(repr(val))
+    except BaseException as e:
+        ok = False
+        frames = [f for f in traceback.extract_tb(e.__traceback__) if f.filename == "<hücre>"]
+        if frames:
+            print("Traceback (most recent call last):")
+            print("".join(traceback.format_list(frames)), end="")
+        print("".join(traceback.format_exception_only(type(e), e)), end="")
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
+    imgs = []
+    if "matplotlib.pyplot" in sys.modules:
+        plt = sys.modules["matplotlib.pyplot"]
+        for n in plt.get_fignums():
+            b = io.BytesIO()
+            plt.figure(n).savefig(b, format="png", dpi=110, bbox_inches="tight")
+            imgs.append(base64.b64encode(b.getvalue()).decode())
+        plt.close("all")
+    return json.dumps({"out": buf.getvalue(), "html": html, "imgs": imgs, "ok": ok})
+`;
+
+
+function loadPython(){
+  if(pyReady) return pyReady;
+  setState('loading','Python yükleniyor…','Pyodide çekirdeği indiriliyor.');
+  pyReady = (async()=>{
+    pyodide = await loadPyodide();
+    pyodide.setStdin({stdin: () => { const v = window.prompt('Python input() bir değer bekliyor:'); return v === null ? undefined : v; }});
+    setState('loading','Paketler yükleniyor…','requests indiriliyor; pandas, matplotlib, scikit-learn ilk kullanıldıkları hücrede yüklenir.');
+    await pyodide.loadPackage(['requests','pyodide-http','micropip']);
+    await pyodide.runPythonAsync(HELPER);
+    await pyodide.runPythonAsync('exec(' + JSON.stringify(SETUP) + ', NS)');
+    pyodide.globals.set('_PT', pageText());
+    pyodide.runPython('NS["PAGE_TEXT"] = _PT');
+    runFn = pyodide.globals.get('_run_cell');
+    const ver = 'Python ' + pyodide.runPython('import sys; sys.version.split()[0]') + ' · ' + pyodide.version;
+    if(window.refreshFiles) refreshFiles();
+    setState('ready','Python hazır',ver);
+    document.getElementById('preload').style.display='none';
+  })().catch(e=>{ setState('','Yükleme başarısız','Sayfayı yenileyip tekrar deneyin. Ayrıntı: '+errMsg(e)); console.error(e); pyReady=null; throw e;});
+  return pyReady;
+}
+document.getElementById('preload').onclick=loadPython;
+
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+/* ---------- Kod hücreleri ---------- */
+document.querySelectorAll('.cell').forEach((cell,i)=>{
+  const ta=cell.querySelector('textarea');
+  const original=ta.value;
+  ta.spellcheck=false;
+  ta.rows=Math.min(ta.value.split('\n').length+1,40);
+  const head=document.createElement('div'); head.className='cell-head';
+  head.innerHTML=`<span class="title">In [${i+1}] · ${cell.dataset.title||'Python'}</span>`;
+  const run=document.createElement('button'); run.className='btn primary'; run.textContent='▶ Çalıştır';
+  const reset=document.createElement('button'); reset.className='btn'; reset.textContent='↺'; reset.title='Özgün koda dön';
+  head.append(run,reset); cell.prepend(head);
+  const out=document.createElement('div'); out.className='out'; cell.append(out);
+
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Tab'){e.preventDefault();const s=ta.selectionStart;ta.setRangeText('    ',s,ta.selectionEnd,'end');}
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run.click();}
+  });
+  reset.onclick=()=>{ta.value=original; out.className='out'; out.innerHTML='';};
+  run.onclick=async()=>{
+    run.disabled=true; out.className='out show'; out.textContent='⏳ Çalışıyor…';
+    try{
+      await loadPython();
+      out.textContent='⏳ Paketler denetleniyor…';
+      await pyodide.loadPackagesFromImports(ta.value);
+      await ensurePkgs(ta.value);
+      out.textContent='⏳ Çalışıyor…';
+      await new Promise(r=>setTimeout(r,20));
+      const res=JSON.parse(await runFn(ta.value));
+      let h='';
+      if(res.out) h+=esc(res.out);
+      if(res.html) h+=`<div>${res.html}</div>`;
+      res.imgs.forEach(b=>h+=`<img alt="grafik" src="data:image/png;base64,${b}">`);
+      if(!h) h='<span style="color:var(--ok)">✓ Çalıştı (çıktı yok)</span>';
+      out.innerHTML=h; if(window.refreshFiles) refreshFiles(); document.dispatchEvent(new CustomEvent('cellran',{detail:ta.value})); out.className='out show'+(res.ok?'':' err');
+    }catch(e){ out.className='out show err'; out.textContent=errMsg(e); }
+    run.disabled=false;
+  };
+});
+
+/* ---------- Yardımcılar ---------- */
+async function py(code){ await loadPython(); await pyodide.loadPackagesFromImports(code); await ensurePkgs(code); return JSON.parse(await runFn(code)); }
+function showRes(el, r){
+  let h=''; if(r.out) h+=esc(r.out); if(r.html) h+=`<div>${r.html}</div>`;
+  r.imgs.forEach(b=>h+=`<img alt="grafik" src="data:image/png;base64,${b}">`);
+  el.innerHTML=h||'✓'; el.className='out show'+(r.ok?'':' err');
+}
+const CITIES={"Chicago, US":[41.85,-87.65],"Seattle, US":[47.61,-122.33],"İstanbul":[41.01,28.98],"Ankara":[39.93,32.86],"Sakarya (Adapazarı)":[40.78,30.40],"İzmir":[38.42,27.14],"Berlin":[52.52,13.40]};
+function fillCities(sel){ Object.keys(CITIES).forEach(c=>{const o=document.createElement('option');o.textContent=c;sel.append(o);}); }
+
+/* ---------- micropip ile gerektiğinde paket ---------- */
+const _installed=new Set();
+async function ensurePkgs(code){ /* bu bölümde ek PyPI paketi yok */
+}
+
+/* ---------- Dosya paneli ---------- */
+(function(){
+  const list=document.getElementById('fileList');
+  async function refresh(){
+    if(!pyodide){ list.innerHTML='<i>Python yüklenince görünür.</i>'; return; }
+    const files=JSON.parse(pyodide.runPython(`import os, json
+_r=[]
+for _d,_s,_fs in os.walk('.'):
+    _s[:]=[x for x in _s if not x.startswith('.') and x!='__pycache__']
+    for _f in sorted(_fs):
+        _p=os.path.join(_d,_f)[2:]
+        _r.append([_p, os.path.getsize(_p)])
+json.dumps(sorted(_r))`));
+    list.innerHTML=files.length?'':'<i>(boş)</i>';
+    files.forEach(([p,sz])=>{
+      const a=document.createElement('a'); a.href='#'; a.textContent=`${p} (${sz<1024?sz+' B':(sz/1024).toFixed(1)+' KB'})`;
+      a.style.cssText='display:block;padding:2px 0;font-size:12px;color:var(--accent);word-break:break-all';
+      a.onclick=e=>{e.preventDefault();
+        const full=pyodide.FS.cwd()+'/'+p, data=pyodide.FS.readFile(full);
+        if(/\.(ini|py|json|jsonl|csv|txt|md|xml)$/.test(p) || p==='.env'){ const w=document.getElementById('filePeek'); w.style.display='block'; w.textContent=`── ${p} ──\n`+new TextDecoder().decode(data).replace(/(OPENAI_API_KEY=)(\S{6})\S+/,'$1$2••••••'); return; }
+        const u=URL.createObjectURL(new Blob([data]));const l=document.createElement('a');l.href=u;l.download=p.split('/').pop();l.click();setTimeout(()=>URL.revokeObjectURL(u),2000);};
+      list.append(a);
+    });
+  }
+  window.refreshFiles=refresh; window.py=py;
+  document.getElementById('fileRefresh').onclick=async()=>{await loadPython();refresh();};
+})();
+
+/* ---------- Çevrimdışı mod ---------- */
+
+
+/* ---------- Sayfa metni (dil modeli için) ---------- */
+function pageText(){
+  const art=document.querySelector('article').cloneNode(true);
+  art.querySelectorAll('.cell,.widget,pre,code,script,.note').forEach(e=>e.remove());
+  return art.textContent.replace(/\s+/g,' ');
+}
+
+/* ---------- Üç dil ---------- */
+(function(){
+  const L={
+    'Python':["for number in range(1, 11):\n    if number % 2 == 0:\n        print(number, \"→\", number ** 2)","3 satır. Girinti (boşluklar) blokları belirler; tür bildirimi, noktalı virgül, süslü parantez yok."],
+    'Java':["public class Squares {\n    public static void main(String[] args) {\n        for (int number = 1; number <= 10; number++) {\n            if (number % 2 == 0) {\n                System.out.println(number + \" → \" + number * number);\n            }\n        }\n    }\n}","Her program bir sınıf ve main yöntemi içinde olmalı; türler (int) açıkça yazılır; çalıştırmadan önce derlenir."],
+    'C++':["#include <iostream>\n\nint main() {\n    for (int number = 1; number <= 10; number++) {\n        if (number % 2 == 0) {\n            std::cout << number << \" → \" << number * number << std::endl;\n        }\n    }\n    return 0;\n}","Donanıma yakın ve çok hızlı; ama derleme, başlık dosyaları ve bellek yönetimi gibi konular öğrenmeyi zorlaştırır."]
+  };
+  const tabs=document.getElementById('langTabs'), code=document.getElementById('langCode'), note=document.getElementById('langNote');
+  function show(k){ code.textContent=L[k][0]; note.textContent=L[k][1]; [...tabs.children].forEach(b=>b.classList.toggle('primary',b.textContent===k)); }
+  Object.keys(L).forEach(k=>{const b=document.createElement('button');b.className='btn';b.textContent=k;b.onclick=()=>show(k);tabs.append(b);});
+  show('Python');
+})();
+
+/* ---------- Bigram otomatik tamamlama (JS) ---------- */
+(function(){
+  const inp=document.getElementById('bgIn'), sug=document.getElementById('bgSug'), info=document.getElementById('bgInfo');
+  const words=(pageText().toLocaleLowerCase('tr').match(/[a-zçğıöşüâî]+/g)||[]);
+  const F={}; for(let i=0;i<words.length-1;i++){ (F[words[i]]=F[words[i]]||{}); F[words[i]][words[i+1]]=(F[words[i]][words[i+1]]||0)+1; }
+  function upd(){
+    const parts=inp.value.toLocaleLowerCase('tr').trim().split(/\s+/), last=parts[parts.length-1]||'';
+    const c=F[last]; sug.innerHTML='';
+    if(!c){ info.textContent=last?`"${last}" sözcüğü metinde hiç geçmiyor ya da hep cümle sonunda; model bir şey öneremez. (Gerçek modeller bu yüzden çok daha fazla veriyle eğitilir.)`:''; return; }
+    const tot=Object.values(c).reduce((a,b)=>a+b,0);
+    Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,6).forEach(([w,n])=>{
+      const b=document.createElement('button'); b.className='btn'; b.innerHTML=`${esc(w)} <span style="color:var(--muted);font-size:11px">${Math.round(100*n/tot)}%</span>`;
+      b.onclick=()=>{inp.value=inp.value.trim()+' '+w; upd();}; sug.append(b);
+    });
+    info.textContent=`"${last}" sonrasında metinde ${tot} kez bir sözcük geliyor (${Object.keys(c).length} farklı). Model: ${words.length} sözcük.`;
+  }
+  inp.oninput=upd; document.getElementById('bgClear').onclick=()=>{inp.value='';upd();inp.focus();}; upd();
+})();
+
+/* ---------- ELIZA sohbet ---------- */
+(function(){
+  const log=document.getElementById('elLog'), inp=document.getElementById('elIn');
+  function add(who,txt,extra){ const d=document.createElement('div'); d.style.cssText='margin:4px 0;'+(who==='Siz'?'text-align:right':'');
+    d.innerHTML=`<span style="display:inline-block;max-width:80%;padding:6px 10px;border-radius:10px;background:${who==='Siz'?'var(--accent)':'var(--prompt-bg)'};color:${who==='Siz'?'#fff':'var(--ink)'}">${esc(txt)}</span>${extra?`<div style="font-size:11.5px;color:var(--muted)">${esc(extra)}</div>`:''}`;
+    log.append(d); log.scrollTop=log.scrollHeight; }
+  add('ELIZA','Merhaba, ben ELIZA. Nasıl hissediyorsunuz?');
+  async function send(){
+    const m=inp.value.trim(); if(!m) return; inp.value=''; add('Siz',m);
+    try{
+      await loadPython();
+      if(!pyodide.runPython('"eliza" in NS')){
+        const cell=[...document.querySelectorAll('.cell')].find(c=>/sohbet botu/.test(c.dataset.title)); await runFn(cell.querySelector('textarea').value);
+      }
+      pyodide.globals.set('_m', m);
+      const r=JSON.parse(pyodide.runPython(`import json, re
+_s = _m.lower().strip()
+_rule = next((p for p, _ in NS["RULES"] if re.search(p, _s)), None)
+json.dumps([NS["eliza"](_m), _rule])`));
+      add('ELIZA', r[0], r[1]?'tetiklenen kural: '+r[1]:'hiçbir kural eşleşmedi → varsayılan yanıt');
+    }catch(e){ add('ELIZA','(hata: '+errMsg(e)+')'); }
+  }
+  document.getElementById('elSend').onclick=send; inp.addEventListener('keydown',e=>{if(e.key==='Enter')send();});
+})();
+
+/* ---------- Öneri paneli ---------- */
+(function(){
+  const g=document.getElementById('rGarden'), a=document.getElementById('rAge'), o=document.getElementById('rOrd');
+  [[g,'rGv'],[a,'rAv'],[o,'rOv']].forEach(([el,id])=>el.oninput=()=>document.getElementById(id).textContent=el.value);
+  document.getElementById('rRun').onclick=async()=>{
+    const out=document.getElementById('rOut'); out.className='out show'; out.textContent='⏳';
+    const city=document.getElementById('rCity').checked?'True':'False', tools=document.getElementById('rTools').checked?'True':'False';
+    const code=`import pandas as pd, html as _h
+_c = pd.DataFrame([{"big_city": ${city}, "garden_m2": ${g.value}, "age": ${a.value}, "bought_tools": ${tools}, "orders_per_yr": ${o.value}}])
+class _R:
+    def to_html(self, max_rows=None):
+        p = model.predict_proba(_c)[0]
+        rows = sorted(zip(model.classes_, p), key=lambda t: -t[1])
+        s = "".join(f'<div style="display:flex;align-items:center;gap:8px;font:14px Inter,sans-serif;margin:3px 0"><span style="width:140px">{_h.escape(k)}</span><span style="height:14px;width:{v*260:.0f}px;background:var(--accent);border-radius:3px"></span><b>{v:.0%}</b></div>' for k, v in rows)
+        r = rules(_c.iloc[0])
+        return s + f'<div style="font:13px Inter,sans-serif;margin-top:6px">ML önerisi: <b>{_h.escape(rows[0][0])}</b> · Kurallara göre: <b>{_h.escape(r)}</b></div>'
+_R()`;
+    try{ const r=await py(code); if(!r.ok&&/NameError/.test(r.out)) r.out='Önce 1.4\'teki "Geçmiş satın almalar" ve "Kurallar mı, makine öğrenmesi mi?" hücrelerini çalıştırın.\n\n'+r.out; showRes(out,r); }
+    catch(e){ out.className='out show err'; out.textContent=errMsg(e); }
+  };
+})();
+
+/* ---------- CREATE istem kurucu ---------- */
+(function(){
+  const F=['cC','cR','cE','cA'].map(i=>document.getElementById(i)), q=document.getElementById('cQ'), out=document.getElementById('cOut'), chk=document.getElementById('cCheck');
+  const EX={
+    'Zayıf istem':['Python\'u nasıl kurarım?','','',''],
+    'İyi istem':['Python\'u bilgisayarıma nasıl kurarım? Adım adım anlat.','Windows 11 kullanıyorum, yönetici yetkim yok. Python\'u Visual Studio Code ile kullanmak istiyorum; programlamaya yeni başlıyorum.','','Yanıtı en fazla 8 numaralı adım olarak ver; terminal komutlarını kod bloğunda göster.'],
+    'Kod için istem':['Bu işlev boş liste verilince hata veriyor. Düzelt ve nedenini açıkla.','Python 3.12. Not ortalaması hesaplamak için kullanıyorum; notlar 1–5 arası tamsayılar.','def average(grades):\n    return sum(grades) / len(grades)\n\naverage([])  # ZeroDivisionError','Yalnızca standart kütüphane kullan. Boş listede None döndür, hata fırlatma.']
+  };
+  Object.entries(EX).forEach(([k,v])=>{const b=document.createElement('button');b.className='btn';b.textContent=k;b.onclick=()=>{F.forEach((f,i)=>f.value=v[i]);q.checked=false;upd();};document.getElementById('cEx').append(b);});
+  function upd(){
+    const [c,r,e,a]=F.map(f=>f.value.trim());
+    let p=c; if(r) p+='\n\nBağlam: '+r; if(e) p+='\n\nÖrnek:\n'+e; if(a) p+='\n\nKısıtlar: '+a;
+    if(q.checked) p+='\n\nYanıt vermeden önce, soruma olabildiğince iyi yanıt verebilmen için bana 10 ek soru sor.';
+    out.textContent=p||'(istem burada oluşur)';
+    const checks=[
+      ['C · Açık görev', c.length>=15, c?'':'Görev boş.'],
+      ['R · İlgili bilgi', r.length>=15||q.checked, 'İşletim sistemi, sürüm, amaç gibi bağlam yok — model tahmin etmek zorunda kalır.'],
+      ['E · Örnek', !!e, 'Kod ya da örnek girdi/çıktı yok (kod isteklerinde çok yardımcı olur).'],
+      ['A · Belirsizlik yok', !!a && !/(kısa|ayrıntılı)[\s\S]*(ayrıntılı|kısa)/i.test(a), a?'Çelişkili görünen kısıtlar var (hem kısa hem ayrıntılı?).':'Biçim/kısıt belirtilmedi.'],
+      ['T · Kurcala', true, ''], ['E · Değerlendir', true, '']
+    ];
+    chk.innerHTML=checks.map(([n,ok,m])=>`<div>${ok?'✅':'⚠️'} <b>${n}</b>${!ok&&m?' — '+esc(m):''}${n.startsWith('T')?' — yanıtı aldıktan sonra istemi düzeltip yeniden sorun.':''}${n.startsWith('E · D')?' — yanıtı (ör. kodu çalıştırarak) doğrulayın.':''}</div>`).join('');
+  }
+  F.concat([q]).forEach(f=>f.oninput=f.onchange=upd);
+  document.getElementById('cCopy').onclick=async()=>{ try{ await navigator.clipboard.writeText(out.textContent); document.getElementById('cMsg').textContent='✓ Kopyalandı'; }catch(e){ document.getElementById('cMsg').textContent='Kopyalanamadı; metni seçip kopyalayın.'; } };
+  F.forEach((f,i)=>f.value=EX['Zayıf istem'][i]); upd();
+})();
+
+/* ---------- İçindekiler vurgusu ---------- */
+(function(){
+  const links=[...document.querySelectorAll('nav.toc a')];
+  const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.remove('active'));links[secs.indexOf(e.target)].classList.add('active');}}),{rootMargin:'-10% 0px -80% 0px'});
+  secs.forEach(s=>io.observe(s));
+})();
+</script>
+</body>
+</html>

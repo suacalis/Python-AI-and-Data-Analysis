@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matplotlib ile Görselleştirme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+<style>
+:root{
+  --bg:#f7f5f0; --paper:#ffffff; --ink:#1d1f24; --muted:#5d6270; --line:#e2ded4;
+  --accent:#1f5f8b; --accent-soft:#e3eef6; --warn:#9a5b00; --warn-soft:#fbf1dc;
+  --code-bg:#f2f0ea; --code-ink:#22252b; --ok:#2f7a4a; --err:#b3261e;
+  --prompt-bg:#efece4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+    --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+    --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+  --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+  --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Serif 4",Georgia,serif;font-size:18px;line-height:1.65}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1200px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:28px 18px;border-right:1px solid var(--line);font-family:Inter,sans-serif;font-size:14px}
+nav.toc .brand{font-weight:600;color:var(--accent);font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;padding:6px 8px;border-radius:6px}
+nav.toc a:hover,nav.toc a.active{background:var(--accent-soft);color:var(--ink)}
+.status{margin-top:22px;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;color:var(--muted);background:var(--paper)}
+.status b{color:var(--ink)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#999;margin-right:6px;vertical-align:middle}
+.dot.loading{background:var(--warn);animation:pulse 1s infinite}
+.dot.ready{background:var(--ok)}
+@keyframes pulse{50%{opacity:.3}}
+.toc button,.btn{font-family:Inter,sans-serif;font-size:13px;font-weight:500;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:6px 12px;border-radius:6px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.5;cursor:wait}
+main{padding:40px 48px 120px;min-width:0}
+article{max-width:780px}
+h1{font-size:2.4rem;line-height:1.15;margin:0 0 .3em;color:var(--accent)}
+h2{font-size:1.55rem;margin:2.6em 0 .6em;padding-top:.4em;border-top:1px solid var(--line);color:var(--accent)}
+h3{font-size:1.2rem;margin:2em 0 .5em;color:var(--ink);font-family:Inter,sans-serif;font-weight:600}
+h2 .num{font-family:Inter,sans-serif;font-weight:600;font-size:.8em;color:var(--muted);margin-right:.4em}
+.lead{font-style:italic;color:var(--muted);font-size:1.08rem;border-left:3px solid var(--accent);padding-left:16px;margin:1.2em 0 2em}
+code{font-family:"JetBrains Mono",monospace;font-size:.82em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.terms{display:grid;gap:12px;margin:1.2em 0}
+.term{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+.term b{font-family:Inter,sans-serif;color:var(--accent)}
+.note{background:var(--warn-soft);border-left:3px solid var(--warn);padding:12px 16px;border-radius:0 8px 8px 0;font-size:.95rem;margin:1.2em 0}
+.formula{font-family:"JetBrains Mono",monospace;background:var(--paper);border:1px dashed var(--line);padding:12px 16px;border-radius:8px;text-align:center;font-size:.95rem;margin:1em 0;overflow-x:auto}
+.prompt{background:var(--prompt-bg);border-radius:10px;padding:14px 18px;margin:1.2em 0;font-size:.95rem}
+.prompt .lbl{font-family:Inter,sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.prompt em{display:block;margin-top:6px}
+/* Kod hücresi */
+.cell{margin:1.3em 0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--paper)}
+.cell-head{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--code-bg);border-bottom:1px solid var(--line);font-family:Inter,sans-serif;font-size:12px;color:var(--muted)}
+.cell-head .title{flex:1}
+.cell textarea{display:block;width:100%;border:0;resize:vertical;padding:14px 16px;background:var(--code-bg);color:var(--code-ink);font-family:"JetBrains Mono",monospace;font-size:13.5px;line-height:1.55;tab-size:4;outline:none;min-height:80px;white-space:pre;overflow:auto}
+.out{display:none;border-top:1px solid var(--line);padding:12px 16px;font-family:"JetBrains Mono",monospace;font-size:13px;white-space:pre-wrap;overflow-x:auto}
+.out.show{display:block}
+.out.err{color:var(--err)}
+.out img{max-width:100%;background:#fff;border-radius:6px;margin-top:8px;display:block}
+.out table{border-collapse:collapse;font-size:12.5px;margin:6px 0;white-space:nowrap}
+.out th,.out td{border:1px solid var(--line);padding:3px 8px;text-align:right}
+.out th{background:var(--code-bg)}
+/* Tablo */
+table.data{border-collapse:collapse;font-family:Inter,sans-serif;font-size:14px;margin:1em 0}
+table.data th,table.data td{border:1px solid var(--line);padding:6px 10px}
+table.data th{background:var(--code-bg)}
+.caption{font-family:Inter,sans-serif;font-size:13px;color:var(--muted);margin-top:-4px}
+/* Widget */
+.widget{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px;margin:1.5em 0}
+.widget h4{margin:0 0 6px;font-family:Inter,sans-serif;font-size:14px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.widget .ctrl{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-family:Inter,sans-serif;font-size:14px;margin:10px 0}
+.widget svg{width:100%;height:auto;display:block}
+.widget .readout{font-family:Inter,sans-serif;font-size:15px}
+.widget .readout b{color:var(--accent)}
+input[type=range]{accent-color:var(--accent)}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  main{padding:24px 16px 80px}
+  h1{font-size:1.9rem}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" id="toc">
+  <div class="brand">Bölüm 6</div>
+  <a href="#giris">Giriş</a>
+  <a href="#s61">6.1 Grafik oluşturma</a>
+  <a href="#s62">6.2 Tasarım seçenekleri</a>
+  <a href="#s63">6.3 Alt grafikler</a>
+  <a href="#s64">6.4 Çizgi, çubuk ve diğerleri</a>
+  <a href="#s65">6.5 DataFrame'lerden grafik</a>
+  <a href="#s66">6.6 Etkileşimli grafikler</a>
+  <a href="#s67">6.7 Yakınlaştırma ve kaydırma</a>
+  <div class="status">
+    <div><span class="dot" id="pyDot"></span><b id="pyState">Python yüklenmedi</b></div>
+    <div id="pyMsg" style="margin:6px 0 8px">Kodlar tarayıcıda Pyodide ile çalışır. İlk çalıştırmada NumPy, pandas ve matplotlib indirilir; plotly ve mplcursors gerektiğinde PyPI'den kurulur.</div>
+    <button class="btn" id="preload">Python'u şimdi yükle</button>
+    <div style="margin-top:8px"><button class="btn" id="themeBtn">Tema değiştir</button></div>
+  </div>
+  <div class="status">
+    <b>Dosyalar</b> <span style="font-size:11.5px">(sanal klasör — tıklayınca iner)</span>
+    <div id="fileList" style="margin:6px 0;max-height:220px;overflow:auto"><i>Python yüklenince görünür.</i></div>
+    <label class="btn" style="display:inline-block">Dosya yükle<input type="file" id="fileUp" multiple style="display:none"></label>
+    <button class="btn" id="fileRefresh">Yenile</button>
+  </div>
+</nav>
+
+<main><article>
+<h1 id="giris">6 · Matplotlib ile Görselleştirme</h1>
+<p class="lead">Veriyi anlamak çoğu zaman zordur. Bir grafik ise neyin önemli olduğunu hemen gösterir. Bu bölümde verinin Matplotlib ile nasıl açık biçimde görselleştirilebileceğine bakacağız.</p>
+
+<p>Veriyi İnternet'ten, dosyalardan ya da başka kaynaklardan Python'a yükleyip hazırlamak için veri temizliği yaptıktan sonra, nihayet yeni içgörüler çıkarmak üzere o veriyi analiz edebiliriz. Bu bilgiyi çıkardığımız tablo olan DataFrame'in anlaşılması her zaman hızlı ve kolay değildir. Grafik çoğu zaman daha iyidir; çünkü verinin, eğilimlerin ve aykırı değerlerin genel görünümünü saniyeler içinde verir. Çizgi grafiğindeki çizgi yukarı doğru gidiyorsa sayılar artıyordur. Ayrıca bir grafik, görselleştirme olmadan fark edilmeyecek ve veride hâlâ bulunan hataları öne çıkarır. Grafikler iletişim için de mükemmeldir: Resimler bin kelimeden ya da yüz bin sayıdan daha çok şey anlatır. Sunumları ve raporları sadeleştirir, güvenilirliği artırır, bilimde, iş dünyasında ve medyada profesyonellik izlenimi verir.</p>
+
+<p>Muhtemelen daha önce Microsoft Excel ya da başka bir hesap tablosu programıyla grafik oluşturdunuz. Bunun için tabloda verinin bulunduğu aralıkları seçer, bir düğmeye tıklarsınız ve Excel sizin için çekici, renkli bir grafik üretir. Bu bölümde bu yaklaşıma Python ile bir alternatif öğreneceksiniz. Elbette Excel'i kullanmaya devam edebilirsiniz. Bir pandas DataFrame'ini Python ile Excel dosyasına aktarmayı zaten öğrendiniz: <code>df.to_excel("table.xlsx")</code>. Ardından dosyayı Excel'de açıp grafiğinizi her zamanki gibi orada oluşturabilirsiniz. Ama şimdi grafikleri tümüyle Python içinde oluşturacağız. Bu yaklaşım çoğu zaman Excel kullanmaktan çok daha zariftir. Bunu yapmanın en kolay yolu Jupyter Notebook'tur; çünkü grafikler orada doğrudan kod hücrelerinin altında gösterilir. Görselleştirmeleri Python betiklerinde de oluşturabilirsiniz; çalıştırdığınızda bir pencere açılır ve grafiği gösterir. Ayrıca grafikleri başka programlarda yeniden kullanabilmek için görüntü dosyası olarak dışa aktarmayı da ileride öğreneceksiniz.</p>
+
+<div class="note"><b>Bu sayfa nasıl kullanılır?</b> Her kod kutusu düzenlenebilir; <b>▶ Çalıştır</b> kodu tarayıcıda gerçek Python (Pyodide) ile çalıştırır ve Matplotlib grafiği hücrenin altında, tıpkı Jupyter'deki gibi PNG görüntüsü olarak çıkar. Değişkenler hücreler arasında paylaşılır. Kısayol: <code>Ctrl/⌘ + Enter</code>. <code>savefig</code> ile kaydedilen görüntüler sol paneldeki <b>Dosyalar</b> listesinden indirilebilir.</div>
+
+<!-- ====================== 6.1 ====================== -->
+<h2 id="s61"><span class="num">6.1</span>Grafik Oluşturma</h2>
+
+<p>Bu bölümde Python kütüphanesi <code>matplotlib</code>'i kullanacağız. Önce <code>pip install matplotlib</code> ile kurmanız gerekir; ardından Python programınıza ya da Jupyter Notebook'unuza içe aktarabilirsiniz: <code>import matplotlib.pyplot as plt</code>.</p>
+
+<p>Matplotlib görselleştirmeye odaklanan son derece kapsamlı bir yazılım koleksiyonudur. Çok sayıda grafik türü ve temel grafik öğesi —çizgiler, şekiller, metin, eksenler, renkler ve görüntü gösterimleri— içerir; animasyonlu ve etkileşimli grafikleri de destekler. Bunların hepsi için başlangıç noktası her zaman <code>matplotlib.pyplot</code> modülüdür. Onu içe aktarırken <code>plt</code> takma adını veririz; böylece her şeye <code>plt.işlev_adı()</code> ile erişebiliriz.</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>Waffle yapmak için gereken malzemeleri gösteren bir pasta grafiğinin kodunu Matplotlib ile yaz: 180 g un, 4 g kabartma tozu, 250 g süt, 110 g yumurta ve 40 g şeker.</em></div>
+
+<div class="cell" data-title="Pasta grafiği (Şekil 6.1)"><textarea>import matplotlib.pyplot as plt
+
+ingredients = ["flour", "baking powder", "milk", "eggs", "sugar"]
+quantities = [180, 4, 250, 110, 40]
+
+plt.pie(quantities, labels=ingredients)
+plt.title("Ingredients for waffles")
+plt.show()</textarea></div>
+
+<p>Matplotlib ile grafik oluşturma yordamı hep aynıdır: Önce grafiğin tek tek öğelerini yapılandıran işlevleri çağırır ve gösterilecek veriyi verirsiniz. Grafik arka planda oluşturulur ve adım adım ayarlanır. Son olarak <code>plt.show()</code> grafiğin gösterilmesini sağlar.</p>
+
+<p>Gösterilen program kodunda grafikte gösterilecek veri iki listede bulunuyor: <code>ingredients</code> <em>etiketleri</em>, yani pasta grafiğindeki her dilimin neyi temsil edeceğini içerir. <code>quantities</code> listesi bu dilimlerin büyüklüğünü içerir. İki listeyi de <code>plt.pie</code> işlevine veririz. <code>plt.title</code> çağrısı grafiğin üstünde görünecek başlığı ayarlar. <code>plt.show()</code> her zaman sondadır ve grafiği gösterir.</p>
+
+<p><code>savefig</code> işlevini çağırarak grafiği bir görüntü dosyası olarak kaydedebiliriz. Bu, onu örneğin sunumlarda ya da belgelerde kullanmak için yararlıdır. Grafiği hem kaydetmek hem göstermek için <code>savefig</code> ardından <code>show</code> da çağırabilirsiniz. Ancak bu sıraya tam olarak uymanız önemlidir; çünkü <code>show</code> grafiği temizler ve artık onunla bir şey yapamazsınız.</p>
+
+<div class="cell" data-title="Görüntü dosyası olarak kaydet"><textarea>plt.pie(quantities, labels=ingredients)
+plt.title("Ingredients for waffles")
+plt.savefig("waffles-pie-chart.png")
+plt.savefig("waffles-pie-chart.svg")      # vektörel biçim de mümkün
+plt.show()
+print("Kaydedildi → sol paneldeki Dosyalar listesinden indirebilirsiniz.")</textarea></div>
+
+<!-- ====================== 6.2 ====================== -->
+<h2 id="s62"><span class="num">6.2</span>Tasarım Seçenekleri</h2>
+
+<p>ChatGPT ve benzeri araçlar, ilk taslağı oluşturduktan sonra grafikleri zevkinize göre özelleştirmekte büyük yardımcıdır; çünkü varsayılan ayarlarla oluşturulan bir grafik nadiren bütün gereksinimleri hemen karşılar.</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>Grafikte şu değişiklikleri yap:</em>
+<ul style="margin:.4em 0 0">
+<li>Şu renkleri kullan: un kahverengi, kabartma tozu mavi, süt beyaz, yumurta sarı, şeker kırmızı.</li>
+<li>İlk malzeme (un) en üstten başlasın.</li>
+<li>Yüzdeleri göster.</li>
+<li>Şekeri görsel olarak vurgula.</li>
+<li>Pasta grafiğine gölge ekle.</li>
+<li>Başlık kırmızı olsun.</li></ul></div>
+
+<div class="cell" data-title="Özelleştirilmiş pasta grafiği (Şekil 6.2)"><textarea>import matplotlib.pyplot as plt
+
+# Malzemeler ve miktarlar
+ingredients = ["flour", "baking powder", "milk", "eggs", "sugar"]
+quantities = [180, 4, 250, 110, 40]
+
+# Renkleri tanımla (görsel olarak uyumlu)
+colors = ["#D2B48C", "#1E90FF", "#FFFFFF", "#FFD700", "#FF6347"]
+
+# Şekeri vurgula
+explode = [0, 0, 0, 0, 0.1]   # yalnızca şekeri hafifçe dışarı çek
+
+# Pasta grafiğini oluştur
+plt.pie(quantities, labels=ingredients, colors=colors, startangle=90,
+        autopct="%1.1f%%", explode=explode, shadow=True)
+
+# Kırmızı başlık
+plt.title("Ingredients for waffles", color="red")
+
+plt.show()</textarea></div>
+
+<p>Tek tek dilimleri —yani malzemelerimizi— yapılandıran her şey ayrı listeler olarak verilir. <code>colors</code> listesi her dilim için istenen rengi belirtir; <code>explode</code> listesi de vurgulamak için hangi dilimlerin ne kadar dışarı çekileceğini belirtir. Renkler burada HTML renk kodları olarak verilmiştir; ama standart renkler için basitçe <code>"yellow"</code> vb. de yazabilirsiniz.</p>
+
+<p>Grafiğin tamamını etkileyen genel ayarlar <code>plt.pie</code> yöntemine seçenek olarak verilir. <code>startangle=90</code>, ilk malzemenin varsayılan konum olan en sağ yerine en üstten başlamasını sağlar. <code>autopct="%1.1f%%"</code> seçeneği otomatik yüzde değerleri üretir. Belirtilen biçim yüzdelerin nasıl gösterileceğini belirler: Değerler bir ondalık basamağa yuvarlanır ve yüzde işaretiyle biter, örneğin <code>6.8%</code>.</p>
+
+<p>Aşağıdaki panelle bu seçenekleri tek tek açıp kapatarak her birinin ne yaptığını görebilirsiniz. Panel, seçimlerinize göre Python kodunu yazar ve Pyodide'de çalıştırır:</p>
+
+<div class="widget" id="pieWidget">
+  <h4>Etkileşimli: <code>plt.pie</code> seçenekleri</h4>
+  <div class="ctrl" id="pieCtrl">
+    <label><input type="checkbox" data-o="colors" checked> colors</label>
+    <label><input type="checkbox" data-o="startangle" checked> startangle=90</label>
+    <label><input type="checkbox" data-o="autopct" checked> autopct</label>
+    <label><input type="checkbox" data-o="explode" checked> explode (şeker)</label>
+    <label><input type="checkbox" data-o="shadow" checked> shadow</label>
+    <label><input type="checkbox" data-o="red" checked> kırmızı başlık</label>
+    <label>explode: <input type="range" id="pieEx" min="0" max="0.4" step="0.05" value="0.1" style="width:90px"> <b id="pieExV">0.1</b></label>
+  </div>
+  <div class="cell" data-title="Panelin ürettiği kod" id="pieCell"><textarea id="pieCode"></textarea></div>
+</div>
+
+<p>İleride başka grafik türlerine baktığımızda yine eksenleri biçimlendirmek ya da açıklama (legend) göstermek gibi pek çok özelleştirme seçeneği olacak.</p>
+
+<!-- ====================== 6.3 ====================== -->
+<h2 id="s63"><span class="num">6.3</span>Alt Grafikler: Tek Şekilde Birden Çok Grafik</h2>
+
+<p>Matplotlib'de daha büyük bir grafiğin her biri kendi başına bir grafik oluşturan parçalarına <em>alt grafik</em> (subplot) denir. Alt grafikler, farklı türlerde bile olsa birden çok grafiğin yan yana ve alt alta gösterilmesini sağlar. Bunun temeli, şeklin kaç satır ve sütundan oluşacağını verdiğiniz <code>plt.subplots(nrows, ncols)</code> işlevidir. Sonuç bir <code>(fig, axes)</code> demetidir. Genel yapılandırmalar <code>fig</code> değişkeni üzerinden yapılır; <code>axes</code> ise her alt grafik için bir eleman içeren bir listedir. Ardından tek tek <code>axes[i]</code> ile, grafik oluştururken alıştığınıza çok benzer biçimde çalışabilirsiniz.</p>
+
+<p>Aşağıdaki örnekte iki pasta grafiğinin yan yana gösterildiği bir şekil oluşturmak için <code>plt.subplots(1, 2)</code>, <code>axes[0].pie</code> ve <code>axes[1].pie</code> kullanıyoruz:</p>
+
+<div class="cell" data-title="İki alt grafik yan yana (Şekil 6.3)"><textarea>import matplotlib.pyplot as plt
+
+# Normal waffle için malzemeler ve miktarlar
+ingredients_normal = ["flour", "baking powder", "milk", "eggs", "sugar"]
+quantities_normal = [180, 4, 250, 110, 40]
+
+# Hindistan cevizli waffle için malzemeler ve miktarlar
+ingredients_coconut = ["spelt flour", "baking powder", "eggs", "coconut milk",
+                       "coconut oil", "coconut blossom sugar"]
+quantities_coconut = [220, 8, 110, 400, 80, 30]
+
+# Alt grafikler: 1 satır, 2 sütun
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+
+# Birinci pasta grafiği: normal waffle
+axes[0].pie(quantities_normal, labels=ingredients_normal, autopct='%1.1f%%')
+axes[0].set_title("Waffles")
+
+# İkinci pasta grafiği: hindistan cevizli waffle
+axes[1].pie(quantities_coconut, labels=ingredients_coconut, autopct='%1.1f%%')
+axes[1].set_title("Coconut Waffles")
+
+# Düzeni ayarla ve göster
+plt.show()</textarea></div>
+
+<p>Burada da aynı malzemelere her iki grafikte aynı renklerin atanması için renkleri ayarlamak yararlı olurdu. Kitap bunu öneri olarak bırakıyor; aşağıdaki hücre bunun bir yolunu gösteriyor:</p>
+
+<div class="cell" data-title="Ek: ortak malzemelere ortak renk"><textarea>palette = {"flour": "#D2B48C", "spelt flour": "#C19A6B", "baking powder": "#1E90FF",
+           "milk": "#F5F5F5", "coconut milk": "#FFFFFF", "eggs": "#FFD700",
+           "sugar": "#FF6347", "coconut blossom sugar": "#E9967A", "coconut oil": "#98FB98"}
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+for ax, ing, qty, title in [(axes[0], ingredients_normal, quantities_normal, "Waffles"),
+                            (axes[1], ingredients_coconut, quantities_coconut, "Coconut Waffles")]:
+    ax.pie(qty, labels=ing, autopct='%1.1f%%', startangle=90,
+           colors=[palette[i] for i in ing], wedgeprops={"edgecolor": "grey"})
+    ax.set_title(title)
+plt.tight_layout()
+plt.show()</textarea></div>
+
+<!-- ====================== 6.4 ====================== -->
+<h2 id="s64"><span class="num">6.4</span>Çizgi Grafikleri, Çubuk Grafikleri ve Daha Fazlası</h2>
+
+<p>Matplotlib çeşitli grafik türlerini destekler. Pasta grafiklerinin (<code>pie</code>) yanı sıra en önemlileri çizgi grafikleri (<code>plot</code>), çubuk grafikleri (<code>bar</code>), serpme grafikleri (<code>scatter</code>), histogramlar (<code>hist</code>) ve kutu grafikleridir (<code>boxplot</code>). Aşağıdaki iki örnekte çizgi ve çubuk grafiklerine bakacağız.</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>f(x) = x² işlevini çizen bir çizgi grafiğinin Matplotlib kodunu yaz. x ekseni −10'dan 10'a kadar olsun.</em></div>
+
+<div class="cell" data-title="Çizgi grafiği: f(x) = x² (Şekil 6.4)"><textarea>import matplotlib.pyplot as plt
+import numpy as np
+
+# -10'dan 10'a x değerleri
+x = np.linspace(-10, 10, 400)
+y = x**2
+
+# Grafiği oluştur
+plt.plot(x, y, label="f(x) = x²")
+
+# Eksen etiketleri ve başlık
+plt.xlabel("x")
+plt.ylabel("f(x)")
+plt.title("Plot of the function f(x) = x²")
+
+# Açıklamayı göster
+plt.legend()
+
+# Izgarayı göster
+plt.grid(True)
+
+# Grafiği göster
+plt.show()
+print("x[:3] =", x[:3], " y[0] =", y[0])</textarea></div>
+
+<p><code>plt.plot</code> işlevi argüman olarak bir x değerleri listesi ve bir y değerleri listesi alır. Standart Python listelerine alternatif olarak NumPy dizileri ve pandas Series'leri de verebilirsiniz. <code>x = np.linspace(-10, 10, 400)</code> 400 sayıdan oluşan bir NumPy dizisi oluşturur: <code>-10</code>, <code>-9.9487…</code> ve böyle <code>10</code>'a kadar. <code>y = x**2</code> (x² anlamına gelir) ile her değerin karesinin alındığı eşit büyüklükte bir NumPy dizisi oluşur; <code>y[0]</code> bu yüzden 100'dür. <code>plt.plot</code> bu x-y değerlerini grafikte noktalar olarak çizer ve onları bir çizgiyle birleştirir.</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>Bir anketin sonuçlarını gösteren bir çubuk grafiğinin Matplotlib kodunu yaz: %74,45 Android, %22,85 iPhone ve %2,7 diğer cep telefonları.</em></div>
+
+<div class="cell" data-title="Çubuk grafiği (Şekil 6.5)"><textarea>import matplotlib.pyplot as plt
+
+# Veri
+labels = ["Android", "iPhone", "other"]
+values = [74.45, 22.85, 2.7]
+
+# Çubuk grafiği oluştur
+plt.bar(labels, values)
+
+# Başlık ve eksen etiketleri
+plt.title("Survey Results: Mobile Phones Used")
+plt.ylabel("Percentage (%)")
+# Yüzdeleri çubukların üstünde göster
+for i, v in enumerate(values):
+    plt.text(i, v + 1, f"{v:.2f}%", ha='center')
+
+# Grafiği göster
+plt.show()</textarea></div>
+
+<p>Burada da <code>plt.bar</code>'a iki liste verilir: biri grafikteki tek tek çubukları oluşturacak etiketleri, diğeri bu çubukların yüksekliklerini içerir.</p>
+
+<p><code>values</code> üzerinde dolaşan döngü, yüzdelerin çubukların üstünde görünmesi için her çubuğun üstüne bir metin öğesi eklenmesini sağlar. <code>plt.text</code>'e üç değer (<code>x</code>, <code>y</code> ve <code>text</code>) ve isteğe bağlı ek biçim seçenekleri vermeniz gerekir. x eksenindeki konum (<code>x</code>) gösterilen örnekte 0, 1 ve 2'dir; çünkü <code>enumerate</code> listedeki elemanları bu sırayla numaralandırır. Dikey konum <code>y</code>, metnin çubuğun biraz üstünde durması için ilgili çubuk yüksekliği artı <code>1</code> olarak hesaplanır. Gösterilecek metin, iki ondalık basamağa yuvarlanmış değer ve bir yüzde işaretinden oluşturulur. <code>ha='center'</code> seçeneği (<em>horizontal alignment</em>, yatay hizalama) metnin çubuğun üstünde sola hizalı değil ortalanmış olmasını sağlar.</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>Android çubuğunu yeşil, iPhone çubuğunu mavi, Diğer kategorisini kırmızı yap. Yalnızca değiştirilmesi gereken kod satırını göster.</em></div>
+
+<div class="cell" data-title="Yalnızca değişen satır: renkler"><textarea>plt.bar(labels, values, color=["green", "blue", "red"])
+
+plt.title("Survey Results: Mobile Phones Used")
+plt.ylabel("Percentage (%)")
+for i, v in enumerate(values):
+    plt.text(i, v + 1, f"{v:.2f}%", ha='center')
+plt.show()</textarea></div>
+
+<p>Kitapta adı geçen diğer üç türü de denemek isterseniz:</p>
+
+<div class="cell" data-title="Ek: scatter, hist ve boxplot"><textarea>import numpy as np
+rng = np.random.default_rng(42)
+a = rng.normal(50, 10, 200)
+b = a * 0.8 + rng.normal(0, 6, 200)
+
+fig, axes = plt.subplots(1, 3, figsize=(13, 3.8))
+axes[0].scatter(a, b, alpha=0.6)
+axes[0].set_title("scatter")
+axes[1].hist(a, bins=20, edgecolor="white")
+axes[1].set_title("hist")
+axes[2].boxplot([a, b])
+axes[2].set_xticks([1, 2], ["a", "b"])
+axes[2].set_title("boxplot")
+plt.tight_layout()
+plt.show()</textarea></div>
+
+<!-- ====================== 6.5 ====================== -->
+<h2 id="s65"><span class="num">6.5</span>DataFrame'lerden Grafik Oluşturma</h2>
+
+<p>Şimdiye kadar gösterilen grafiklerde gösterilecek veri ya doğrudan program kodundaydı ya da bir matematik işleviyle hesaplanıyordu. x ve y değerlerini <code>plt.plot</code>, <code>plt.bar</code> vb. işlevlere iki liste ya da iki NumPy dizisi biçiminde verdik. Şimdi pandas Series'lerini, yani bir DataFrame'in sütunlarının tamamını da verebileceğimizi göreceksiniz. Bu, özellikle bir dosyada saklanan ve veri temizliği adımları ve diğer hesaplamalarla zaten ön işlemden geçirdiğiniz veriyi görselleştirmek istediğinizde yararlıdır.</p>
+
+<p>Bundan sonra, önceki bölümde Alman Hava Servisi'nin verisinden oluşturduğumuza benzeyen ve <em>temperatures.csv</em> adlı bir dosyaya kaydedilmiş bir DataFrame ile çalışacağız.</p>
+
+<div class="note"><b>Veri hakkında:</b> Kitap <code>temperatures.csv</code> dosyasının içeriğini vermiyor. Bu sayfadaki dosya, beş ABD şehri (Portland, Seattle, Chicago, San Francisco, Philadelphia) için 12 aylık sıcaklık (°F) ve yağış (inç) değerleri içeriyor. Portland değerleri kitabın Şekil 6.6–6.7'sinden, diğer şehirlerin sıcaklıkları Şekil 6.8'den <b>gözle okunmuş yaklaşık değerlerdir</b>; diğer şehirlerin yağış değerleri ise gösterim amaçlı yapaydır. Kendi dosyanızı sol paneldeki <b>Dosya yükle</b> ile ekleyebilirsiniz (sütun adları: <code>city, month, temperature, precipitation</code>).</div>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<code>df = pd.read_csv("temperatures.csv")<br>portland_df = df[df['city'] == 'Portland']</code>
+<em>month ve temperature sütunlarındaki veri çizgi grafiği olarak gösterilsin.</em></div>
+
+<div class="cell" data-title="DataFrame'den çizgi grafiği (Şekil 6.6)"><textarea>import pandas as pd
+import matplotlib.pyplot as plt
+
+df = pd.read_csv("temperatures.csv")
+portland_df = df[df['city'] == 'Portland']
+
+# Çizgi grafiği oluştur
+plt.plot(portland_df['month'], portland_df['temperature'])
+plt.xlabel('Month')
+plt.ylabel('Temperature (°F)')
+plt.title('Temperature Trend in Portland')
+plt.xticks(portland_df['month'].unique())
+plt.show()</textarea></div>
+
+<p><code>month</code> sütunundaki değerler x değerleri, <code>temperature</code> sütunundaki değerler y değerleridir. İkisi de doğrudan <code>plt.plot</code> işlevine verilebilir. <code>plt.xlabel</code> ve <code>plt.ylabel</code> eksen etiketlerini ayarlar. <code>plt.xticks</code> çağrısı x ekseninde hangi değerlerin görüneceğini belirler; bizim durumumuzda 1'den 12'ye tüm aylar.</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>precipitation sütunu için ikincil bir y ekseniyle ikinci bir çizgi göster. Sıcaklık kırmızı, yağış mavi olsun. Bana yalnızca değiştirilmesi gereken kod satırlarını göster.</em></div>
+
+<div class="cell" data-title="İkincil y ekseni: twinx (Şekil 6.7)"><textarea>fig, ax1 = plt.subplots()
+
+# Birinci y ekseninde sıcaklık
+ax1.plot(portland_df['month'], portland_df['temperature'],
+         color='red')
+ax1.set_xlabel('Month')
+ax1.set_ylabel('Temperature (°F)', color='red')
+ax1.tick_params(axis='y', labelcolor='red')
+ax1.set_xticks(portland_df['month'].unique())
+
+# İkincil y ekseninde yağış
+ax2 = ax1.twinx()
+ax2.plot(portland_df['month'], portland_df['precipitation'],
+         color='blue', linestyle="--")
+ax2.set_ylabel('Precipitation (inch)', color='blue')
+ax2.tick_params(axis='y', labelcolor='blue')
+
+plt.title('Temperature and Precipitation in Portland')
+plt.show()</textarea></div>
+
+<p>Burada yalnızca bir grafik gösterilecek olmasına rağmen alt grafikler oluşturuldu. Nedeni basitçe bunun <code>ax1</code> eksen nesnesine erişmemizi sağlamasıdır. Bu nesne sıcaklık verimizle doldurulur ve buna göre yapılandırılır. Yağış değerleri için düşünülen ikincil y ekseni <code>ax1.twinx()</code> ile oluşturulur. Bu, yeni eksenin öteki eksenle aynı x eksenini paylaşacağı anlamına gelir. <code>linestyle='--'</code> seçeneği sayesinde çizgi kesikli gösterilir. <code>marker='o'</code> ya da <code>marker='x'</code> ile çizgi üzerine noktalar ya da çarpılar da çizilebilir (deneyin).</p>
+
+<p>DataFrame'imiz ay numaraları yerine tarih değerleri içerseydi, bunları DataFrame'de metin olarak (örneğin <code>"2026-01-01"</code>) saklamamak, <code>datetime</code> nesnelerine dönüştürmek önemlidir. Bu dönüşümü önceki bölümde hatalı tarih değerlerini belirlemek ve tarih değerleri üzerinde hesap yapmak için zaten yapmıştık. <code>datetime</code>'a dönüştürmek, zaman serisi verisini Matplotlib ile görselleştirirken de yararlıdır. Bu, örneğin veriyi tarihe göre doğru sıralamamızı ya da tarihi istenen biçimde göstermemizi sağlar:</p>
+
+<div class="cell" data-title="Ek: datetime x ekseni ve tarih biçimi"><textarea>import matplotlib.dates as mdates
+
+pdf = portland_df.copy()
+pdf["date"] = pd.to_datetime({"year": 2026, "month": pdf["month"], "day": 1})
+
+fig, ax = plt.subplots(figsize=(8, 3.5))
+ax.plot(pdf["date"], pdf["temperature"], marker="o", color="red")
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
+fig.autofmt_xdate()
+ax.set_ylabel("Temperature (°F)")
+plt.show()</textarea></div>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>Portland, Seattle, Chicago, San Francisco ve Philadelphia konumları için ayrı çizgiler çiz.</em></div>
+
+<div class="cell" data-title="Birden çok şehir (Şekil 6.8)"><textarea>cities = ['Portland', 'Seattle', 'Chicago', 'San Francisco',
+          'Philadelphia']
+
+fig, ax = plt.subplots()
+
+for city in cities:
+    city_df = df[df['city'] == city]
+    ax.plot(city_df['month'], city_df['temperature'], label=city)
+
+ax.set_xlabel('Month')
+ax.set_ylabel('Temperature (°F)')
+ax.set_xticks(df['month'].unique())
+ax.set_title('Temperature trends in selected cities')
+ax.legend()
+plt.show()</textarea></div>
+
+<p>Yağış bu grafikte artık gösterilmiyor; aksi hâlde şehir başına iki çizgimiz olurdu. Ancak bu yaklaşım <code>plt.plot</code>'u istediğimiz kadar çağırabileceğimizi gösteriyor. Bizim durumumuzda <code>cities</code> listesindeki her şehir için yalnızca o şehrin verisini içeren yeni bir <code>city_df</code> DataFrame'i oluşturulur. Her <code>plt.plot</code> çağrısı da şehir başına bir tane olmak üzere yeni bir çizgi üretir. DataFrame'imizde yalnızca birkaç şehir olsaydı tüm konum adlarının listesini belirlemek için <code>cities = df['city'].unique()</code> da kullanabilir ve bu konumların her biri için bir çizgi oluşturabilirdik.</p>
+
+<p>Bir grafikte birkaç farklı grafik türünü karıştırmak mümkündür. Örneğin sıcaklık eğilimini çizgi, yağış miktarlarını çubuk olarak gösterebiliriz. Grafiklere metin öğeleri, görüntüler, çizgiler ve daha fazlasını da ekleyebilirsiniz. Her şeyi Python koduyla yapmak ve grafik oluştururken tıklayarak ilerlemek zorunda kalmamak çok kullanışlıdır. Bu sayede bir grafik bir kez oluşturulduktan sonra yeni veri geldiğinde onu istediğiniz zaman yeniden üretebilirsiniz. Ayrıca birden çok grafiği art arda, örneğin çeşitli Excel dosyaları üzerinde bir döngüyle üretip bu grafikleri bir klasörde ayrı görüntü dosyaları olarak kaydedebilirsiniz. Her iki fikri de aşağıdaki hücre gösteriyor:</p>
+
+<div class="cell" data-title="Ek: çizgi + çubuk karışık ve döngüyle toplu kaydetme"><textarea>import os
+# 1) Sıcaklık çizgi, yağış çubuk
+fig, ax1 = plt.subplots(figsize=(8, 4))
+ax2 = ax1.twinx()
+ax2.bar(portland_df['month'], portland_df['precipitation'], color="lightsteelblue", label="Precipitation")
+ax1.plot(portland_df['month'], portland_df['temperature'], color="red", marker="o", label="Temperature")
+ax1.set_zorder(ax2.get_zorder() + 1); ax1.patch.set_visible(False)
+ax1.set_xticks(range(1, 13)); ax1.set_ylabel("°F"); ax2.set_ylabel("inch")
+ax1.set_title("Portland: line + bar")
+plt.show()
+
+# 2) Her şehir için ayrı PNG dosyası
+os.makedirs("grafikler", exist_ok=True)
+for city in df['city'].unique():
+    c = df[df['city'] == city]
+    fig, ax = plt.subplots(figsize=(6, 3))
+    ax.plot(c['month'], c['temperature'], marker="o")
+    ax.set_title(city); ax.set_xticks(range(1, 13))
+    fig.savefig(f"grafikler/{city.replace(' ', '_')}.png", dpi=120, bbox_inches="tight")
+    plt.close(fig)
+print("Kaydedilen dosyalar:", sorted(os.listdir("grafikler")))</textarea></div>
+
+<!-- ====================== 6.6 ====================== -->
+<h2 id="s66"><span class="num">6.6</span>Etkileşimli Grafikler</h2>
+
+<p>Matplotlib ve birazdan göz atacağımız diğer Python kütüphaneleri yalnızca durağan değil, etkileşimli grafikler de oluşturmanıza izin verir. Bunlar kullanıcıların görüntülerken etkileşime girebildiği grafiklerdir. Örneğin yakınlaştırabilir, bir şeyi vurgulayabilir ya da fareyle veri noktalarının üzerine gelince bir ipucu (tooltip) gösterebilir, veriyi gösterip gizleyebilir, filtreleyebilir ve çok daha fazlasını yapabilirsiniz.</p>
+
+<p>Önceki örneklerimizde Jupyter Notebook'ların Matplotlib grafiklerini doğrudan kod hücrelerinin altında göstermesi hep kullanışlıydı. İçeride bu, <code>plt.show()</code> çağrıldığında bir PNG görüntüsü üretilip hücrenin altında gösterilmesiyle işler. PNG görüntüleri her zaman durağan olduğundan, şimdi etkileşimli grafiklerle yapmak istediğimiz şey ne yazık ki Jupyter Notebook'larda çalışmaz. Ancak Matplotlib kodumuzu sıradan bir <em>.py</em> dosyasına, örneğin <em>weatherplot.py</em>'ye yazar ve çalıştırırsak grafiği gösteren bir pencere açılır (kitaptaki Şekil 6.8). Etkileşimli öğeler orada da çalışır!</p>
+
+<div class="note"><b>Bu sayfada durum:</b> Buradaki hücreler de Jupyter gibi PNG ürettiği için 6.6–6.7'deki Matplotlib kodları <em>çalışır ama durağan görüntü verir</em>; yakınlaştırma, ipucu ve kaydırıcı için kodu bilgisayarınızda bir <code>.py</code> dosyası olarak çalıştırın. Tarayıcıda gerçek etkileşimi görmek için bölüm sonundaki <b>Plotly</b> hücresi Python'da çalışıp gerçekten etkileşimli bir grafik çizer; ayrıca kaydırıcılı grafiğin tarayıcıda çalışan bir eşdeğeri aşağıdadır.</div>
+
+<!-- ====================== 6.7 ====================== -->
+<h2 id="s67"><span class="num">6.7</span>Yakınlaştırma ve Kaydırma</h2>
+
+<p>Matplotlib grafiğini açıp gösteren pencere, Python koduna özel bir şey eklememizi gerektirmeden varsayılan olarak birkaç etkileşimli denetim içerir. Aşağıdaki örnek bir çubuk grafiği oluşturur. Büyüteç simgesiyle grafiği yakınlaştırıp uzaklaştırabilirsiniz. Bunun için büyütece tıklayın, sol fare tuşuyla bir alan seçin; grafik o alana yakınlaşır. Sağ fare tuşuyla ya da Geri düğmesine veya grafiği her zaman özgün görünümüne döndüren ev simgesine tıklayarak uzaklaşabilirsiniz. Grafiğin altındaki diğer düğmeler bir ayarlar penceresi açar ve mevcut görünümü görüntü dosyası olarak kaydetmenizi sağlar.</p>
+
+<div class="cell" data-title="Adım sayısı çubuk grafiği"><textarea>import matplotlib.pyplot as plt
+days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+steps = [8234, 11789, 3120, 10054, 7422, 4821, 15337]
+plt.bar(days, steps)
+plt.title("Steps per Day")
+plt.xlabel("Day of the week")
+plt.ylabel("Steps")
+plt.show()</textarea></div>
+
+<p>Sonra grafiği ipuçları gösterecek biçimde geliştirebiliriz:</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<code>bars = plt.bar(days, steps)</code>
+<em>Fareyle bir çubuğun üzerine geldiğimde adım sayısının gösterilmesi için ne eklemem gerekiyor?</em></div>
+
+<p>Yanıtın özeti: <code>plt.bar()</code> varsayılan olarak bir çubuğun üzerine gelindiğinde değer göstermez. Bunun için etkileşimli imleçler/ipuçları sağlayan küçük bir eklenti modülü olan <code>mplcursors</code> gerekir:</p>
+
+<div class="cell" data-title="mplcursors ile ipucu (masaüstünde etkileşimli)"><textarea>import matplotlib.pyplot as plt
+import mplcursors
+
+bars = plt.bar(days, steps)
+# Üzerine gelinince değerlerin gösterilmesi için bir imleç ekle
+cursor = mplcursors.cursor(bars, hover=True)
+cursor.connect("add",
+    lambda sel: sel.annotation.set_text(f"{steps[sel.index]} steps"))
+plt.show()
+print("Not: Bu sayfada grafik durağan PNG'dir; ipucu masaüstü penceresinde görünür.")</textarea></div>
+
+<p><code>mplcursors</code> paketinin içe aktarılabilmesi için önce <code>pip install mplcursors</code> ile kurulması gerekir (bu sayfa onu otomatik olarak micropip ile kurar). Programda, çubuk grafiğini oluştururken <code>plt.bar</code>'ın sonucunu bir değişkende saklamamız gerektiğini fark edeceksiniz. Bu <code>bars</code> değişkeni daha sonra çubuk grafiğindeki imleç ayarlarını yapmak için kullanılır. Bu burada bir işlevi tanımlamanın kısa yolu olan bir <em>lambda işlevi</em> ile yapılır. Bizim durumumuzda fare bir çubuğun üzerine geldiğinde adım sayısını gösteren bir ipucunun belirmesini sağlar.</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<code>plt.bar(days, steps)</code>
+<em>En yüksek adım sayısını ayarlamamı sağlayan bir kaydırıcıya ihtiyacım var. Bu, y eksenindeki en yüksek değer olmalı.</em></div>
+
+<div class="cell" data-title="Slider ile y ekseni (Şekil 6.10)"><textarea>import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
+
+days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+steps = [8234, 11789, 3120, 10054, 7422, 4821, 15337]
+
+# Şekil ve eksenler
+fig, ax = plt.subplots()
+plt.subplots_adjust(bottom=0.25)   # kaydırıcı için yer
+
+# Çubuk grafiği
+bars = ax.bar(days, steps)
+
+# Kaydırıcı ekseni
+ax_slider = plt.axes([0.25, 0.1, 0.5, 0.03])
+max_steps = max(steps) * 1.5
+slider = Slider(ax_slider, 'Max Steps', 0, max_steps, valinit=max(steps))
+
+# Kaydırıcı için güncelleme işlevi
+def update(val):
+    ax.set_ylim(0, slider.val)   # y eksenini kaydırıcı değerine ayarla
+    fig.canvas.draw_idle()
+
+slider.on_changed(update)
+plt.show()
+
+# Durağan görüntüde etkiyi görmek için kaydırıcıyı kodla ayarlayalım:
+slider.set_val(9000)
+print("slider.set_val(9000) sonrası y üst sınırı:", ax.get_ylim()[1])</textarea></div>
+
+<p><code>ax_slider</code> değişkeni kaydırıcının konumunu ve boyutunu içerir: Şeklin sol kenarından genişliğin %25'i, alt kenarından yüksekliğin %10'u kadar içeride gösterilmelidir. Kaydırıcının kendisi <code>Slider</code> ile oluşturulur. Bu kurucu işleve az önce tanımladığımız <code>ax_slider</code>'ı, bir etiketi, başlangıç ve bitiş değerlerini ve kaydırıcının başlangıçtaki değerini veririz. Kullanıcılar kaydırıcının konumunu değiştirdiğinde ne olacağını belirlemek için <code>update</code> işlevini oluştururuz. Bizim durumumuzda y ekseninin üst sınırı seçilen en yüksek adım sayısına ayarlanır.</p>
+
+<p>Aynı grafiğin tarayıcıda çalışan bir eşdeğeri (fareyle üstüne gelince değer gösterir; kaydırıcı y eksenini ayarlar; ayrıca kitapta önerilen "hedefe ulaşılan günleri yeşil göster" fikri de eklendi):</p>
+
+<div class="widget" id="stepsWidget">
+  <h4>Etkileşimli: Max Steps kaydırıcısı + ipucu + hedef</h4>
+  <div class="ctrl">
+    <label>Max Steps: <input type="range" id="maxSl" min="3000" max="23000" step="100" value="15337"> <b id="maxV">15337</b></label>
+    <label>Hedef: <input type="range" id="goalSl" min="0" max="16000" step="250" value="7500"> <b id="goalV">7500</b></label>
+  </div>
+  <div style="position:relative">
+    <svg id="stepsSvg" viewBox="0 0 640 280" role="img" aria-label="Günlük adım grafiği"></svg>
+    <div id="stepsTip" style="position:absolute;display:none;pointer-events:none;background:#fff8c5;color:#222;border:1px solid #c9b700;border-radius:4px;padding:2px 8px;font-family:Inter,sans-serif;font-size:12.5px"></div>
+  </div>
+</div>
+
+<p>Kaydırıcılar grafik kullanıcısına grafikle etkileşim için pratik yollar sunar; değerleri dinamik olarak değiştirmesini ya da filtrelemesini sağlar. x ekseninde tarih değerleri olsaydı örneğin kullanıcının bir kaydırıcıyla tarih aralığı seçmesine izin verebilirdik. Kullanıcıların kaydırıcıyla bir adım hedefi belirlemesi ve bu en az adım sayısına ulaşılan günlerin yeşil vurgulanması da mümkündür.</p>
+
+<p>Bir başka etkileşim seçeneği tıklama olaylarına yanıt vermektir. Bunun için biri grafiğe her tıkladığında çağrılan bir işlev oluşturmamız gerekir. Bu işlevde grafiği değiştirebilir, konsola bir şey yazdırabilir ya da örneğin tıklanan ayrıntıyla ilgili web sayfalarını açabiliriz.</p>
+
+<div class="cell" data-title="Ek: tıklama olayı (masaüstünde etkileşimli)"><textarea>fig, ax = plt.subplots()
+bars = ax.bar(days, steps)
+
+def on_click(event):
+    if event.inaxes is ax and event.xdata is not None:
+        i = int(round(event.xdata))
+        if 0 <= i < len(days):
+            print(f"{days[i]}: {steps[i]} adım")
+            bars[i].set_color("orange")
+            fig.canvas.draw_idle()
+
+fig.canvas.mpl_connect("button_press_event", on_click)
+plt.show()
+print("Masaüstü penceresinde bir çubuğa tıklayınca turuncuya döner ve değeri yazdırılır.")</textarea></div>
+
+<p>Daha az etkileşimli ama yine de ilginç olanlar animasyonlar ve dinamik grafiklerdir. Animasyonlar grafikte bir şeyin hareket etmesini sağlar. Dinamik grafikler gerçek zamanlı değişen canlı veriyi görselleştirir; örneğin ölçülürken ya da çevrimiçi daha güncel veri bulunduğu için.</p>
+
+<p>Matplotlib'e etkileşimli grafik oluşturmak için de kullanılabilecek birkaç alternatif vardır; Plotly ya da Bokeh gibi. Uygun modülü kurup içe aktardıktan sonra burada da veriyi ve yapılandırmaları verdiğiniz ilgili işlevlerle grafik oluşturursunuz. Ama Matplotlib'in aksine Plotly ve Bokeh grafikten bir tür web sayfası üretir. Bu sayfa tarayıcıda açılır ve grafiği orada gösterir.</p>
+
+<div class="cell" data-title="Plotly — tarayıcıda gerçekten etkileşimli (Şekil 6.11)"><textarea>import plotly.graph_objects as go
+import plotly.io as pio
+
+# Görüntüleyiciyi tarayıcıya ayarla
+pio.renderers.default = "browser"
+
+# Veri
+days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+steps = [8234, 11789, 3120, 10054, 7422, 4821, 15337]
+
+# Çubuk grafiği oluştur
+fig = go.Figure(
+    data=go.Bar(x=days, y=steps, text=steps,
+                textposition='auto', name="Steps"),
+                layout=go.Layout(
+                title="Steps per Day",
+                xaxis=dict(title="Weekday"),
+                yaxis=dict(title="Steps")
+    )
+)
+
+# Grafiği göster (bu sayfada hücrenin altında açılır)
+fig.show()</textarea></div>
+
+<p>İlk çalıştırmada Plotly paketi PyPI'den indirildiği için birkaç saniye sürebilir. Grafik geldiğinde çubukların üstüne gelin, bir alanı sürükleyerek yakınlaştırın, çift tıklayarak sıfırlayın ve sağ üstteki araç çubuğunu deneyin.</p>
+
+<p>Matplotlib'de olduğu gibi Plotly de eksenleri, açıklamaları, renkleri ve etkileşim seçeneklerini neredeyse istediğiniz her şekilde yapılandırmanıza izin verir. Plotly özellikle etkileşimli grafikler için çok uygundur. Grafikler tarayıcıda gösterilecek web siteleri ya da panolar (dashboard) içinse bu, Plotly ile onları gömerek ya da HTML dosyası olarak kaydederek kolayca yapılabilir:</p>
+
+<div class="cell" data-title="Ek: Plotly ile şehir sıcaklıkları + HTML'e kaydetme"><textarea>import plotly.express as px
+import pandas as pd
+
+df = pd.read_csv("temperatures.csv")
+fig2 = px.line(df, x="month", y="temperature", color="city", markers=True,
+               title="Temperature trends in selected cities",
+               labels={"month": "Month", "temperature": "Temperature (°F)"})
+fig2.update_xaxes(dtick=1)
+fig2.show()
+
+fig2.write_html("temperatures_plotly.html", include_plotlyjs="cdn")
+print("temperatures_plotly.html kaydedildi → sol panelden indirip tarayıcıda açabilirsiniz.")</textarea></div>
+
+</article></main>
+</div>
+
+<script>
+/* ---------- Tema ---------- */
+(function(){
+  const root=document.documentElement;
+  let saved=null; try{saved=localStorage.getItem('ml-theme')}catch(e){}
+  if(saved) root.setAttribute('data-theme',saved);
+  document.getElementById('themeBtn').onclick=()=>{
+    const dark = root.getAttribute('data-theme')==='dark' ||
+      (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    const next = dark?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem('ml-theme',next)}catch(e){}
+  };
+})();
+
+/* ---------- Pyodide ---------- */
+let pyodide=null, pyReady=null, runFn=null;
+const dot=document.getElementById('pyDot'), st=document.getElementById('pyState'), msg=document.getElementById('pyMsg');
+function setState(s,t,m){dot.className='dot '+s; st.textContent=t; if(m!==undefined) msg.textContent=m;}
+
+const HELPER = `
+import sys, io, ast, base64, traceback, json
+import matplotlib
+matplotlib.use("AGG")
+import matplotlib.pyplot as plt
+plt.show = lambda *a, **k: None
+import pandas as _pd
+_pd.set_option("display.width", 140)
+_pd.set_option("display.max_columns", 30)
+NS = {"__name__": "__main__"}
+_PLOTLY = []
+def _patch_plotly():
+    try:
+        import plotly.basedatatypes as _bd
+    except ImportError:
+        return
+    if not getattr(_bd.BaseFigure.show, "_patched", False):
+        def _show(self, *a, **k):
+            _PLOTLY.append(self.to_json())
+        _show._patched = True
+        _bd.BaseFigure.show = _show
+
+def _run_cell(code):
+    buf = io.StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    sys.stdout = sys.stderr = buf
+    html = None; ok = True
+    _PLOTLY.clear()
+    if "plotly" in code:
+        _patch_plotly()
+    try:
+        tree = ast.parse(code)
+        last = None
+        if tree.body and isinstance(tree.body[-1], ast.Expr):
+            last = ast.Expression(tree.body.pop().value)
+        exec(compile(tree, "<hücre>", "exec"), NS)
+        if last is not None:
+            val = eval(compile(last, "<hücre>", "eval"), NS)
+            if val is not None:
+                if hasattr(val, "to_html"):
+                    html = val.to_html(max_rows=40)
+                else:
+                    print(repr(val))
+    except Exception:
+        ok = False
+        traceback.print_exc()
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
+    imgs = []
+    for n in plt.get_fignums():
+        fig = plt.figure(n)
+        b = io.BytesIO()
+        fig.savefig(b, format="png", dpi=110, bbox_inches="tight")
+        imgs.append(base64.b64encode(b.getvalue()).decode())
+    plt.close("all")
+    return json.dumps({"out": buf.getvalue(), "html": html, "imgs": imgs, "ok": ok, "plotly": list(_PLOTLY)})
+`;
+
+const SETUP = "import numpy as np, pandas as pd\n_t = {\"Portland\":      [30, 32, 40, 48, 57.5, 62.5, 66, 65, 56, 46, 38, 32],\n      \"Seattle\":       [32, 33, 40, 48, 57, 63, 66.5, 66, 57, 48, 40, 34],\n      \"Chicago\":       [33.5, 35, 41, 49, 57.5, 63, 67, 66, 58, 49, 41, 35],\n      \"San Francisco\": [35, 37.5, 44, 50, 58.5, 64, 68, 67, 59, 50, 42, 37],\n      \"Philadelphia\":  [37.5, 37.5, 43, 49, 56, 62, 65, 64.5, 57, 50, 44, 38.5]}\n_p_portland = [1.8, 1.55, 1.8, 1.55, 2.4, 2.85, 3.3, 2.7, 2.05, 1.95, 2.0, 2.2]\n_rng = np.random.default_rng(6)\n_rows = []\nfor _c, _v in _t.items():\n    _p = _p_portland if _c == \"Portland\" else np.round(_rng.uniform(1.4, 3.6, 12), 2)\n    for _m in range(12):\n        _rows.append({\"city\": _c, \"month\": _m + 1, \"temperature\": _v[_m], \"precipitation\": _p[_m]})\npd.DataFrame(_rows).to_csv(\"temperatures.csv\", index=False)\ndel _t, _p_portland, _rng, _rows\n";
+
+function loadPython(){
+  if(pyReady) return pyReady;
+  setState('loading','Python yükleniyor…','Pyodide çekirdeği indiriliyor.');
+  pyReady = (async()=>{
+    pyodide = await loadPyodide();
+    setState('loading','Paketler yükleniyor…','NumPy, pandas ve matplotlib indiriliyor (ilk sefer birkaç dakika sürebilir).');
+    await pyodide.loadPackage(['numpy','pandas','matplotlib','micropip']);
+    await pyodide.runPythonAsync(SETUP);
+    await pyodide.runPythonAsync(HELPER);
+    runFn = pyodide.globals.get('_run_cell');
+    const ver = pyodide.runPython('import numpy, pandas; f"pandas {pandas.__version__} · NumPy {numpy.__version__}"');
+    if(window.refreshFiles) refreshFiles();
+    setState('ready','Python hazır',ver);
+    document.getElementById('preload').style.display='none';
+  })().catch(e=>{ setState('','Yükleme başarısız','İnternet bağlantısını kontrol edip sayfayı yenileyin. '+e); pyReady=null; throw e;});
+  return pyReady;
+}
+document.getElementById('preload').onclick=loadPython;
+
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+/* ---------- Kod hücreleri ---------- */
+document.querySelectorAll('.cell').forEach((cell,i)=>{
+  const ta=cell.querySelector('textarea');
+  const original=ta.value;
+  ta.spellcheck=false;
+  ta.rows=Math.min(ta.value.split('\n').length+1,40);
+  const head=document.createElement('div'); head.className='cell-head';
+  head.innerHTML=`<span class="title">In [${i+1}] · ${cell.dataset.title||'Python'}</span>`;
+  const run=document.createElement('button'); run.className='btn primary'; run.textContent='▶ Çalıştır';
+  const reset=document.createElement('button'); reset.className='btn'; reset.textContent='↺'; reset.title='Özgün koda dön';
+  head.append(run,reset); cell.prepend(head);
+  const out=document.createElement('div'); out.className='out'; cell.append(out);
+
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Tab'){e.preventDefault();const s=ta.selectionStart;ta.setRangeText('    ',s,ta.selectionEnd,'end');}
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run.click();}
+  });
+  reset.onclick=()=>{ta.value=original; out.className='out'; out.innerHTML='';};
+  run.onclick=async()=>{
+    run.disabled=true; out.className='out show'; out.textContent='⏳ Çalışıyor…';
+    try{
+      await loadPython();
+      await ensurePkgs(ta.value);
+      out.textContent='⏳ Çalışıyor…';
+      await new Promise(r=>setTimeout(r,20));
+      const res=JSON.parse(runFn(ta.value));
+      let h='';
+      if(res.out) h+=esc(res.out);
+      if(res.html) h+=`<div>${res.html}</div>`;
+      res.imgs.forEach(b=>h+=`<img alt="grafik" src="data:image/png;base64,${b}">`);
+      if(!h) h='<span style="color:var(--ok)">✓ Çalıştı (çıktı yok)</span>';
+      if(res.plotly&&res.plotly.length&&h.indexOf('✓ Çalıştı')>=0) h='';
+      out.innerHTML=h; if(window.refreshFiles) refreshFiles(); out.className='out show'+(res.ok?'':' err');
+      await renderPlotly(out,res.plotly);
+    }catch(e){ out.className='out show err'; out.textContent=String(e); }
+    run.disabled=false;
+  };
+});
+
+/* ---------- Plotly.js (gerektiğinde yüklenir) ---------- */
+let plotlyJs=null;
+function loadPlotlyJs(){
+  if(plotlyJs) return plotlyJs;
+  plotlyJs=new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js';s.onload=res;s.onerror=()=>{plotlyJs=null;rej(new Error('Plotly.js yüklenemedi'));};document.head.append(s);});
+  return plotlyJs;
+}
+async function renderPlotly(outEl, figs){
+  if(!figs||!figs.length) return;
+  await loadPlotlyJs();
+  const dark=document.documentElement.getAttribute('data-theme')==='dark'||(!document.documentElement.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);
+  for(const j of figs){
+    const f=JSON.parse(j); const d=document.createElement('div');
+    d.style.cssText='width:100%;min-height:380px;margin-top:8px;background:#fff;border-radius:6px';
+    outEl.append(d);
+    f.layout=f.layout||{}; f.layout.autosize=true;
+    if(dark){ f.layout.template=undefined; }
+    Plotly.newPlot(d,f.data,f.layout,{responsive:true,displaylogo:false});
+  }
+}
+
+/* ---------- Gerektiğinde PyPI paketleri ---------- */
+const installed=new Set();
+async function ensurePkgs(code){
+  for(const [mod,pkg] of [['plotly','plotly'],['mplcursors','mplcursors']]){
+    if(new RegExp('\\b(import|from)\\s+'+mod).test(code)&&!installed.has(pkg)){
+      setState('loading',pkg+' kuruluyor…',pkg+' PyPI üzerinden micropip ile kuruluyor (yalnızca ilk sefer).');
+      await pyodide.runPythonAsync(`import micropip\nawait micropip.install('${pkg}')`);
+      installed.add(pkg);
+      setState('ready','Python hazır','');
+    }
+  }
+}
+
+/* ---------- Dosya paneli ---------- */
+(function(){
+  const up=document.getElementById('fileUp'), list=document.getElementById('fileList'), ref=document.getElementById('fileRefresh');
+  async function refresh(){
+    if(!pyodide){ list.innerHTML='<i>Python yüklenince görünür.</i>'; return; }
+    const files=JSON.parse(pyodide.runPython(`import os, json
+_r=[]
+for _d,_s,_fs in os.walk('.'):
+    _s[:]=[x for x in _s if not x.startswith('.')]
+    for _f in sorted(_fs):
+        _p=os.path.join(_d,_f)[2:]
+        _r.append([_p, os.path.getsize(_p)])
+json.dumps(sorted(_r))`));
+    list.innerHTML='';
+    files.forEach(([p,sz])=>{
+      const a=document.createElement('a'); a.href='#'; a.textContent=`${p} (${sz<1024?sz+' B':(sz/1024).toFixed(1)+' KB'})`;
+      a.style.cssText='display:block;padding:2px 0;font-size:12px;color:var(--accent);word-break:break-all';
+      a.onclick=e=>{e.preventDefault();const data=pyodide.FS.readFile(p);const blob=new Blob([data]);const u=URL.createObjectURL(blob);const l=document.createElement('a');l.href=u;l.download=p.split('/').pop();l.click();setTimeout(()=>URL.revokeObjectURL(u),2000);};
+      list.append(a);
+    });
+  }
+  window.refreshFiles=refresh;
+  ref.onclick=async()=>{await loadPython();refresh();};
+  up.onchange=async()=>{
+    await loadPython();
+    for(const f of up.files){ const buf=new Uint8Array(await f.arrayBuffer()); pyodide.FS.writeFile(f.name,buf); }
+    up.value=''; refresh();
+  };
+})();
+
+/* ---------- Pasta grafiği seçenek paneli ---------- */
+(function(){
+  const ta=document.getElementById('pieCode'), cell=document.getElementById('pieCell');
+  const boxes=[...document.querySelectorAll('#pieCtrl input[type=checkbox]')], ex=document.getElementById('pieEx'), exv=document.getElementById('pieExV');
+  const on=k=>boxes.find(b=>b.dataset.o===k).checked;
+  function gen(){
+    exv.textContent=ex.value;
+    const args=['quantities','labels=ingredients'];
+    if(on('colors')) args.push('colors=colors');
+    if(on('startangle')) args.push('startangle=90');
+    if(on('autopct')) args.push('autopct="%1.1f%%"');
+    if(on('explode')) args.push('explode=explode');
+    if(on('shadow')) args.push('shadow=True');
+    return `import matplotlib.pyplot as plt
+
+ingredients = ["flour", "baking powder", "milk", "eggs", "sugar"]
+quantities = [180, 4, 250, 110, 40]
+colors = ["#D2B48C", "#1E90FF", "#FFFFFF", "#FFD700", "#FF6347"]
+explode = [0, 0, 0, 0, ${ex.value}]
+
+plt.pie(${args.join(', ')})
+plt.title("Ingredients for waffles"${on('red')?', color="red"':''})
+plt.show()`;
+  }
+  let t=null;
+  function update(){
+    ta.value=gen(); ta.rows=ta.value.split('\n').length+1;
+    clearTimeout(t);
+    t=setTimeout(()=>{ if(pyodide&&runFn) cell.querySelector('.btn.primary').click(); },250);
+  }
+  boxes.forEach(b=>b.onchange=update); ex.oninput=update;
+  ta.value=gen(); ta.rows=ta.value.split('\n').length+1;
+  const rb=cell.querySelectorAll('.cell-head .btn')[1]; if(rb) rb.style.display='none';
+})();
+
+/* ---------- Adım grafiği: kaydırıcı + ipucu + hedef ---------- */
+(function(){
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], steps=[8234,11789,3120,10054,7422,4821,15337];
+  const svg=document.getElementById('stepsSvg'), tip=document.getElementById('stepsTip');
+  const ms=document.getElementById('maxSl'), mv=document.getElementById('maxV'), gs=document.getElementById('goalSl'), gv=document.getElementById('goalV');
+  const W=640,H=280,L=60,R=14,T=14,B=34;
+  function draw(){
+    const mx=+ms.value, goal=+gs.value; mv.textContent=mx; gv.textContent=goal;
+    const py=v=>H-B-Math.min(v,mx)/mx*(H-B-T), bw=(W-L-R)/7*0.7, gap=(W-L-R)/7;
+    let s=`<defs><clipPath id="clipA"><rect x="${L}" y="${T}" width="${W-L-R}" height="${H-B-T}"/></clipPath></defs><g font-family="Inter,sans-serif" font-size="11" fill="var(--muted)">`;
+    const stepT=mx>12000?2500:mx>6000?1000:500;
+    for(let v=0;v<=mx;v+=stepT) s+=`<line x1="${L}" x2="${W-R}" y1="${py(v)}" y2="${py(v)}" stroke="var(--line)"/><text x="${L-6}" y="${py(v)+4}" text-anchor="end">${v}</text>`;
+    s+=`<rect x="${L}" y="${T}" width="${W-L-R}" height="${H-B-T}" fill="none" stroke="var(--muted)"/></g><g clip-path="url(#clipA)">`;
+    steps.forEach((v,i)=>{const x=L+i*gap+(gap-bw)/2;
+      s+=`<rect data-i="${i}" x="${x}" y="${py(v)}" width="${bw}" height="${H-B-py(v)}" fill="${goal>0&&v>=goal?'#2f8f4e':'#1f77b4'}" style="cursor:pointer"/>`;});
+    if(goal>0&&goal<=mx) s+=`<line x1="${L}" x2="${W-R}" y1="${py(goal)}" y2="${py(goal)}" stroke="#d1453b" stroke-dasharray="6 4" stroke-width="1.5"/>`;
+    s+='</g>';
+    steps.forEach((v,i)=>{const x=L+i*gap+gap/2; s+=`<text x="${x}" y="${H-12}" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" fill="var(--ink)">${days[i]}</text>`;});
+    svg.innerHTML=s;
+    svg.querySelectorAll('rect[data-i]').forEach(r=>{
+      r.onmousemove=e=>{const i=+r.dataset.i, box=svg.getBoundingClientRect();tip.style.display='block';tip.textContent=`${steps[i]} steps`;tip.style.left=(e.clientX-box.left+12)+'px';tip.style.top=(e.clientY-box.top-28)+'px';};
+      r.onmouseleave=()=>tip.style.display='none';
+    });
+  }
+  ms.oninput=draw; gs.oninput=draw; draw();
+})();
+
+/* ---------- İçindekiler vurgusu ---------- */
+(function(){
+  const links=[...document.querySelectorAll('nav.toc a')];
+  const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.remove('active'));links[secs.indexOf(e.target)].classList.add('active');}}),{rootMargin:'-10% 0px -80% 0px'});
+  secs.forEach(s=>io.observe(s));
+})();
+</script>
+</body>
+</html>

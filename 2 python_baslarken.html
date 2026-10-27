@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python'a Başlarken</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<style>
+:root{
+  --bg:#f7f5f0; --paper:#ffffff; --ink:#1d1f24; --muted:#5d6270; --line:#e2ded4;
+  --accent:#1f5f8b; --accent-soft:#e3eef6; --warn:#9a5b00; --warn-soft:#fbf1dc;
+  --code-bg:#f2f0ea; --code-ink:#22252b; --ok:#2f7a4a; --err:#b3261e;
+  --prompt-bg:#efece4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+    --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+    --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+  --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+  --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Serif 4",Georgia,serif;font-size:18px;line-height:1.65}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1200px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:28px 18px;border-right:1px solid var(--line);font-family:Inter,sans-serif;font-size:14px}
+nav.toc .brand{font-weight:600;color:var(--accent);font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;padding:6px 8px;border-radius:6px}
+nav.toc a:hover,nav.toc a.active{background:var(--accent-soft);color:var(--ink)}
+.status{margin-top:22px;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;color:var(--muted);background:var(--paper)}
+.status b{color:var(--ink)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#999;margin-right:6px;vertical-align:middle}
+.dot.loading{background:var(--warn);animation:pulse 1s infinite}
+.dot.ready{background:var(--ok)}
+@keyframes pulse{50%{opacity:.3}}
+.toc button,.btn{font-family:Inter,sans-serif;font-size:13px;font-weight:500;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:6px 12px;border-radius:6px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.5;cursor:wait}
+main{padding:40px 48px 120px;min-width:0}
+article{max-width:780px}
+h1{font-size:2.4rem;line-height:1.15;margin:0 0 .3em;color:var(--accent)}
+h2{font-size:1.55rem;margin:2.6em 0 .6em;padding-top:.4em;border-top:1px solid var(--line);color:var(--accent)}
+h3{font-size:1.2rem;margin:2em 0 .5em;color:var(--ink);font-family:Inter,sans-serif;font-weight:600}
+h2 .num{font-family:Inter,sans-serif;font-weight:600;font-size:.8em;color:var(--muted);margin-right:.4em}
+.lead{font-style:italic;color:var(--muted);font-size:1.08rem;border-left:3px solid var(--accent);padding-left:16px;margin:1.2em 0 2em}
+code{font-family:"JetBrains Mono",monospace;font-size:.82em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.terms{display:grid;gap:12px;margin:1.2em 0}
+.term{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+.term b{font-family:Inter,sans-serif;color:var(--accent)}
+.note{background:var(--warn-soft);border-left:3px solid var(--warn);padding:12px 16px;border-radius:0 8px 8px 0;font-size:.95rem;margin:1.2em 0}
+.formula{font-family:"JetBrains Mono",monospace;background:var(--paper);border:1px dashed var(--line);padding:12px 16px;border-radius:8px;text-align:center;font-size:.95rem;margin:1em 0;overflow-x:auto}
+.prompt{background:var(--prompt-bg);border-radius:10px;padding:14px 18px;margin:1.2em 0;font-size:.95rem}
+.prompt .lbl{font-family:Inter,sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.prompt em{display:block;margin-top:6px}
+/* Kod hücresi */
+.cell{margin:1.3em 0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--paper)}
+.cell-head{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--code-bg);border-bottom:1px solid var(--line);font-family:Inter,sans-serif;font-size:12px;color:var(--muted)}
+.cell-head .title{flex:1}
+.cell textarea{display:block;width:100%;border:0;resize:vertical;padding:14px 16px;background:var(--code-bg);color:var(--code-ink);font-family:"JetBrains Mono",monospace;font-size:13.5px;line-height:1.55;tab-size:4;outline:none;min-height:80px;white-space:pre;overflow:auto}
+.out{display:none;border-top:1px solid var(--line);padding:12px 16px;font-family:"JetBrains Mono",monospace;font-size:13px;white-space:pre-wrap;overflow-x:auto}
+.out.show{display:block}
+.out.err{color:var(--err)}
+.out img{max-width:100%;background:#fff;border-radius:6px;margin-top:8px;display:block}
+.out table{border-collapse:collapse;font-size:12.5px;margin:6px 0;white-space:nowrap}
+.out th,.out td{border:1px solid var(--line);padding:3px 8px;text-align:right}
+.out th{background:var(--code-bg)}
+/* Tablo */
+table.data{border-collapse:collapse;font-family:Inter,sans-serif;font-size:14px;margin:1em 0}
+table.data th,table.data td{border:1px solid var(--line);padding:6px 10px}
+table.data th{background:var(--code-bg)}
+.caption{font-family:Inter,sans-serif;font-size:13px;color:var(--muted);margin-top:-4px}
+/* Widget */
+.widget{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px;margin:1.5em 0}
+.widget h4{margin:0 0 6px;font-family:Inter,sans-serif;font-size:14px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.widget .ctrl{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-family:Inter,sans-serif;font-size:14px;margin:10px 0}
+.widget svg{width:100%;height:auto;display:block}
+.widget .readout{font-family:Inter,sans-serif;font-size:15px}
+.widget .readout b{color:var(--accent)}
+input[type=range]{accent-color:var(--accent)}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  main{padding:24px 16px 80px}
+  h1{font-size:1.9rem}
+}
+h3{font-size:1.15rem;margin:2em 0 .5em;color:var(--ink);font-family:Inter,sans-serif;font-weight:600}
+kbd{font-family:"JetBrains Mono",monospace;font-size:.8em;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--paper)}
+input[type=number]{padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:"JetBrains Mono",monospace}
+@media (max-width:700px){.wh-grid{grid-template-columns:1fr !important}}
+.ro{margin:1.3em 0;border:1px dashed var(--line);border-radius:10px;overflow:hidden;background:var(--paper)}
+.ro-head{padding:6px 12px;background:var(--warn-soft);color:var(--warn);font-family:Inter,sans-serif;font-size:12px;font-weight:600}
+.ro pre{margin:0;padding:12px 16px;background:var(--code-bg);color:var(--code-ink);font-family:"JetBrains Mono",monospace;font-size:13px;line-height:1.5;overflow-x:auto}
+.ro-out{padding:8px 16px;border-top:1px solid var(--line);font-family:Inter,sans-serif;font-size:13px}
+.ro-out pre{background:none;padding:4px 0}
+.ro-tag{background:var(--warn-soft);color:var(--warn);font-family:Inter,sans-serif;font-size:12px;font-weight:600;padding:1px 6px;border-radius:4px}
+.sel{padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink)}
+.h-grid iframe{min-width:0}
+@media (max-width:760px){.h-grid{grid-template-columns:1fr !important}}
+@media (max-width:700px){table.data{display:block;overflow-x:auto;max-width:100%}}
+pre.plain{background:var(--code-bg);color:var(--code-ink);font-family:"JetBrains Mono",monospace;font-size:13px;line-height:1.5;padding:10px 14px;border-radius:8px;overflow-x:auto}
+h3{font-family:Inter,sans-serif;font-size:1.05rem;margin:1.6em 0 .4em}
+.answer{border-left:4px solid var(--line);padding:10px 18px;margin:-.6em 0 1.2em;font-size:.95rem}
+article p code,article li code{overflow-wrap:anywhere}
+.cin{width:100%;box-sizing:border-box;margin-top:3px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:Inter,sans-serif;font-size:13px}
+.md-view h1{font-size:1.7rem;margin:.3em 0}.md-view h2{font-size:1.35rem;margin:.4em 0}.md-view h3{font-size:1.1rem;margin:.4em 0}
+.md-view table{border-collapse:collapse}.md-view td,.md-view th{border:1px solid var(--line);padding:3px 10px}
+.md-cell{cursor:default}
+.md-view,.md-view pre{overflow-wrap:anywhere}
+@media (max-width:700px){.vsc-grid{grid-template-columns:1fr !important}}
+.cell-head .title b{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" id="toc">
+  <div class="brand">Bölüm 2</div>
+  <a href="#giris">Giriş: yorumlayıcı</a>
+  <a href="#s21">2.1 Windows'a kurulum</a>
+  <a href="#s22">2.2 macOS / Linux</a>
+  <a href="#s23">2.3 Etkileşimli kip</a>
+  <a href="#s24">2.4 Python betikleri</a>
+  <a href="#s25">2.5 VS Code ve IDE'ler</a>
+  <a href="#s26">2.6 Jupyter Notebook'lar</a>
+  <div class="status">
+    <div><span class="dot" id="pyDot"></span><b id="pyState">Python yüklenmedi</b></div>
+    <div id="pyMsg" style="margin:6px 0 8px">Kodlar tarayıcıda Pyodide ile çalışır; ilk hücrede Python indirilir.</div>
+    <button class="btn" id="preload">Python'u şimdi yükle</button>
+    <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px"><button class="btn" id="runAll">▶▶ Tümünü çalıştır</button> <button class="btn" id="restart">↻ Çekirdeği yeniden başlat</button></div>
+    <div style="margin-top:8px"><button class="btn" id="themeBtn">Tema değiştir</button></div>
+  </div>
+  <div class="status">
+    <b>Dosyalar</b> <span style="font-size:11.5px">(hücrelerin oluşturduğu dosyalar)</span>
+    <div id="fileList" style="margin:6px 0;max-height:180px;overflow:auto"><i>Python yüklenince görünür.</i></div>
+    <button class="btn" id="fileRefresh">Yenile</button>
+    <pre id="filePeek" style="display:none;margin:8px 0 0;max-height:220px;overflow:auto;font-size:11px;background:var(--code-bg);padding:6px;border-radius:6px;white-space:pre-wrap"></pre>
+  </div>
+</nav>
+
+<main><article>
+<h1 id="giris">2 · Python'a Başlarken</h1>
+<p class="lead">Bu bölümde Python'u ve Visual Studio Code'u kuracağız. Ardından ilk komutlarımızı etkileşimli kipte deneyecek ve gerçek Python koduyla ilk adımlarımızı atacağız.</p>
+
+<p>Python yalnızca bir programlama dili değildir; Python programlarını çalıştırmak için ihtiyaç duyduğunuz programın adı da budur. İleride program kodumuzu <em>.py</em> uzantılı dosyalara, örneğin <em>myprogram.py</em>'ye yazacağız. Python daha sonra o dosyada bulunan komutları çalıştırır. Python'un program kodunu <em>yorumladığı</em> (interpret) da söylenir. Java ya da C gibi diğer programlama dillerinde iş oldukça farklı yürür. Orada bir <em>derleyici</em> (compiler) önce program kodunu makine diline çevirir ve sonunda çalıştırabileceğiniz şey bunun çıktısıdır. Python'da daha basittir: <code>python myprogram.py</code> kullanırsınız ve program hemen çalışır. <code>python</code> programı —Windows'ta <em>python.exe</em> de diyebilirsiniz— <em>myprogram.py</em> dosyanızı açar, program kodunuza satır satır bakar ve tam olarak orada yazdığınızı yapar. Bir yerde yazım hatası yaptıysanız çalıştırma sırasında bir hata oluşur. Program yapması gerekeni yaparsa ilgili çıktıyı ekranda görürsünüz. Ancak gerçekten başlayabilmek için önce Python'u bilgisayarınıza nasıl yükleyeceğinize ve ilgili komutları aslında nereye gireceğinize bakmamız gerekiyor.</p>
+
+<p>"Satır satır" sözünü kendiniz görün: Aşağıdaki programda üçüncü satırda bir yazım hatası var. Python ilk iki satırı çalıştırır, sonra hataya gelince durur. (Derlenen bir dilde program hiç çalışmaz; hata baştan bildirilirdi.)</p>
+
+<div class="cell" data-title="Satır satır yorumlama"><textarea>print("1. satır çalıştı")
+print("2. satır çalıştı")
+prnt("3. satırda yazım hatası var")
+print("4. satıra hiç gelinmez")</textarea></div>
+
+<div class="note"><b>Bu sayfada Python nerede çalışıyor?</b> Bu sayfadaki Python, bilgisayarınıza kurulmuş bir program değil, tarayıcınızın içinde çalışan <b>Pyodide</b>'dir (WebAssembly'ye derlenmiş gerçek CPython). Yani bu bölümdeki kurulum adımlarını yapmadan da her şeyi burada deneyebilirsiniz. Ama kendi bilgisayarınızda dosyalarla, kütüphanelerle ve daha büyük projelerle rahat çalışmak için 2.1–2.5'teki kurulum yine de önerilir. Sayfadaki her şey, kitabın anlattığı araçların (Python kabuğu, VS Code, Jupyter) tarayıcıdaki benzetimleridir.</div>
+
+<!-- ====================== 2.1 ====================== -->
+<h2 id="s21"><span class="num">2.1</span>Python'u Windows'a Kurmak</h2>
+
+<p>Python'u Windows'a <em>Microsoft Store</em> üzerinden kurabilirsiniz. Orada <em>Python Software Foundation</em>'ın <em>Python</em> programının çeşitli sürümlerini bulur ve tek tıkla doğrudan kurabilirsiniz. Python 3'ün en son sürümünü seçmeniz yeterli.</p>
+
+<p>Alternatif olarak bir yükleyici (installer) kullanan klasik yöntem de var. ChatGPT'ye sorduğumuzda şu talimatları alıyoruz:</p>
+
+<div class="prompt"><div class="lbl">İstem</div><em>Python'u Windows'a nasıl kurarım?</em></div>
+<div class="answer"><ol style="margin:0">
+<li>Resmî Python web sitesine gidin: <em>www.python.org/downloads/</em>.</li>
+<li>Windows yükleyicisini indirin (ör. <code>python-3.x.x.exe</code>).</li>
+<li>Dosyayı çalıştırın. Önemli: Kurulum penceresinin üst kısmındaki <b>Add Python to PATH</b> seçeneğini mutlaka işaretleyin.</li>
+<li><b>Install Now</b>'a tıklayın.</li>
+<li>Kurulum tamamlanana kadar bekleyin.</li>
+</ol></div>
+
+<p>Python'u ister Microsoft Store ister yükleyici üzerinden kurun, programlar sonunda bilgisayarınızda belirli bir dizine yerleşir; örneğin <em>C:\Python3.9\</em>. Daha sonra tam yolu belirtmek zorunda kalmadan konsola basitçe "python" ya da "python.exe" girebilmeniz için, daha önce önerilen seçeneği kullanarak Python'u <code>PATH</code>'e eklemek mantıklıdır. O zaman bilgisayarınız programı tam olarak nerede arayacağını bilir. Python'u Microsoft Store üzerinden kurarsanız <code>PATH</code> otomatik olarak doğru ayarlanır.</p>
+
+<div class="widget" id="pathWidget">
+  <h4>Etkileşimli: PATH ne işe yarar?</h4>
+  <div style="font-family:Inter,sans-serif;font-size:13px;color:var(--muted);margin-bottom:6px">Bir komut yazdığınızda Windows, <code>PATH</code> listesindeki klasörlere sırayla bakar ve <code>python.exe</code>'yi ilk bulduğu yerde çalıştırır. Kutuyu işaretleyip kaldırarak farkı görün.</div>
+  <div class="ctrl"><label><input type="checkbox" id="pwAdd" checked> Kurulumda <b>Add Python to PATH</b> işaretlendi</label></div>
+  <div id="pwList" style="word-break:break-all;font-family:'JetBrains Mono',monospace;font-size:12.5px"></div>
+  <pre id="pwTerm" style="background:#0c0c0c;color:#ccc;padding:10px 14px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12.5px;margin:8px 0 0;white-space:pre-wrap"></pre>
+</div>
+
+<!-- ====================== 2.2 ====================== -->
+<h2 id="s22"><span class="num">2.2</span>Python'u macOS'a ve Linux'a Kurmak</h2>
+
+<p>macOS kullanıcıları için ChatGPT, Python web sitesinden indirilebilen bir yükleyici dosyasıyla kurulum yapılmasını öneriyor:</p>
+
+<div class="prompt"><div class="lbl">İstem</div><em>Python'u macOS'a nasıl kurarım?</em></div>
+<div class="answer"><ol style="margin:0">
+<li>Şuraya gidin: <em>www.python.org/downloads/macos/</em>.</li>
+<li>En son sürümü (ör. <b>Python 3.12.x</b>) seçip <b>macOS 64-bit universal2 installer</b>'a tıklayarak yükleyiciyi indirin.</li>
+<li>Yükleyiciyi çalıştırmak için <em>.pkg</em> dosyasına çift tıklayın.</li>
+<li>Kurulum sihirbazındaki talimatları izleyin.</li>
+</ol></div>
+
+<p>Linux kullanıcısıysanız Python'u kurmak özellikle kolaydır. Linux dağıtımınızın paket yöneticisini kullanmanız yeterli. Örneğin Ubuntu'da terminale şunu girmeniz yeterli: <code>sudo apt install python3 python3-pip</code>. (Pek çok Linux dağıtımında ve macOS'ta komutun adı <code>python</code> değil <code>python3</code>'tür.)</p>
+
+<p>Python kurulduktan sonra sürümünü ve nerede çalıştığını öğrenmek için Python'un kendisine sorabilirsiniz. Bu sayfadaki Python'a soralım:</p>
+
+<div class="cell" data-title="Hangi Python? (sürüm ve platform)"><textarea>import sys, platform
+print("Python sürümü :", sys.version)
+print("Platform      :", platform.system(), platform.machine())
+print("Çalıştırılabilir dosya:", sys.executable)</textarea></div>
+
+<!-- ====================== 2.3 ====================== -->
+<h2 id="s23"><span class="num">2.3</span>Python'u Etkileşimli Kipte Kullanmak</h2>
+
+<p>Kurulumdan hemen sonra Python'u etkileşimli olarak denemek için bir konsol açabilirsiniz. Windows'ta iki seçeneğiniz var: <em>Komut İstemi</em> (Command Prompt) ve <em>PowerShell</em>. İkisi de Windows'a yerleşiktir ve <b>Başlat</b> menüsünde bulabilirsiniz. Windows tuşuna basıp "cmd" ya da "powershell" de yazabilirsiniz. macOS'ta ya da Linux'ta bir <em>terminal</em> açın. O terminalde ya da Komut İstemi'nde veya PowerShell'de artık <code>python</code> yazıp <kbd>Enter</kbd>'a basabilirsiniz.</p>
+
+<p>Şimdi Python sürüm numarasını ve <code>&gt;&gt;&gt;</code> ile başlayan bir satır görüyorsanız kurulum başarılı olmuştur ve Python'un etkileşimli kipindesiniz.</p>
+
+<p>"Etkileşimli", Python'un bir <em>.py</em> dosyasında bulunan program kodunu çalıştırmadığı anlamına gelir. Bunun yerine Python başta hiçbir şey yapmaz; komutlarınızı bekler. Artık Python kabuğunu (shell) bir hesap makinesi gibi kullanabilirsiniz. "5+3" yazıp <kbd>Enter</kbd>'a basmanız yeterli. Sonucu hemen görürsünüz: <code>8</code>. Şunu girmeyi de deneyebilirsiniz: <code>x = 5+3</code>. <kbd>Enter</kbd>'a bastığınızda hiçbir şey olmuyormuş gibi gelebilir, ama arka planda Python <code>x</code> adlı bir değişken oluşturmuş ve ona <code>8</code> değerini atamıştır. Şimdi <code>x</code> girip yeniden <kbd>Enter</kbd>'a basarsanız <code>8</code> sayısının gösterildiğini görürsünüz.</p>
+
+<p>Aşağıdaki pencere, kitaptaki Şekil 2.1'deki gibi gerçek bir Python kabuğudur. Tıklayıp yazmaya başlayın:</p>
+
+<div class="widget" id="replWidget" style="padding:0;overflow:hidden">
+  <div style="display:flex;align-items:center;gap:8px;background:#1f1f1f;color:#ddd;padding:6px 12px;font:12.5px Inter,sans-serif">
+    <span style="color:#3b9cff">▣</span> Windows PowerShell <span style="flex:1"></span>
+    <button class="btn" id="rpHelp" style="padding:2px 8px;font-size:12px">Örnekler</button>
+    <button class="btn" id="rpClear" style="padding:2px 8px;font-size:12px">Temizle</button>
+  </div>
+  <div id="rpTerm" tabindex="0" style="background:#0c0c0c;color:#d4d4d4;font-family:'JetBrains Mono',monospace;font-size:13.5px;line-height:1.45;padding:10px 14px;height:300px;overflow:auto;white-space:pre-wrap;word-break:break-word;cursor:text"></div>
+  <div id="rpHints" style="display:none;background:var(--paper);padding:8px 12px;border-top:1px solid var(--line);font-family:Inter,sans-serif;font-size:13px"></div>
+</div>
+
+<p>Etkileşimli kip, bir şeyleri hızlıca denemek için çok kullanışlıdır. Python'da üs nasıl hesaplanır? Örneğin 2'nin 5. kuvveti nedir? Google'a ya da ChatGPT'ye sorarsanız bunun <code>**</code> operatörüyle yapıldığını öğrenirsiniz. Öyleyse bunu programınıza dahil etmeden önce etkileşimli Python kabuğunda neden denemeyesiniz:</p>
+<pre class="plain">&gt;&gt;&gt; 2**5
+32</pre>
+
+<p>İşe yarıyor —2'nin 5. kuvveti 32'dir, çünkü 2 kere 2 kere 2 kere 2 kere 2, 32 eder. Python'un etkileşimli kipinden çıkmak için <kbd>Ctrl</kbd> + <kbd>D</kbd>'ye ya da Mac'te <kbd>Control</kbd> + <kbd>D</kbd>'ye basın. (Windows'ta bu genellikle <kbd>Ctrl</kbd> + <kbd>Z</kbd> ardından <kbd>Enter</kbd>'dır; <kbd>Ctrl</kbd> + <kbd>D</kbd> Python 3.13'ten itibaren Windows'ta da çalışır.) Alternatif olarak <code>exit()</code> ya da <code>quit()</code> yazıp <kbd>Enter</kbd>'a da basabilirsiniz. (Yukarıdaki pencerede de deneyebilirsiniz.)</p>
+
+<!-- ====================== 2.4 ====================== -->
+<h2 id="s24"><span class="num">2.4</span>Python Betikleri</h2>
+
+<p>Metin düzenleyicinizde yeni bir dosya oluşturup içine <code>print(2**5)</code> yazar ve ardından dosyayı <em>myprogram.py</em> olarak kaydederseniz, konsola <code>python myprogram.py</code> yazıp <kbd>Enter</kbd>'a basarak onu çalıştırabilirsiniz. Sonucu hemen görürsünüz: 32. Ancak bundan sonra etkileşimli kipte değilsiniz, dolayısıyla başka Python komutu giremezsiniz. Python programınızı çalıştırmış ve ardından çıkmıştır.</p>
+
+<div class="widget" id="scriptWidget">
+  <h4>Etkileşimli: betik mi, etkileşimli kip mi?</h4>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px" class="h-grid">
+    <div>
+      <div style="font:600 12px Inter,sans-serif;color:var(--muted);margin-bottom:4px">myprogram.py</div>
+      <textarea id="scCode" spellcheck="false" style="width:100%;box-sizing:border-box;min-height:150px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--code-bg);color:var(--code-ink);font-family:'JetBrains Mono',monospace;font-size:13px">x = 2**5
+x
+print(x)
+5 + 3</textarea>
+      <div class="ctrl"><button class="btn primary" id="scRun">python myprogram.py</button> <button class="btn" id="scRepl">Aynı satırları &gt;&gt;&gt; içinde çalıştır</button></div>
+    </div>
+    <div>
+      <div style="font:600 12px Inter,sans-serif;color:var(--muted);margin-bottom:4px">Konsol</div>
+      <pre id="scOut" style="background:#0c0c0c;color:#d4d4d4;padding:10px 14px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;min-height:150px;margin:0;white-space:pre-wrap"></pre>
+    </div>
+  </div>
+  <div class="readout" id="scNote" style="font-size:13px;color:var(--muted)">İki düğmeye de basıp çıktıları karşılaştırın.</div>
+</div>
+
+<div class="note"><b>Önemli!</b> Python betiklerinde bir şey göstermek istiyorsanız her zaman <code>print</code> kullanmanız gerektiğini unutmayın; örneğin <code>print(x)</code>. Etkileşimli kipte basitçe <code>x</code> yazmanız yeterlidir.</div>
+
+<!-- ====================== 2.5 ====================== -->
+<h2 id="s25"><span class="num">2.5</span>Visual Studio Code ve Tümleşik Geliştirme Ortamları</h2>
+
+<p>Konsolda, Komut İstemi'nde ya da PowerShell'de çalışmaya alışkın değilseniz <em>.py</em> dosyanızın bulunduğu doğru klasöre gitmekte ve sonra onu çalıştırmakta zorlanabilirsiniz. İyi haber şu ki bu konsol becerilerine mutlaka ihtiyacınız yok! Bundan sonra Visual Studio Code'da programlayacağız. Orada konsola (neredeyse) hiç komut girmeniz gerekmeyecek. Bunun yerine kodlamaya başlayıp programınızı çalıştırmak için <b>Play</b> (Oynat) düğmesine tıklayabilirsiniz.</p>
+
+<p><em>Tümleşik geliştirme ortamı</em> (integrated development environment, IDE), yazılım geliştirmek için kullanabileceğiniz bir programdır. Her modern programlama dili için IDE'ler vardır; Python için en bilinenleri <em>PyCharm</em>, <em>Thonny</em> ve <em>Spyder</em>'dır. Bu programlar esasen Python programları geliştirmek için ihtiyacınız olan her şeyi —ve çoğu zaman çok daha fazlasını— içeren hepsi bir arada araçlardır. Bir IDE; yerleşik bir Python yorumlayıcısına ve hataları bulmak için programınızda adım adım ilerlemenizi sağlayan bir hata ayıklayıcıya (debugger) sahip bir kod düzenleyicidir; ayrıca proje yönetimi ve diğer yazılımlarla entegrasyonlar sunar. Pek çok amaç için bir IDE'ye gerek bile yoktur.</p>
+
+<p>Bu kitapta <em>Visual Studio Code</em> programını kullanıyoruz. Tam teşekküllü bir IDE değil; Microsoft'un Windows, macOS ve Linux için ücretsiz olarak sunduğu hafif ve genişletilebilir bir kod düzenleyicidir. Visual Studio Code'da yazdığınız program kodunu doğrudan <b>Play</b> düğmesine tıklayarak çalıştırabilirsiniz.</p>
+
+<p>Visual Studio Code'u kurmak için işletim sisteminize uygun yükleyiciyi <em>https://code.visualstudio.com</em> adresinden indirip çalıştırın. Alternatif olarak Windows için Visual Studio Code'u Microsoft Store'da da bulabilirsiniz. Programı başlattıktan sonra Python eklentisini doğrudan <b>Extensions</b> (Uzantılar) bölümünden kurabilirsiniz. Ancak <em>.py</em> uzantılı bir dosyayı ilk kez açtığınızda ya da oluşturduğunuzda Visual Studio Code bu eklentiyi kurmayı otomatik olarak da önerecektir.</p>
+
+<p>En iyisi bilgisayarınızda Python betiklerinizi kaydetmek istediğiniz bir klasör oluşturmaktır. Visual Studio Code'da o klasörü seçmek için <b>Open Folder</b> (Klasör Aç) düğmesini kullanın; klasördeki tüm dosyalar programın sol tarafında gösterilir. <b>File • New File</b> ile yeni bir dosya oluşturabilirsiniz. Ona <em>.py</em> uzantısını vermek çok önemlidir; örneğin <em>myprogram.py</em>. Visual Studio Code o zaman otomatik olarak sözdizimi vurgulaması uygular —farklı dil öğeleri farklı renklerde gösterilir— ve sağ üst köşede programı çalıştırmak için bir <b>Play</b> düğmesi görürsünüz.</p>
+
+<div class="widget" id="vscWidget" style="padding:0;overflow:hidden">
+  <div style="background:#2c2c2c;color:#ccc;font:12px Inter,sans-serif;padding:5px 12px;display:flex;gap:10px;align-items:center"><span style="color:#3b9cff">◆</span> code — Visual Studio Code (benzetim)</div>
+  <div style="display:grid;grid-template-columns:150px minmax(0,1fr);min-height:330px" class="vsc-grid">
+    <div style="background:#252526;color:#ccc;font:12.5px Inter,sans-serif;padding:8px 0">
+      <div style="padding:0 10px 6px;font-size:11px;letter-spacing:.06em;color:#999">EXPLORER</div>
+      <div style="padding:0 10px 4px;font-weight:600">⌄ CODE</div>
+      <div id="vscFiles"></div>
+      <div style="padding:6px 10px"><button class="btn" id="vscNew" style="font-size:11.5px;padding:2px 8px">+ New File</button></div>
+    </div>
+    <div style="display:flex;flex-direction:column;background:#1e1e1e;min-width:0">
+      <div style="display:flex;align-items:center;background:#252526;color:#ddd;font:12.5px Inter,sans-serif">
+        <span id="vscTab" style="padding:6px 12px;background:#1e1e1e;border-top:1px solid #3b9cff">myapp.py</span><span style="flex:1"></span>
+        <button id="vscPlay" title="Run Python File" style="background:none;border:0;color:#89d185;font-size:16px;cursor:pointer;padding:4px 12px">▷</button>
+      </div>
+      <div style="position:relative;flex:1;min-height:150px">
+        <pre id="vscHl" aria-hidden="true" style="position:absolute;inset:0;margin:0;padding:8px 10px 8px 44px;font:13px/1.5 'JetBrains Mono',monospace;color:#d4d4d4;white-space:pre-wrap;word-break:break-word;pointer-events:none;overflow:hidden"></pre>
+        <div id="vscLn" style="position:absolute;left:0;top:0;bottom:0;width:34px;padding:8px 0;text-align:right;font:13px/1.5 'JetBrains Mono',monospace;color:#858585"></div>
+        <textarea id="vscEd" spellcheck="false" style="position:absolute;inset:0;width:100%;height:100%;box-sizing:border-box;margin:0;padding:8px 10px 8px 44px;font:13px/1.5 'JetBrains Mono',monospace;background:transparent;color:transparent;caret-color:#fff;border:0;resize:none;outline:none;white-space:pre-wrap;word-break:break-word;overflow:hidden"></textarea>
+      </div>
+      <div style="border-top:1px solid #3c3c3c;font:11px Inter,sans-serif;color:#ccc;padding:4px 12px;letter-spacing:.05em">PROBLEMS &nbsp; <u>TERMINAL</u></div>
+      <pre id="vscTerm" style="margin:0;background:#1e1e1e;color:#ccc;font:12.5px/1.45 'JetBrains Mono',monospace;padding:6px 12px 10px;min-height:90px;max-height:170px;overflow:auto;white-space:pre-wrap"></pre>
+    </div>
+  </div>
+</div>
+
+<p>Arada Python'un etkileşimli kipini kullanmak isterseniz Visual Studio Code'a yerleşik terminali kullanabilirsiniz. Bir Python betiği çalıştırdıktan sonra sağ alt köşede görünmesi gerekir. Onu <b>View • Terminal</b>'i seçerek de açabilirsiniz. Ardından her zamanki gibi <code>python</code> yazıp <kbd>Enter</kbd>'a basın. Etkileşimli kipten çıkmak için <kbd>Ctrl</kbd> + <kbd>D</kbd>'ye ya da Mac'te <kbd>Control</kbd> + <kbd>D</kbd>'ye basın.</p>
+
+<!-- ====================== 2.6 ====================== -->
+<h2 id="s26"><span class="num">2.6</span>Jupyter Notebook'lar</h2>
+
+<p>Python programlarını konsolda çalıştırmak ya da Visual Studio Code'daki <b>Play</b> düğmesine tıklamak yerine Jupyter Notebook'ları da kullanabilirsiniz. Adından da anlaşılacağı gibi onları bir defter (notebook) —başlıklar, metin, listeler ve elbette Python kodu içeren bir tür not alma belgesi— olarak düşünebilirsiniz. Jupyter Notebook'ları oluşturmanın, düzenlemenin ve çalıştırmanın çeşitli yolları vardır. En bilinenlerinden biri <em>JupyterLab</em> ya da <em>Jupyter Notebook (classic)</em> gibi yerel bir geliştirme ortamı kullanmaktır. Bu bağlamda "yerel", her şeyin bilgisayarınızda yerel olarak çalıştığı ve o bilgisayarda kurulu Python sürümünü kullandığı anlamına gelir.</p>
+
+<p>Ancak alternatif olarak Jupyter Notebook'lar bulutta da kullanılabilir; örneğin Google Colab, Databricks Notebooks, Kaggle Notebooks ya da Microsoft Azure Notebooks aracılığıyla. Bu, özellikle Jupyter Notebook'lar üzerinde birden çok kişiyle iş birliği yapmak istiyorsanız yararlıdır. Bu durumda kendi bilgisayarınıza hiçbir şey kurmanız gerekmez; her şeye tarayıcı üzerinden erişirsiniz. (Bu sayfa da bir tür tarayıcı içi not defteridir; ama Colab'ın aksine Python bir sunucuda değil doğrudan sizin tarayıcınızda çalışır.)</p>
+
+<h3 id="s261">2.6.1 Visual Studio Code'da Jupyter Notebook Oluşturmak</h3>
+<p>Bu kitapta Jupyter Notebook'larla yoğun biçimde çalışacağız. Ancak ek bir yazılım kurmamız gerekmiyor; basitçe Visual Studio Code'u kullanabiliriz. Bunun için Visual Studio Code'da <b>File • New File</b>'a tıklayarak <em>.ipynb</em> uzantılı bir dosya oluşturur ve ona örneğin <em>example.ipynb</em> adını veririz. Visual Studio Code'da bir <em>.ipynb</em> dosyasını ilk kez açtığınızda ya da oluşturduğunuzda Jupyter Notebooks eklentisini kurmak isteyip istemediğiniz sorulur. Bunu yapın; hemen başlayabilirsiniz.</p>
+
+<p>Şekil 2.3, Visual Studio Code'da <em>example.ipynb</em> adlı bir Jupyter Notebook'u gösteriyor. Aşağıda aynı defterin bu sayfadaki karşılığı var: bir Markdown hücresi ve bir kod hücresi.</p>
+
+<div class="widget" id="mdWidget1" style="padding:12px 18px">
+  <div class="md-cell" data-md="# Temperatures&#10;This week in **Berlin**."></div>
+</div>
+<div class="cell" data-title="example.ipynb — ortalama sıcaklık"><textarea>avg = (22.7 + 21.3 + 23.4 + 19.3 + 20.0) / 5
+avg</textarea></div>
+
+
+<h3 id="s262">2.6.2 Markdown Hücreleri</h3>
+<p>Jupyter Notebook'lar <em>hücre</em> denen öğelerden oluşur. Hücreler ya <em>Markdown</em> ya da <em>kod</em> hücreleridir. Kod hücrelerine Python kodu yazabilirsiniz —buna daha sonra değineceğiz. Markdown ile Jupyter Notebook'unuzdaki metni tıpkı Microsoft Word ve benzeri programlarda alışık olduğunuz gibi biçimlendirebilirsiniz. İşte Markdown hücrelerine neler girebileceğinize hızlı bir genel bakış. Aşağıdaki hücre düzenlenebilir: Çift tıklayıp Markdown kodunu değiştirin, <kbd>Ctrl</kbd> + <kbd>Enter</kbd> ile biçimlendirilmiş hâline dönün.</p>
+
+<div class="widget" id="mdWidget2" style="padding:12px 18px">
+  <div class="md-cell" data-edit="1" data-md="# Başlık 1 (en büyük)&#10;## Başlık 2 (biraz daha küçük)&#10;### Başlık 3 (daha da küçük)&#10;&#10;**Kalın** için iki yıldız, *italik* için bir yıldız kullanın.&#10;&#10;* Madde işaretli listeler:&#10;* Bunları yıldızlarla oluşturursunuz.&#10;&#10;1. Birinci, ikinci, üçüncü&#10;2. numaralı bir liste olur.&#10;3. Her madde için yalnızca &quot;1.&quot; bile yazabilirsiniz.&#10;&#10;Daha ayrıntılı bir kopya kâğıdını [Markdown Guide](https://www.markdownguide.org/cheat-sheet/) web sitesinde bulabilirsiniz. Tablo oluşturmak için kullanabileceğiniz komutları da içerir.&#10;&#10;| Gün | °C |&#10;|-----|----|&#10;| Pzt | 22.7 |&#10;| Sal | 21.3 |&#10;&#10;Kod da gösterebilirsiniz: `print(&quot;Merhaba&quot;)`&#10;&#10;![Görüntü de ekleyebilirsiniz:](ImageFile.png)"></div>
+</div>
+
+<p>Visual Studio Code'da bir Jupyter Notebook dosyası açıkken yeni bir Markdown hücresi oluşturmak için <b>+ Markdown</b> düğmesini kullanabilirsiniz. Markdown metnini içine yazın ve <kbd>Ctrl</kbd> + <kbd>Enter</kbd>'a (Mac: <kbd>Cmd</kbd> + <kbd>Enter</kbd>) basın. O zaman güzelce biçimlendirilmiş metni görürsünüz. Düzenlemek için hücreye çift tıklayın; Markdown kodunu yeniden görürsünüz. (Son satırdaki görüntü, <em>ImageFile.png</em> adlı dosya olmadığı için kırık görünür; bu beklenen bir durum.)</p>
+
+<h3 id="s263">2.6.3 Kod Hücreleri</h3>
+<p>Kod hücreleriyle işler daha ilginç hâle gelir. Onları <b>+ Code</b> düğmesiyle oluşturursunuz. Bu hücreler Python kodunuzu girdiğiniz yerlerdir. Bir kod hücresinde <kbd>Ctrl</kbd> + <kbd>Enter</kbd>'a (Mac: <kbd>Cmd</kbd> + <kbd>Enter</kbd>) bastığınızda kod çalıştırılır ve sonuç (ya da hata mesajı) kod hücresinin altında gösterilir. (Bu sayfadaki hücrelerde de <kbd>Ctrl</kbd> + <kbd>Enter</kbd> çalışır.)</p>
+
+<div class="cell" data-title="Şekil 2.4: bir kod hücresi"><textarea>x = 5+3
+x</textarea></div>
+
+<p>Bir kod hücresinde Python kodunu ilk kez çalıştırdığınızda Visual Studio Code size çalıştırma için hangi <em>çekirdeği</em> (kernel) kullanmak istediğinizi sorabilir. Çekirdek, kodunuzu sonunda çalıştıran Python programıdır. Çok sık olarak bir bilgisayarda birden çok Python sürümü kuruludur. Bu durumda en iyisi Python 3'e benzeyen bir şey seçmektir. Bu işe yaramazsa farklı bir çekirdek deneyin. (Bu sayfanın çekirdeği Pyodide'dir; sol paneldeki <b>Çekirdeği yeniden başlat</b> düğmesi Jupyter'deki <b>Restart</b>'ın karşılığıdır.)</p>
+
+<p>Bir Python betiği yazarken bir şey çıktı olarak vermek için her zaman <code>print</code> kullanmanız gerekir; örneğin <code>print(x)</code>. Ancak etkileşimli kipte ve Jupyter Notebook'larda basitçe <code>x</code> yazmanız yeterlidir. Bunun nedeni, etkileşimli kipin komutlarınızın döndürdüğü sonuçları otomatik olarak çıktı olarak vermesi, Jupyter Notebook'larda ise bir kod hücresindeki son hesaplamanın sonucunun her zaman kod hücresinin altında gösterilmesidir. Pek çok amaç için Jupyter Notebook'larda <code>print(x)</code> yerine <code>x</code> yazmak aslında önerilir, çünkü bu çoğu zaman daha okunur bir çıktı üretir. İleride Jupyter Notebook'larla daha karmaşık veri analizleri yaptığımızda Jupyter Notebook'lar örneğin bir pandas DataFrame'ini güzelce biçimlendirilmiş bir tablo olarak gösterirken <code>print</code> kullanmak veriyi tıpkı konsoldaki gibi metin biçiminde çıktı olarak verir:</p>
+
+<div class="cell" data-title="Ek: print(df) ile df farkı"><textarea>import pandas as pd
+df = pd.DataFrame({"Gün": ["Pzt", "Sal", "Çar"], "°C": [22.7, 21.3, 23.4]})
+print(df)      # metin olarak
+df             # son ifade: tablo olarak</textarea></div>
+
+<p>Metin ya da sayılar gibi basit şeyler için elbette <code>print</code> da kullanabilirsiniz. Birden çok şeyi art arda çıktı olarak vermek isterseniz zaten <code>print</code> kullanmanız gerekir:</p>
+
+<div class="cell" data-title="Birden çok çıktı: print"><textarea>x = 5
+print(x)
+y = 3
+print(y)
+print(x+y)</textarea></div>
+
+<p>Burada <code>print</code> deyimlerini atlasaydınız sonuç olarak yalnızca <code>8</code> görürdünüz, çünkü Jupyter Notebook'lar her zaman yalnızca son komutun sonucunu gösterir! Deneyin:</p>
+
+<div class="cell" data-title="print olmadan: yalnızca son ifade"><textarea>x = 5
+x
+y = 3
+y
+x+y</textarea></div>
+
+<p>Jupyter Notebook'lar özellikle defteriniz birden çok kod hücresinden oluştuğunda yararlıdır. Bu, işleri daha anlaşılır kılar ve kodunuzun o ana kadar ne yaptığını görmek için defterin her hücreden sonra bir şey yazdırmasını sağlayabilirsiniz. Ama dikkatli olun: <kbd>Ctrl</kbd> + <kbd>Enter</kbd> yalnızca o anda içinde bulunduğunuz tek hücreyi çalıştırır. Geçerli hücrenin üstündeki tüm hücreleri ya da geçerli hücreden başlayarak tüm hücreleri çalıştırmanızı sağlayan, oynat ve ok simgeli düğmeler de vardır. Bu biraz pratik gerektirir ve hatalar hızla olabilir; örneğin önceki bir hücrede oluşturulmuş değişkenlere erişiyorsanız ama o diğer hücreyi henüz çalıştırmadıysanız. Ya da güncelliğini yitirmiş bir değer alabilirsiniz, çünkü veriniz bu arada değişmiş olsa da önce belirli başka bir hücrenin çalıştırılması gerekir. Bir hücreyi yeniden çalıştırmanın içindeki her şeyi tekrarladığını, ama elbette diğer hücrelerde yaptıklarınızı yeniden çalıştırmadığını da aklınızda tutmanız gerekir. Bu yüzden Jupyter Notebook'larda her zaman dikkatli çalışmanız gerekir. Bir şeylerin takibini kaybederseniz <b>Restart</b> düğmesine tıklamanız yeterli —bu, tüm hücrelerdeki tüm çıktıları sıfırlar ve hücreleri yukarıdan aşağıya tek tek yeniden çalıştırabilirsiniz.</p>
+
+<p>Bu tuzakları kendiniz yaşayın. Aşağıdaki üç hücreyi <b>farklı sıralarla</b> çalıştırın ve hücre başlıklarındaki <code>In [n]</code> sayılarına bakın: Bu sayılar hücrelerin hangi sırayla çalıştırıldığını gösterir (Jupyter'deki gibi).</p>
+
+<div class="cell" data-title="Sıra deneyi A: fiyatı belirle"><textarea>price = 100
+vat = 0.20</textarea></div>
+<div class="cell" data-title="Sıra deneyi B: toplamı hesapla"><textarea>total = price * (1 + vat)
+total</textarea></div>
+<div class="cell" data-title="Sıra deneyi C: fiyatı değiştir"><textarea>price = 250
+print("Fiyat değişti:", price, "— ama 'total' hâlâ eski değerde:", total if "total" in dir() else "(henüz yok)")</textarea></div>
+
+<div class="note"><b>Denemeler:</b> (1) Önce sol paneldeki <b>Çekirdeği yeniden başlat</b>'a basın, sonra yalnızca B'yi çalıştırın → <code>NameError</code>, çünkü A hiç çalışmadı. (2) A → B → C sırası: C'den sonra <code>total</code> hâlâ 120'dir; B'yi yeniden çalıştırana kadar güncellenmez. (3) A → C → B: <code>total</code> 300 olur. Aynı kod, farklı sıra, farklı sonuç! <b>Tümünü çalıştır</b> düğmesi hücreleri yukarıdan aşağıya sırayla çalıştırır.</div>
+
+<p>Jupyter Notebook'lar bir performans avantajı da sunar. Yalnızca tek bir kod satırıyla deneme yapıyorsanız her zaman tüm program kodunu en baştan çalıştırmanız gerekmez. Önceki hücrelerde karmaşık hesaplamalar yapıldıysa ya da İnternet'e erişildiyse bu işlemler zaten yürütülmüştür; bu yüzden yalnızca geçerli hücreyi çalıştırmak yeterlidir:</p>
+
+<div class="cell" data-title="Ek: yavaş hücre bir kez çalışır"><textarea>import time
+start = time.time()
+squares = [n * n for n in range(3_000_000)]     # biraz zaman alan bir hesaplama
+print(f"Hesaplama {time.time() - start:.2f} saniye sürdü; {len(squares):,} sayı.")</textarea></div>
+<div class="cell" data-title="Ek: sonraki hücre anında çalışır"><textarea>import time
+start = time.time()
+print("Son kare:", squares[-1], f"— bu hücre {time.time() - start:.4f} saniye sürdü (hesap tekrarlanmadı).")</textarea></div>
+
+<p>Artık Python'un etkileşimli kipinin nasıl çalıştığını, bir <em>.py</em> dosyasını konsolda nasıl çalıştıracağınızı, bir Python betiğini Visual Studio Code ile nasıl düzenleyip çalıştıracağınızı ve bunların hepsini bir Jupyter Notebook ile nasıl yapacağınızı biliyorsunuz. Dolayısıyla projeleriniz için bu yöntemlerden hangisini kullanacağınıza kendiniz karar verebilirsiniz. Bunu yapmanın tek bir "doğru" yolu yok. En iyisi her şeyi denemek ve sizin için en iyi işleyeni bulmaktır. Etkileşimli kip özellikle bir şeyi hızlıca denemek için iyidir. Jupyter Notebook'lar kodunuzu anlaşılır bölümlere ayırmak ve her bölümün ne yaptığını gözlemlemek için harikadır. Geri kalan her şey için klasik Python betikleri çoğu zaman en iyi seçimdir.</p>
+
+</article></main>
+</div>
+
+<script>
+/* ---------- Tema ---------- */
+(function(){
+  const root=document.documentElement;
+  let saved=null; try{saved=localStorage.getItem('ml-theme')}catch(e){}
+  if(saved) root.setAttribute('data-theme',saved);
+  document.getElementById('themeBtn').onclick=()=>{
+    const dark = root.getAttribute('data-theme')==='dark' ||
+      (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    const next = dark?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem('ml-theme',next)}catch(e){}
+  };
+})();
+
+/* ---------- Pyodide ---------- */
+let EXEC=0;
+let pyodide=null, pyReady=null, runFn=null;
+const dot=document.getElementById('pyDot'), st=document.getElementById('pyState'), msg=document.getElementById('pyMsg');
+function errMsg(e){ if(!e) return 'bilinmeyen hata'; if(e.message) return e.message; if(e.errno!==undefined) return 'Pyodide dosya sistemi hatası (errno '+e.errno+')'; try{ return JSON.stringify(e); }catch(_){ return String(e); } }
+function setState(s,t,m){dot.className='dot '+s; st.textContent=t; if(m!==undefined) msg.textContent=m;}
+
+const SETUP = "import sys, io, json, codeop, traceback, builtins\n\ndef _fmt_exc(e, filename):\n    frames = [f for f in traceback.extract_tb(e.__traceback__) if f.filename == filename]\n    out = \"\"\n    if frames:\n        out += \"Traceback (most recent call last):\\n\" + \"\".join(traceback.format_list(frames))\n    return out + \"\".join(traceback.format_exception_only(type(e), e))\n\ndef _capture(fn):\n    buf = io.StringIO()\n    old = sys.stdout, sys.stderr\n    sys.stdout = sys.stderr = buf\n    status = \"ok\"\n    try:\n        fn()\n    except SystemExit:\n        status = \"exit\"\n    except BaseException as e:\n        status = \"error\"\n        buf.write(_fmt_exc(e, _capture.filename))\n    finally:\n        sys.stdout, sys.stderr = old\n    return buf.getvalue(), status\n_capture.filename = \"<stdin>\"\n\nclass _Repl:\n    def __init__(self):\n        self.ns = {\"__name__\": \"__main__\", \"__builtins__\": builtins}\n        self.buf = []\n    def push(self, line):\n        self.buf.append(line)\n        src = \"\\n\".join(self.buf)\n        try:\n            code = codeop.compile_command(src, \"<stdin>\", \"single\")\n        except (SyntaxError, OverflowError, ValueError) as e:\n            self.buf = []\n            return {\"more\": False, \"out\": \"\".join(traceback.format_exception_only(type(e), e)), \"status\": \"error\"}\n        if code is None:\n            return {\"more\": True, \"out\": \"\", \"status\": \"ok\"}\n        self.buf = []\n        _capture.filename = \"<stdin>\"\n        out, status = _capture(lambda: exec(code, self.ns))\n        return {\"more\": False, \"out\": out, \"status\": status}\n\n_REPL = _Repl()\ndef _repl_push(line):\n    return json.dumps(_REPL.push(line))\ndef _repl_reset():\n    global _REPL\n    _REPL = _Repl()\n\ndef _run_script(src, filename=\"myprogram.py\"):\n    \"\"\"Bir .py dosyas\u0131n\u0131 betik olarak \u00e7al\u0131\u015ft\u0131r\u0131r: son ifadeler otomatik g\u00f6sterilmez.\"\"\"\n    ns = {\"__name__\": \"__main__\", \"__builtins__\": builtins}\n    _capture.filename = filename\n    import linecache\n    linecache.cache[filename] = (len(src), None, src.splitlines(True), filename)\n    def go():\n        exec(compile(src, filename, \"exec\"), ns)\n    out, status = _capture(go)\n    return json.dumps({\"out\": out, \"status\": status})\n\ndef _repl_transcript(src):\n    \"\"\"Ayn\u0131 sat\u0131rlar\u0131 etkile\u015fimli kabu\u011fa tek tek yazm\u0131\u015f\u0131z gibi \u00e7al\u0131\u015ft\u0131r\u0131r.\"\"\"\n    r, lines = _Repl(), []\n    rows = src.split(\"\\n\") + [\"\"]\n    for i, line in enumerate(rows):\n        if i == len(rows) - 1 and not r.buf:\n            break\n        lines.append(((\"... \" if r.buf else \">>> \") + line))\n        res = r.push(line)\n        if res[\"out\"]:\n            lines.append(res[\"out\"].rstrip(\"\\n\"))\n    lines.append(\">>> \")\n    return \"\\n\".join(lines)\n";
+
+const HELPER = `import sys, io, ast, base64, traceback, json, inspect, os, warnings
+os.environ['MPLBACKEND'] = 'AGG'
+warnings.filterwarnings('ignore', message='.*non-interactive.*')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+NS = {"__name__": "__main__"}
+_FLAGS = ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
+
+async def _run_cell(code):
+    buf = io.StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    sys.stdout = sys.stderr = buf
+    html = None; ok = True
+    try:
+        tree = ast.parse(code)
+        last = None
+        if tree.body and isinstance(tree.body[-1], ast.Expr):
+            last = ast.Expression(tree.body.pop().value)
+        r = eval(compile(tree, "<hücre>", "exec", flags=_FLAGS), NS)
+        if inspect.iscoroutine(r):
+            await r
+        if last is not None:
+            val = eval(compile(last, "<hücre>", "eval", flags=_FLAGS), NS)
+            if inspect.iscoroutine(val):
+                val = await val
+            if val is not None:
+                if hasattr(val, "to_html"):
+                    html = val.to_html(max_rows=40)
+                else:
+                    print(repr(val))
+    except BaseException as e:
+        ok = False
+        frames = [f for f in traceback.extract_tb(e.__traceback__) if f.filename == "<hücre>"]
+        if frames:
+            print("Traceback (most recent call last):")
+            print("".join(traceback.format_list(frames)), end="")
+        print("".join(traceback.format_exception_only(type(e), e)), end="")
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
+    imgs = []
+    if "matplotlib.pyplot" in sys.modules:
+        plt = sys.modules["matplotlib.pyplot"]
+        for n in plt.get_fignums():
+            b = io.BytesIO()
+            plt.figure(n).savefig(b, format="png", dpi=110, bbox_inches="tight")
+            imgs.append(base64.b64encode(b.getvalue()).decode())
+        plt.close("all")
+    return json.dumps({"out": buf.getvalue(), "html": html, "imgs": imgs, "ok": ok})
+`;
+
+
+function loadPython(){
+  if(pyReady) return pyReady;
+  setState('loading','Python yükleniyor…','Pyodide çekirdeği indiriliyor.');
+  pyReady = (async()=>{
+    pyodide = await loadPyodide();
+    pyodide.setStdin({stdin: () => { const v = window.prompt('Python input() bir değer bekliyor:'); return v === null ? undefined : v; }});
+    setState('loading','Hazırlanıyor…','pandas gibi paketler ilk kullanıldıkları hücrede yüklenir.');
+    await pyodide.loadPackage(['micropip']);
+    await pyodide.runPythonAsync(HELPER);
+    await pyodide.runPythonAsync('exec(' + JSON.stringify(SETUP) + ', NS)');
+    runFn = pyodide.globals.get('_run_cell');
+    const ver = 'Python ' + pyodide.runPython('import sys; sys.version.split()[0]') + ' · ' + pyodide.version;
+    if(window.refreshFiles) refreshFiles();
+    setState('ready','Python hazır',ver);
+    document.getElementById('preload').style.display='none';
+  })().catch(e=>{ setState('','Yükleme başarısız','Sayfayı yenileyip tekrar deneyin. Ayrıntı: '+errMsg(e)); console.error(e); pyReady=null; throw e;});
+  return pyReady;
+}
+document.getElementById('preload').onclick=loadPython;
+
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+/* ---------- Kod hücreleri ---------- */
+document.querySelectorAll('.cell').forEach((cell,i)=>{
+  const ta=cell.querySelector('textarea');
+  const original=ta.value;
+  ta.spellcheck=false;
+  ta.rows=Math.min(ta.value.split('\n').length+1,40);
+  const head=document.createElement('div'); head.className='cell-head';
+  head.innerHTML=`<span class="title"><b class="ec">In [ ]</b> · ${cell.dataset.title||'Python'}</span>`; const ec=head.querySelector('.ec');
+  const run=document.createElement('button'); run.className='btn primary'; run.textContent='▶ Çalıştır';
+  const reset=document.createElement('button'); reset.className='btn'; reset.textContent='↺'; reset.title='Özgün koda dön';
+  head.append(run,reset); cell.prepend(head);
+  const out=document.createElement('div'); out.className='out'; cell.append(out);
+  cell._run=()=>run.onclick(); cell._reset=()=>{ec.textContent='In [ ]'; out.className='out'; out.innerHTML='';};
+
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Tab'){e.preventDefault();const s=ta.selectionStart;ta.setRangeText('    ',s,ta.selectionEnd,'end');}
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run.click();}
+  });
+  reset.onclick=()=>{ta.value=original; out.className='out'; out.innerHTML='';};
+  run.onclick=async()=>{
+    ec.textContent='In [*]';
+    run.disabled=true; out.className='out show'; out.textContent='⏳ Çalışıyor…';
+    try{
+      await loadPython();
+      out.textContent='⏳ Paketler denetleniyor…';
+      await pyodide.loadPackagesFromImports(ta.value);
+      await ensurePkgs(ta.value);
+      out.textContent='⏳ Çalışıyor…';
+      await new Promise(r=>setTimeout(r,20));
+      const res=JSON.parse(await runFn(ta.value));
+      let h='';
+      if(res.out) h+=esc(res.out);
+      if(res.html) h+=`<div>${res.html}</div>`;
+      res.imgs.forEach(b=>h+=`<img alt="grafik" src="data:image/png;base64,${b}">`);
+      if(!h) h='<span style="color:var(--ok)">✓ Çalıştı (çıktı yok)</span>';
+      out.innerHTML=h; ec.textContent=`In [${++EXEC}]`; if(window.refreshFiles) refreshFiles(); document.dispatchEvent(new CustomEvent('cellran',{detail:ta.value})); out.className='out show'+(res.ok?'':' err');
+    }catch(e){ out.className='out show err'; out.textContent=errMsg(e); }
+    if(ec.textContent==='In [*]') ec.textContent='In [ ]';
+    run.disabled=false;
+  };
+});
+
+/* ---------- Yardımcılar ---------- */
+async function py(code){ await loadPython(); await pyodide.loadPackagesFromImports(code); await ensurePkgs(code); return JSON.parse(await runFn(code)); }
+function showRes(el, r){
+  let h=''; if(r.out) h+=esc(r.out); if(r.html) h+=`<div>${r.html}</div>`;
+  r.imgs.forEach(b=>h+=`<img alt="grafik" src="data:image/png;base64,${b}">`);
+  el.innerHTML=h||'✓'; el.className='out show'+(r.ok?'':' err');
+}
+const CITIES={"Chicago, US":[41.85,-87.65],"Seattle, US":[47.61,-122.33],"İstanbul":[41.01,28.98],"Ankara":[39.93,32.86],"Sakarya (Adapazarı)":[40.78,30.40],"İzmir":[38.42,27.14],"Berlin":[52.52,13.40]};
+function fillCities(sel){ Object.keys(CITIES).forEach(c=>{const o=document.createElement('option');o.textContent=c;sel.append(o);}); }
+
+/* ---------- micropip ile gerektiğinde paket ---------- */
+const _installed=new Set();
+async function ensurePkgs(code){ /* bu bölümde ek PyPI paketi yok */
+}
+
+/* ---------- Dosya paneli ---------- */
+(function(){
+  const list=document.getElementById('fileList');
+  async function refresh(){
+    if(!pyodide){ list.innerHTML='<i>Python yüklenince görünür.</i>'; return; }
+    const files=JSON.parse(pyodide.runPython(`import os, json
+_r=[]
+for _d,_s,_fs in os.walk('.'):
+    _s[:]=[x for x in _s if not x.startswith('.') and x!='__pycache__']
+    for _f in sorted(_fs):
+        _p=os.path.join(_d,_f)[2:]
+        _r.append([_p, os.path.getsize(_p)])
+json.dumps(sorted(_r))`));
+    list.innerHTML=files.length?'':'<i>(boş)</i>';
+    files.forEach(([p,sz])=>{
+      const a=document.createElement('a'); a.href='#'; a.textContent=`${p} (${sz<1024?sz+' B':(sz/1024).toFixed(1)+' KB'})`;
+      a.style.cssText='display:block;padding:2px 0;font-size:12px;color:var(--accent);word-break:break-all';
+      a.onclick=e=>{e.preventDefault();
+        const full=pyodide.FS.cwd()+'/'+p, data=pyodide.FS.readFile(full);
+        if(/\.(ini|py|json|jsonl|csv|txt|md|xml)$/.test(p) || p==='.env'){ const w=document.getElementById('filePeek'); w.style.display='block'; w.textContent=`── ${p} ──\n`+new TextDecoder().decode(data).replace(/(OPENAI_API_KEY=)(\S{6})\S+/,'$1$2••••••'); return; }
+        const u=URL.createObjectURL(new Blob([data]));const l=document.createElement('a');l.href=u;l.download=p.split('/').pop();l.click();setTimeout(()=>URL.revokeObjectURL(u),2000);};
+      list.append(a);
+    });
+  }
+  window.refreshFiles=refresh; window.py=py;
+  document.getElementById('fileRefresh').onclick=async()=>{await loadPython();refresh();};
+})();
+
+/* ---------- Çevrimdışı mod ---------- */
+
+
+/* ---------- PATH ---------- */
+(function(){
+  const cb=document.getElementById('pwAdd'), list=document.getElementById('pwList'), term=document.getElementById('pwTerm');
+  const PY='C:\\Users\\Kai\\AppData\\Local\\Programs\\Python\\Python313\\';
+  function upd(){
+    const path=['C:\\Windows\\system32\\','C:\\Windows\\','C:\\Program Files\\Git\\cmd\\'].concat(cb.checked?[PY,PY+'Scripts\\']:[]).concat(['C:\\Users\\Kai\\AppData\\Local\\Microsoft\\WindowsApps\\']);
+    let found=false;
+    list.innerHTML='<div style="font-family:Inter,sans-serif;font-size:12.5px;margin-bottom:2px"><b>PATH</b> (sırayla aranır):</div>'+path.map(p=>{
+      const hit=!found && p===PY; if(hit) found=true;
+      return `<div style="padding:1px 0;${hit?'color:var(--ok);font-weight:600':(found?'color:var(--muted)':'')}">${hit?'✓':(found?'·':'✗')} ${esc(p)}${hit?'python.exe  ← bulundu':''}</div>`;}).join('');
+    term.textContent='PS C:\\> python\n'+(cb.checked
+      ?'Python 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)] on win32\nType "help", "copyright", "credits" or "license" for more information.\n>>> '
+      :'(Windows, WindowsApps klasöründeki "uygulama yürütme takma adını" bulur ve Python yerine\n Microsoft Store\'u açar ya da şu hatayı verir:)\npython: The term \'python\' is not recognized as a name of a cmdlet, function, script file,\nor executable program.');
+  }
+  cb.onchange=upd; upd();
+})();
+
+/* ---------- Python kabuğu (REPL) ---------- */
+(function(){
+  const term=document.getElementById('rpTerm'), hints=document.getElementById('rpHints');
+  let lines=[], cur='', more=false, hist=[], hi=0, busy=false, exited=false, started=false;
+  function prompt(){ return exited?'PS C:\\> ':(more?'... ':'>>> '); }
+  function render(){
+    term.innerHTML=lines.map(l=>`<span style="${l.c?'color:'+l.c:''}">${esc(l.t)}</span>`).join('\n')+(lines.length?'\n':'')+
+      `<span style="color:${exited?'#ddd':'#c586c0'}">${esc(prompt())}</span>${esc(cur)}<span style="background:#d4d4d4;color:#0c0c0c;animation:none">${document.activeElement===term?'&nbsp;':''}</span>`;
+    term.scrollTop=term.scrollHeight;
+  }
+  async function start(){
+    started=true;
+    lines=[{t:'PS C:\\> python',c:'#ddd'}];
+    render();
+    await loadPython();
+    const v=pyodide.runPython('import sys; sys.version.split(" [")[0]');
+    lines.push({t:`Python ${v} on emscripten (Pyodide)`},{t:'Type "help", "copyright", "credits" or "license" for more information.'});
+    render();
+  }
+  async function enter(){
+    const line=cur; cur='';
+    lines.push({t:prompt()+line, c:'#d4d4d4'});
+    if(exited){
+      if(/^\s*python(3)?\s*$/.test(line)){ exited=false; pyodide.runPython('NS["_repl_reset"]()'); lines.push({t:'Python '+pyodide.runPython('import sys; sys.version.split()[0]')+' (yeni oturum — önceki değişkenler gitti)'}); }
+      else if(line.trim()) lines.push({t:`${line.split(' ')[0]}: Bu benzetimde yalnızca "python" komutu var.`,c:'#f48771'});
+      render(); return;
+    }
+    if(line.trim() && !more) hist.push(line); else if(line.trim()) hist.push(line); hi=hist.length;
+    busy=true; render();
+    try{
+      pyodide.globals.set('_l', line);
+      const r=JSON.parse(pyodide.runPython('NS["_repl_push"](_l)'));
+      more=r.more;
+      if(r.out) lines.push({t:r.out.replace(/\n$/,''), c:r.status==='error'?'#f48771':null});
+      if(r.status==='exit'){ exited=true; more=false; }
+    }catch(e){ lines.push({t:errMsg(e),c:'#f48771'}); }
+    busy=false; render();
+  }
+  term.addEventListener('focus',()=>{ if(!started) start(); render(); });
+  term.addEventListener('blur',render);
+  term.addEventListener('keydown',async e=>{
+    if(busy) return;
+    if(e.ctrlKey && (e.key==='d'||e.key==='D')){ e.preventDefault(); if(!exited){ lines.push({t:prompt()+cur}); cur=''; more=false; exited=true; pyodide&&pyodide.runPython('NS["_REPL"].buf=[]'); render(); } return; }
+    if(e.ctrlKey && (e.key==='c'||e.key==='C') && !window.getSelection().toString()){ e.preventDefault(); lines.push({t:prompt()+cur}); lines.push({t:'KeyboardInterrupt',c:'#f48771'}); cur=''; more=false; pyodide&&pyodide.runPython('NS["_REPL"].buf=[]'); render(); return; }
+    if(e.ctrlKey||e.metaKey||e.altKey) return;
+    if(e.key==='Enter'){ e.preventDefault(); await enter(); }
+    else if(e.key==='Backspace'){ e.preventDefault(); cur=cur.slice(0,-1); render(); }
+    else if(e.key==='Tab'){ e.preventDefault(); cur+='    '; render(); }
+    else if(e.key==='ArrowUp'){ e.preventDefault(); if(hi>0){hi--;cur=hist[hi];render();} }
+    else if(e.key==='ArrowDown'){ e.preventDefault(); if(hi<hist.length-1){hi++;cur=hist[hi];}else{hi=hist.length;cur='';} render(); }
+    else if(e.key.length===1){ e.preventDefault(); cur+=e.key; render(); }
+  });
+  term.addEventListener('paste',e=>{ e.preventDefault(); cur+=(e.clipboardData.getData('text')||'').split('\n')[0]; render(); });
+  document.getElementById('rpClear').onclick=()=>{ lines=[]; render(); term.focus(); };
+  const EX=['5+3','x = 5+3','x','2**5','x * 2','"Merhaba" * 3','for i in range(3):','import math','math.sqrt(2)','_','exit()'];
+  hints.innerHTML='Tıklayınca satır kabuğa yazılır (Enter ile çalıştırın): '+EX.map(x=>`<button class="btn" style="font-family:'JetBrains Mono',monospace;font-size:12px;margin:2px">${esc(x)}</button>`).join('')+
+    '<div style="margin-top:4px;color:var(--muted)"><kbd>↑</kbd>/<kbd>↓</kbd> geçmiş · <kbd>Ctrl</kbd>+<kbd>D</kbd> çıkış · <kbd>Ctrl</kbd>+<kbd>C</kbd> satırı iptal · çok satırlı blokta boş satır + Enter bloğu bitirir · <code>_</code> son sonucu tutar</div>';
+  hints.querySelectorAll('button').forEach(b=>b.onclick=()=>{ cur=b.textContent; term.focus(); render(); });
+  document.getElementById('rpHelp').onclick=()=>{ hints.style.display=hints.style.display==='none'?'block':'none'; };
+  term.innerHTML='<span style="color:#888">Başlatmak için buraya tıklayın…</span>';
+})();
+
+/* ---------- Betik mi, etkileşimli mi? ---------- */
+(function(){
+  const code=document.getElementById('scCode'), out=document.getElementById('scOut'), note=document.getElementById('scNote');
+  document.getElementById('scRun').onclick=async()=>{
+    out.textContent='PS C:\\code> python myprogram.py\n⏳'; await loadPython();
+    pyodide.globals.set('_s', code.value);
+    const r=JSON.parse(pyodide.runPython('NS["_run_script"](_s, "myprogram.py")'));
+    out.textContent='PS C:\\code> python myprogram.py\n'+r.out+'PS C:\\code> ';
+    note.innerHTML='Betik kipinde yalnızca <code>print</code> çıktı üretir; tek başına duran <code>x</code> ya da <code>5 + 3</code> hesaplanır ama gösterilmez. Program bitince konsola geri dönülür.';
+  };
+  document.getElementById('scRepl').onclick=async()=>{
+    out.textContent='⏳'; await loadPython();
+    pyodide.globals.set('_s', code.value);
+    out.textContent='PS C:\\code> python\n'+pyodide.runPython('NS["_repl_transcript"](_s)');
+    note.innerHTML='Etkileşimli kipte her ifadenin değeri otomatik gösterilir; <code>x</code> yazmak yeterlidir. Python sonraki komutu bekler (<code>&gt;&gt;&gt;</code>).';
+  };
+})();
+
+/* ---------- VS Code benzetimi ---------- */
+(function(){
+  const files={'myapp.py':'x = 5 + 3\nprint("Let\'s go!")\nprint(x)\n','notes.txt':'Bu bir .py dosyası değil:\nsözdizimi vurgusu ve Play düğmesi yok.\n'};
+  let cur='myapp.py';
+  const ed=document.getElementById('vscEd'), hl=document.getElementById('vscHl'), ln=document.getElementById('vscLn'), tab=document.getElementById('vscTab'),
+        play=document.getElementById('vscPlay'), term=document.getElementById('vscTerm'), fl=document.getElementById('vscFiles');
+  const KW=/\b(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)\b/;
+  const BI=/\b(print|input|len|range|int|float|str|list|dict|set|tuple|sum|min|max|abs|round|open|sorted|enumerate|zip|type)\b/;
+  function hlPy(s){
+    const re=/(#[^\n]*)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_]\w*)|([\s\S])/g; let o='',m;
+    while((m=re.exec(s))){
+      if(m[1]) o+=`<span style="color:#6a9955">${esc(m[1])}</span>`;
+      else if(m[2]) o+=`<span style="color:#ce9178">${esc(m[2])}</span>`;
+      else if(m[3]) o+=`<span style="color:#b5cea8">${m[3]}</span>`;
+      else if(m[4]) o+=KW.test(m[4])&&m[4].match(KW)[0]===m[4]?`<span style="color:#c586c0">${m[4]}</span>`:(BI.test(m[4])&&m[4].match(BI)[0]===m[4]?`<span style="color:#dcdcaa">${m[4]}</span>`:`<span style="color:#9cdcfe">${m[4]}</span>`);
+      else o+=esc(m[5]);
+    }
+    return o;
+  }
+  function draw(){
+    const isPy=cur.endsWith('.py');
+    hl.innerHTML=(isPy?hlPy(ed.value):esc(ed.value))+'\n';
+    ln.innerHTML=ed.value.split('\n').map((_,i)=>i+1).join('<br>');
+    play.style.visibility=isPy?'visible':'hidden';
+    const h=Math.max(150,(ed.value.split('\n').length+1)*19.5+16); ed.parentElement.style.height=h+'px';
+  }
+  function list(){
+    fl.innerHTML='';
+    Object.keys(files).sort().forEach(n=>{const d=document.createElement('div'); d.textContent=(n.endsWith('.py')?'🐍 ':'📄 ')+n;
+      d.style.cssText='padding:2px 10px 2px 18px;cursor:pointer;'+(n===cur?'background:#37373d;color:#fff':'');
+      d.onclick=()=>{files[cur]=ed.value; cur=n; ed.value=files[n]; tab.textContent=n; list(); draw();}; fl.append(d);});
+  }
+  ed.addEventListener('input',()=>{files[cur]=ed.value; draw();});
+  ed.addEventListener('keydown',e=>{ if(e.key==='Tab'){e.preventDefault();const s=ed.selectionStart;ed.setRangeText('    ',s,ed.selectionEnd,'end');files[cur]=ed.value;draw();} });
+  document.getElementById('vscNew').onclick=()=>{
+    const n=(prompt('Yeni dosyanın adı (ör. myprogram.py):','myprogram.py')||'').trim(); if(!n) return;
+    if(!files[n]) files[n]=n.endsWith('.py')?'# '+n+'\nprint("Merhaba!")\n':''; files[cur]=ed.value; cur=n; ed.value=files[n]; tab.textContent=n; list(); draw();
+  };
+  play.onclick=async()=>{
+    term.textContent+=(term.textContent?'\n':'')+`PS C:\\code> & C:/Python313/python.exe c:/code/${cur}\n⏳`; term.scrollTop=term.scrollHeight;
+    await loadPython();
+    pyodide.globals.set('_s', ed.value); pyodide.globals.set('_f', cur);
+    const r=JSON.parse(pyodide.runPython('NS["_run_script"](_s, _f)'));
+    term.textContent=term.textContent.replace(/⏳$/,'')+r.out+'PS C:\\code> '; term.scrollTop=term.scrollHeight;
+  };
+  ed.value=files[cur]; list(); draw();
+})();
+
+/* ---------- Markdown hücreleri ---------- */
+document.querySelectorAll('.md-cell').forEach(cell=>{
+  let src=cell.dataset.md, editing=false;
+  const view=document.createElement('div'), ta=document.createElement('textarea'), bar=document.createElement('div');
+  view.className='md-view'; ta.spellcheck=false;
+  ta.style.cssText="width:100%;box-sizing:border-box;min-height:180px;padding:10px;border:1px solid var(--accent);border-radius:8px;background:var(--code-bg);color:var(--code-ink);font-family:'JetBrains Mono',monospace;font-size:13px";
+  bar.style.cssText='font:12px Inter,sans-serif;color:var(--muted);margin-top:4px';
+  function md(s){ return window.marked ? marked.parse(s) : '<pre style="white-space:pre-wrap">'+esc(s)+'</pre>'; }
+  function show(){
+    if(editing){ ta.value=src; ta.rows=src.split('\n').length+1; cell.replaceChildren(ta,bar); bar.textContent='Düzenleme kipi — Ctrl + Enter: biçimlendir'; ta.focus(); }
+    else { view.innerHTML=md(src); cell.replaceChildren(view,bar); bar.textContent=cell.dataset.edit?'Markdown hücresi — çift tıklayın: düzenle':'Markdown hücresi'; }
+  }
+  ta.addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){ e.preventDefault(); src=ta.value; editing=false; show(); } });
+  cell.addEventListener('dblclick',()=>{ if(!editing){ editing=true; show(); } });
+  show();
+});
+
+/* ---------- Tümünü çalıştır / yeniden başlat ---------- */
+document.getElementById('runAll').onclick=async()=>{ for(const c of document.querySelectorAll('.cell')){ await c._run(); } };
+document.getElementById('restart').onclick=async()=>{
+  await loadPython();
+  pyodide.runPython('_keep = {k: v for k, v in NS.items() if k.startswith("_")}\nNS.clear()\nNS.update(_keep)\nNS["__name__"] = "__main__"');
+  EXEC=0; document.querySelectorAll('.cell').forEach(c=>c._reset());
+  setState('ready','Çekirdek yeniden başlatıldı','Tüm değişkenler silindi; hücreleri yukarıdan aşağıya yeniden çalıştırın.');
+};
+
+/* ---------- İçindekiler vurgusu ---------- */
+(function(){
+  const links=[...document.querySelectorAll('nav.toc a')];
+  const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.remove('active'));links[secs.indexOf(e.target)].classList.add('active');}}),{rootMargin:'-10% 0px -80% 0px'});
+  secs.forEach(s=>io.observe(s));
+})();
+</script>
+</body>
+</html>

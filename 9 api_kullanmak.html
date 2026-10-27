@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API Kullanmak</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+<style>
+:root{
+  --bg:#f7f5f0; --paper:#ffffff; --ink:#1d1f24; --muted:#5d6270; --line:#e2ded4;
+  --accent:#1f5f8b; --accent-soft:#e3eef6; --warn:#9a5b00; --warn-soft:#fbf1dc;
+  --code-bg:#f2f0ea; --code-ink:#22252b; --ok:#2f7a4a; --err:#b3261e;
+  --prompt-bg:#efece4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+    --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+    --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+  --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+  --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Serif 4",Georgia,serif;font-size:18px;line-height:1.65}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1200px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:28px 18px;border-right:1px solid var(--line);font-family:Inter,sans-serif;font-size:14px}
+nav.toc .brand{font-weight:600;color:var(--accent);font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;padding:6px 8px;border-radius:6px}
+nav.toc a:hover,nav.toc a.active{background:var(--accent-soft);color:var(--ink)}
+.status{margin-top:22px;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;color:var(--muted);background:var(--paper)}
+.status b{color:var(--ink)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#999;margin-right:6px;vertical-align:middle}
+.dot.loading{background:var(--warn);animation:pulse 1s infinite}
+.dot.ready{background:var(--ok)}
+@keyframes pulse{50%{opacity:.3}}
+.toc button,.btn{font-family:Inter,sans-serif;font-size:13px;font-weight:500;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:6px 12px;border-radius:6px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.5;cursor:wait}
+main{padding:40px 48px 120px;min-width:0}
+article{max-width:780px}
+h1{font-size:2.4rem;line-height:1.15;margin:0 0 .3em;color:var(--accent)}
+h2{font-size:1.55rem;margin:2.6em 0 .6em;padding-top:.4em;border-top:1px solid var(--line);color:var(--accent)}
+h3{font-size:1.2rem;margin:2em 0 .5em;color:var(--ink);font-family:Inter,sans-serif;font-weight:600}
+h2 .num{font-family:Inter,sans-serif;font-weight:600;font-size:.8em;color:var(--muted);margin-right:.4em}
+.lead{font-style:italic;color:var(--muted);font-size:1.08rem;border-left:3px solid var(--accent);padding-left:16px;margin:1.2em 0 2em}
+code{font-family:"JetBrains Mono",monospace;font-size:.82em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.terms{display:grid;gap:12px;margin:1.2em 0}
+.term{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+.term b{font-family:Inter,sans-serif;color:var(--accent)}
+.note{background:var(--warn-soft);border-left:3px solid var(--warn);padding:12px 16px;border-radius:0 8px 8px 0;font-size:.95rem;margin:1.2em 0}
+.formula{font-family:"JetBrains Mono",monospace;background:var(--paper);border:1px dashed var(--line);padding:12px 16px;border-radius:8px;text-align:center;font-size:.95rem;margin:1em 0;overflow-x:auto}
+.prompt{background:var(--prompt-bg);border-radius:10px;padding:14px 18px;margin:1.2em 0;font-size:.95rem}
+.prompt .lbl{font-family:Inter,sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.prompt em{display:block;margin-top:6px}
+/* Kod hücresi */
+.cell{margin:1.3em 0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--paper)}
+.cell-head{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--code-bg);border-bottom:1px solid var(--line);font-family:Inter,sans-serif;font-size:12px;color:var(--muted)}
+.cell-head .title{flex:1}
+.cell textarea{display:block;width:100%;border:0;resize:vertical;padding:14px 16px;background:var(--code-bg);color:var(--code-ink);font-family:"JetBrains Mono",monospace;font-size:13.5px;line-height:1.55;tab-size:4;outline:none;min-height:80px;white-space:pre;overflow:auto}
+.out{display:none;border-top:1px solid var(--line);padding:12px 16px;font-family:"JetBrains Mono",monospace;font-size:13px;white-space:pre-wrap;overflow-x:auto}
+.out.show{display:block}
+.out.err{color:var(--err)}
+.out img{max-width:100%;background:#fff;border-radius:6px;margin-top:8px;display:block}
+.out table{border-collapse:collapse;font-size:12.5px;margin:6px 0;white-space:nowrap}
+.out th,.out td{border:1px solid var(--line);padding:3px 8px;text-align:right}
+.out th{background:var(--code-bg)}
+/* Tablo */
+table.data{border-collapse:collapse;font-family:Inter,sans-serif;font-size:14px;margin:1em 0}
+table.data th,table.data td{border:1px solid var(--line);padding:6px 10px}
+table.data th{background:var(--code-bg)}
+.caption{font-family:Inter,sans-serif;font-size:13px;color:var(--muted);margin-top:-4px}
+/* Widget */
+.widget{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px;margin:1.5em 0}
+.widget h4{margin:0 0 6px;font-family:Inter,sans-serif;font-size:14px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.widget .ctrl{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-family:Inter,sans-serif;font-size:14px;margin:10px 0}
+.widget svg{width:100%;height:auto;display:block}
+.widget .readout{font-family:Inter,sans-serif;font-size:15px}
+.widget .readout b{color:var(--accent)}
+input[type=range]{accent-color:var(--accent)}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  main{padding:24px 16px 80px}
+  h1{font-size:1.9rem}
+}
+h3{font-size:1.15rem;margin:2em 0 .5em;color:var(--ink);font-family:Inter,sans-serif;font-weight:600}
+kbd{font-family:"JetBrains Mono",monospace;font-size:.8em;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--paper)}
+input[type=number]{padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:"JetBrains Mono",monospace}
+@media (max-width:700px){.wh-grid{grid-template-columns:1fr !important}}
+.ro{margin:1.3em 0;border:1px dashed var(--line);border-radius:10px;overflow:hidden;background:var(--paper)}
+.ro-head{padding:6px 12px;background:var(--warn-soft);color:var(--warn);font-family:Inter,sans-serif;font-size:12px;font-weight:600}
+.ro pre{margin:0;padding:12px 16px;background:var(--code-bg);color:var(--code-ink);font-family:"JetBrains Mono",monospace;font-size:13px;line-height:1.5;overflow-x:auto}
+.ro-out{padding:8px 16px;border-top:1px solid var(--line);font-family:Inter,sans-serif;font-size:13px}
+.ro-out pre{background:none;padding:4px 0}
+.ro-tag{background:var(--warn-soft);color:var(--warn);font-family:Inter,sans-serif;font-size:12px;font-weight:600;padding:1px 6px;border-radius:4px}
+.sel{padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" id="toc">
+  <div class="brand">Bölüm 9</div>
+  <a href="#giris">Giriş: API nedir?</a>
+  <a href="#s91">9.1 requests ile istekler</a>
+  <a href="#s92">9.2 SDK'larla erişim</a>
+  <a href="#s93">9.3 API verisini görselleştirmek</a>
+  <a href="#s94">9.4 ChatGPT API'si</a>
+  <div class="status">
+    <div><span class="dot" id="pyDot"></span><b id="pyState">Python yüklenmedi</b></div>
+    <div id="pyMsg" style="margin:6px 0 8px">Kodlar tarayıcıda Pyodide ile çalışır; istekler gerçekten İnternet'e gider.</div>
+    <button class="btn" id="preload">Python'u şimdi yükle</button>
+    <div style="margin-top:8px"><label style="font-size:12.5px"><input type="checkbox" id="offline"> Çevrimdışı mod (her zaman örnek yanıt)</label></div>
+    <div style="margin-top:8px"><button class="btn" id="themeBtn">Tema değiştir</button></div>
+  </div>
+  <div class="status">
+    <b>OpenAI API anahtarı</b> <span style="font-size:11.5px">(isteğe bağlı, 9.4)</span>
+    <input type="password" id="keyIn" placeholder="sk-…" autocomplete="off" style="width:100%;margin:6px 0;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:'JetBrains Mono',monospace;font-size:12px">
+    <button class="btn" id="keySave">.env'ye yaz</button> <button class="btn" id="keyDel">Sil</button>
+    <div id="keyMsg" style="font-size:12px;margin-top:4px">Anahtar yalnızca bu sekmenin belleğinde tutulur.</div>
+  </div>
+  <div class="status">
+    <b>Dosyalar</b> <span style="font-size:11.5px">(metin dosyaları burada açılır)</span>
+    <div id="fileList" style="margin:6px 0;max-height:180px;overflow:auto"><i>Python yüklenince görünür.</i></div>
+    <button class="btn" id="fileRefresh">Yenile</button>
+    <pre id="filePeek" style="display:none;margin:8px 0 0;max-height:220px;overflow:auto;font-size:11px;background:var(--code-bg);padding:6px;border-radius:6px;white-space:pre-wrap"></pre>
+  </div>
+</nav>
+
+<main><article>
+<h1 id="giris">9 · API Kullanmak</h1>
+<p class="lead">Python uygulamaları API'ler aracılığıyla dış hizmetleri kullanabilir. Örnek olarak güncel hava durumunu ve döviz kurlarını API'lerle nasıl alacağımıza ve ChatGPT'yi Python uygulamalarına nasıl entegre edeceğimize bakacağız.</p>
+
+<p>İnternet kabaca şöyle çalışır: Web tarayıcınıza bir URL —bir adres— girer ve <kbd>Enter</kbd>'a basarsınız. Bilgisayarınız o adresin arkasındaki web sunucusuna bir istek gönderir ve sunucu size tarayıcınızın gösterebileceği bir HTML sayfası biçiminde bir <em>yanıt</em> gönderir. HTML hakkında daha fazlasını kitabın bir sonraki bölümünde öğreneceksiniz. Web sitelerini tasarlamak ve içerik göstermek için kullanılır. Tüm sistem, biz insanların içerikleri görebileceği ve sayfadan sayfaya tıklayabileceği biçimde tasarlanmıştır.</p>
+
+<p><em>Uygulama programlama arayüzleri</em> (API'ler) benzer biçimde çalışır; ama insanlar için değil, programlama arayüzleri olarak makineler için tasarlanmıştır. API'lerin de bir URL'si vardır; ama genellikle bir HTML sayfası döndürmezler; bunun yerine örneğin ihtiyacımız olan tüm veriyi içeren bir JavaScript Object Notation (JSON) belgesi döndürürler.</p>
+
+<p>Cihazlarımızın İnternet'e gönderdiği isteklerin çoğu API istekleridir. Bunun bir nedeni, cep telefonlarımızda çalışan uygulamaların uygulamada gösterilecek veriyi almak için bir web sunucusuyla bir API üzerinden iletişim kurmasıdır. Öte yandan pek çok web sitesi de, gösterilecek veri çoğu zaman doğrudan HTML sayfasının parçası olmayıp sunucudan bir API ile dinamik olarak yüklenecek biçimde programlanır. Her iki durumda da web sitesi işletmecisi hem sağlanan API'yi hem de o API'yi kullanan uygulamayı ya da web sitesini geliştirir. Ancak bu, böyle API'lerin herkese açık olmadığı, yalnızca ön yüz (uygulama ya da web sitesi) ile arka uç (web sunucusu) arasındaki iletişime hizmet ettiği anlamına da gelir.</p>
+
+<p>Ancak bazılarını ücretsiz bile kullanabileceğimiz pek çok herkese açık API de vardır; bu bölümde tam olarak bunu yapacağız. Böyle herkese açık API'ler, önce bir yerden alınması gereken verilere, örneğin hava durumu verisine erişmemizi sağlar. İlk örneklerimiz için hava durumu hizmetlerinin verisine erişen Open-Meteo API'sini kullanacağız. Bazı API'ler için isteklerinize eklenmesi gereken bir <em>API anahtarı</em> almak üzere önceden kaydolmanız gerekir. Sorgu kotasına bağlı olarak bazı API'ler belirli bir ücret de alır. Diğer API'ler ücretsiz sürümlerinde yalnızca saatte ya da günde belirli sayıda sorguya izin verir. Open-Meteo API'si ise kitaba göre tümüyle ücretsizdir, anahtar gerektirmez ve kısıtlama olmadan kullanılabilir; ayrıca <em>https://www.open-meteo.com</em> adresinde çok iyi belgelenmiştir, bu da kullanımını çok kolaylaştırır. (Not: Open-Meteo'nun kendi kullanım koşullarına göre ücretsiz erişim ticari olmayan kullanım içindir ve günlük istek sınırları vardır; güncel koşulları sitesinden denetleyin.)</p>
+
+<div class="note"><b>Bu sayfa nasıl çalışır?</b> Kodlar tarayıcıda Pyodide ile çalışır. <code>requests</code> paketi <code>pyodide-http</code> ile tarayıcının kendi istek mekanizmasına bağlandı; yani istekler <b>gerçekten İnternet'e gider</b>. Ancak tarayıcı yalnızca izin veren (CORS başlığı gönderen) API'lere erişebilir; Open-Meteo buna izin verir.<br><br>
+<b>Örnek yanıtlar:</b> Bir istek başarısız olursa (bağlantı yok, API anahtarı yok, CORS engeli ya da hata kodu), sayfa kitaptaki akışın sürmesi için o URL'ye ait <b>örnek bir yanıt</b> kullanır ve bunu çıktıda <code>[sayfa] …</code> satırıyla açıkça yazar. Örnek yanıtlar kitaptaki çıktılardan alınmıştır; saatlik sıcaklıklar ve ürün listesi kitaptaki şekillerden yaklaşık olarak üretilmiştir. Sol paneldeki <b>Çevrimdışı mod</b> ile her zaman örnek yanıtları kullanabilirsiniz.<br><br>
+<b>ChatGPT API'si (9.4):</b> Ücretlidir ve kişisel bir anahtar gerektirir. Anahtarınızı sol paneldeki kutuya girerseniz yalnızca bu sekmenin belleğinde ve sanal <code>.env</code> dosyasında tutulur; hiçbir yere kaydedilmez, sayfa yenilenince silinir. Anahtar girmezseniz bu hücreler açıklayıcı bir hata verir; kitaptaki çıktılar yanlarında gösteriliyor.</div>
+
+<p><em>https://api.open-meteo.com/v1/forecast?latitude=41.85&amp;longitude=-87.65&amp;current=temperature_2m&amp;temperature_unit=fahrenheit</em> adresini çağırdığımızda burada kısaltılmış olarak gösterilen bir JSON belgesi biçiminde bir yanıt alırız:</p>
+
+<pre class="formula" style="text-align:left">{
+ "latitude": 41.85271,
+ "longitude": -87.65361,
+ "generationtime_ms": 0.01800060272216797,
+ "utc_offset_seconds": 0,
+ "timezone": "GMT",
+ "timezone_abbreviation": "GMT",
+ "elevation": 179.0,
+ "current_units": {…, "temperature_2m": "°F"},
+ "current": {…, "temperature_2m": 65.1}
+}</pre>
+
+<p>Deneme amacıyla URL'yi tarayıcıya girip belgeyi görüntüleyebiliriz. URL'de soru işaretinden sonra görünen değerlere <em>URL parametreleri</em> denir. Bizim durumumuzda, güncel hava durumunu almak istediğimiz konumun enlemi (<code>latitude</code>) ve boylamı (<code>longitude</code>) dâhil dört parametre verdik. URL parametreleri her zaman bir <code>?</code>'den sonra gelir ve birbirlerinden <code>&amp;</code> ile ayrılır. Bir konumun coğrafi koordinatlarını elde etmek için örneğin Wikipedia'da bakabiliriz —konumlar için her zaman sağ üst köşede listelenirler— ya da <em>www.gps-coordinates.net</em>'e.</p>
+
+<div class="widget" id="urlWidget">
+  <h4>Etkileşimli: URL'yi parametrelerden kurun ve isteği gönderin</h4>
+  <div class="ctrl">
+    <label>Konum: <select id="uCity" class="sel"></select></label>
+    <label>latitude <input type="number" id="uLat" step="0.01" style="width:90px"></label>
+    <label>longitude <input type="number" id="uLon" step="0.01" style="width:90px"></label>
+  </div>
+  <div class="ctrl">
+    <label>current = <select id="uVar" class="sel"><option>temperature_2m</option><option>relative_humidity_2m</option><option>wind_speed_10m</option><option>precipitation</option></select></label>
+    <label><input type="checkbox" id="uF" checked> temperature_unit=fahrenheit</label>
+    <button class="btn primary" id="uSend">İsteği gönder (fetch)</button>
+  </div>
+  <div id="uUrl" style="font-family:'JetBrains Mono',monospace;font-size:13px;word-break:break-all;background:var(--code-bg);padding:8px 10px;border-radius:8px"></div>
+  <div id="uParams" style="margin-top:6px"></div>
+  <pre id="uOut" style="font-family:'JetBrains Mono',monospace;font-size:12.5px;max-height:260px;overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0 0;white-space:pre-wrap">Yanıt burada görünecek.</pre>
+</div>
+
+<p>API'nin döndürdüğü JSON belgesinde güncel sıcaklığı buluruz: 65,1 °F. <code>temperature_unit=fahrenheit</code> parametresini verdiğimiz için sıcaklık Fahrenhayt derecesindedir. Bu parametre olmadan Celsius derecesinde olurdu.</p>
+
+<!-- ====================== 9.1 ====================== -->
+<h2 id="s91"><span class="num">9.1</span>"requests" ile API İstekleri</h2>
+
+<p>Python'da API istekleri yapmak için sık sık <code>pip install requests</code> ile kurduğumuz <code>requests</code> paketini kullanırız:</p>
+
+<div class="cell" data-title="İlk API isteği"><textarea>import requests
+
+url = ("https://api.open-meteo.com/v1/forecast" +
+       "?latitude=41.85&amp;longitude=-87.65" +
+       "&amp;current=temperature_2m&amp;temperature_unit=fahrenheit")
+
+response = requests.get(url)
+
+if response.status_code == 200:
+    data = response.json()
+else:
+    print("Error retrieving data:", response.status_code)
+
+data</textarea></div>
+
+<p>Az önce gösterilen kodu bir Jupyter Notebook hücresine yazarsak artık <code>data</code> değişkeninde saklanan yanıtı görebilir ve sonraki kod hücrelerinde onunla çalışmaya devam edebiliriz. <code>requests.get(url)</code> çağrısı asıl API isteğimizi gerçekleştirdi. <code>GET</code>, bir API üzerinden veri alan ya da eylem gerçekleştiren HTTP yönteminin adıdır. Alternatif olarak <code>POST</code> yöntemi de vardır. Bu, örneğin bir web sitesinde giriş alanları olan bir formu gönderirken, kaydolurken ya da oturum açarken kullanılır. Ama <code>POST</code> API'lerle de kullanılır; örneğin bir meteoroloji istasyonu olsaydık ve ölçülen sıcaklıkları API üzerinden iletmek isteseydik. Ancak bizim <code>GET</code> isteğimiz yalnızca veri alır. Bu veri bize <code>response</code> değişkeninde sunulur. Ayrıca <code>status_code</code>'da isteğin başarılı olup olmadığını görebiliriz. 200 durum kodu başarıyı gösterir; 400'e eşit ya da büyük diğer durum kodları hataları gösterir. Örneğin 404 kodu, kaynağın bulunamadığı anlamına gelir.</p>
+
+<table class="data">
+<tr><th>Kod</th><th>Anlamı</th><th>Tipik neden</th></tr>
+<tr><td><code>200</code></td><td>OK — başarılı</td><td>İstek doğru, veri döndü</td></tr>
+<tr><td><code>400</code></td><td>Bad Request — hatalı istek</td><td>Eksik ya da geçersiz parametre (ör. çok eski tarih)</td></tr>
+<tr><td><code>401</code> / <code>403</code></td><td>Yetkisiz / Yasak</td><td>API anahtarı yok ya da geçersiz</td></tr>
+<tr><td><code>404</code></td><td>Not Found — bulunamadı</td><td>Yanlış URL ya da olmayan kaynak</td></tr>
+<tr><td><code>429</code></td><td>Too Many Requests</td><td>Sorgu kotası aşıldı</td></tr>
+<tr><td><code>500</code>+</td><td>Sunucu hatası</td><td>Sorun API tarafında</td></tr>
+</table>
+<div class="caption">Sık görülen HTTP durum kodları (ek tablo)</div>
+
+<p><code>response.text</code> ile API'nin döndürdüğü yanıtın tamamını bir metin olarak alırdık. Bizim durumumuzda bu JSON verisi içeren bir metin olacağı için doğrudan <code>response.json()</code>'u da çağırabiliriz; bu, veriyi tam olarak JSON nesnesi gibi yapılandırılmış bir Python sözlüğüne dönüştürür. Bunu <code>data</code> değişkeninde saklarız; <code>"latitude"</code>, <code>"current"</code> vb. özniteliklere sahiptir. Daha önce deneme amacıyla yazdırdığımız JSON belgesinde öznitelikleri, alt özniteliklerini ve veri türlerini görebiliriz. Bu bilgiyle örneğin güncel sıcaklığı yazdırabiliriz:</p>
+
+<div class="cell" data-title="JSON'dan değer okumak"><textarea>temperature = data["current"]["temperature_2m"]
+print(f"Outdoor temperature in Chicago: {temperature}°F")
+
+print("\nresponse.text ilk 120 karakter:", response.text[:120], "…")
+print("type(data):", type(data).__name__, "| anahtarlar:", list(data.keys()))</textarea></div>
+
+<p>Sonra iki para birimi arasındaki güncel döviz kurunu bize söyleyen bir API kullanmak istiyoruz. Hava durumu API'lerinin aksine döviz kuru sağlayan API'ler genellikle önce bir hesap kaydetmeden kullanılamaz; çünkü sağlayıcılar kullanımı bu yolla sınırlayabilir ve hesap başına yalnızca belirli sayıda sorguya izin verebilir. Bu kötüye kullanımı ve aşırı yüklenmeyi önler. Ayrıca API sağlayıcıları, ücretsiz kotanın yetmediği kullanıcılara ücretli planlar sunarak para kazanır. Şimdi <em>www.exchangerate-api.com</em> hizmetini kullanacağız ve web sitesinde bir hesap oluşturacağız. Ücretsiz planla ayda 1.500 istek yapmamızı sağlayan bir API anahtarı alırız.</p>
+
+<div class="prompt"><div class="lbl">İstem</div><em><code>https://v6.exchangerate-api.com/v6/{API_KEY}/latest/EUR</code> API'si şunu döndürüyor. Euro cinsinden bir tutarı ABD dolarına çeviren bir <code>eur_to_usd(eur)</code> Python işlevi oluştur.</em>
+<pre style="font-family:'JetBrains Mono',monospace;font-size:12px;margin:.5em 0 0;white-space:pre-wrap">{"result":"success", "base_code":"EUR", "conversion_rates":{"EUR":1, "AED":4.2626, …}}</pre></div>
+
+<div class="cell" data-title="eur_to_usd (kitaptaki hâli)"><textarea>import requests
+
+def eur_to_usd(eur: float) -> float:
+    """
+    Converts an amount in euros to US dollars,
+    based on the current exchange rate from the ExchangeRate API.
+    """
+    API_KEY = "YOUR_API_KEY_HERE"
+    url = f"https://v6.exchangerate-api.com/v6/{API_KEY}/latest/EUR"
+
+    response = requests.get(url)
+    data = response.json()
+
+    if data.get("result") != "success":
+        raise Exception("Error retrieving the exchange rate!")
+
+    usd_rate = data["conversion_rates"]["USD"]
+    usd_value = eur * usd_rate
+    return round(usd_value, 2)
+
+# Örnek:
+print(eur_to_usd(100))  # örneğin 116.23 yazdırır</textarea></div>
+
+<div class="note">Bu hücrede gerçek bir anahtar olmadığı için API hata döndürür; sayfa örnek kur (1 EUR = 1,1623 USD) ile devam eder. Kendi anahtarınızı <code>API_KEY</code>'e yazarsanız canlı kuru alırsınız. <b>Anahtarsız alternatif:</b> Aynı sağlayıcının <code>https://open.er-api.com/v6/latest/EUR</code> adresi kayıt gerektirmez; tek fark, kurların <code>"rates"</code> anahtarında olmasıdır (aşağıdaki hücre).</div>
+
+<div class="cell" data-title="Anahtarsız döviz kuru"><textarea>import requests
+
+data = requests.get("https://open.er-api.com/v6/latest/EUR").json()
+print("Sonuç:", data.get("result"), "| son güncelleme:", data.get("time_last_update_utc"))
+for code in ["USD", "GBP", "TRY"]:
+    print(f"1 EUR = {data['rates'][code]} {code}")</textarea></div>
+
+<p>ChatGPT'nin oluşturduğu <code>eur_to_usd</code> işlevinde <code>def</code> ile başlayan satırda <em>tür ipuçları</em> (type hints) görünür: Burada <code>eur: float</code>, işlevin bir float değerle çağrılması gerektiğini, sondaki <code>-&gt; float</code> ise işlevin kendisinin de bir float değer döndürdüğünü belirtir. Bu, işlevimiz için kısa bir belge görevi görür ve program kodunu daha okunur kılar. Ancak Python bu tür ipuçlarını yok sayar ve işlev çağrıldığında bunlara uyulmasını zorlamaz. <code>"""</code> ile <code>"""</code> arasındaki satırlar işlevin işlevselliğini betimleyen çok satırlı bir yorumdur (docstring). Bizim için yeni olabilecek bir başka şey de, API hata döndürürse <code>raise Exception</code> kodunun çalıştırılmasıdır. <code>raise</code> ile Python'da özel hata iletileri üretebilirsiniz. İşlevi daha sonra çağıran biri bu hatayı yakalayıp oluştuğunda ne olacağını bile tanımlayabilir. Bizim durumumuzda bir hata oluşursa program sonlanır.</p>
+
+<div class="cell" data-title="Ek: tür ipuçları zorlanmaz; hatayı yakalamak"><textarea>def double(x: float) -> float:
+    return x * 2
+print(double("ab"), "← tür ipucu float dese de metin kabul edildi")
+
+def risky():
+    raise Exception("Error retrieving the exchange rate!")
+
+try:
+    risky()
+except Exception as e:
+    print("Yakalandı:", e, "→ program sonlanmadı, varsayılan kur kullanılıyor")
+print(eur_to_usd.__doc__)</textarea></div>
+
+<p><em>www.exchangerate-api.com</em>'da kaydolduktan sonra aldığımız API anahtarını <code>API_KEY</code> değişkenine girmemiz gerekir. API anahtarı Python programına hiç sabit olarak yazılmamalı, bunun yerine bir ortam değişkeninde —bunu daha sonra yapacağız— ya da ayrı bir yapılandırma dosyasında, örneğin <em>config.ini</em>'de saklanmalıdır:</p>
+
+<pre class="formula" style="text-align:left">[exchangerate-api]
+api_key = YOUR_API_KEY_HERE</pre>
+
+<p>Python programımızda bu yapılandırma daha sonra yüklenir ve API anahtarı okunur. Yapılandırma dosyalarından değer okuyup onlara değer yazabildiğimiz için dosyayı bir önbellek olarak da kullanabiliriz. Döviz kuru <code>eur_to_usd</code> işlevimizde bir kez yüklendikten sonra bugünün tarihiyle birlikte dosyaya yazılmalıdır. İşlev her çağrıldığında önce bugünün tarihi için bir döviz kurunun zaten var olup olmadığını denetler. Öyleyse o kur kullanılır ve kendimizi bir API çağrısından daha kurtarırız. <em>config.ini</em> yapılandırma dosyası şöyle görünür (bu sayfada sanal klasörde hazır; sol paneldeki <b>Dosyalar</b>'dan görebilirsiniz):</p>
+
+<div class="cell" data-title="config.ini'den okumak"><textarea>import configparser
+
+print(open("config.ini").read())
+config = configparser.ConfigParser()
+config.read("config.ini")
+API_KEY = config["exchangerate-api"]["api_key"]
+print("API_KEY =", API_KEY)</textarea></div>
+
+<p>İşte işlevimizin, günde yalnızca bir kez API çağrısı yapan ve diğer tüm durumlarda yalnızca önbellekteki değeri veren yeni bir sürümü:</p>
+
+<div class="cell" data-title="Günde bir API çağrısı: config.ini önbelleği"><textarea>import requests
+import configparser
+from datetime import date
+
+config = configparser.ConfigParser()
+config.read("config.ini")
+
+def eur_to_usd(eur):
+    API_KEY = config["exchangerate-api"]["api_key"]
+    usd_rate = float(config["exchangerate-api"]["usd_rate"])
+    last_updated = config["exchangerate-api"]["last_updated"]
+    today = str(date.today())
+
+    if last_updated != today:
+        print("→ API çağrısı yapılıyor")          # (eklendi: farkı görmek için)
+        url = f"https://v6.exchangerate-api.com/v6/{API_KEY}/latest/EUR"
+        response = requests.get(url)
+        data = response.json()
+
+        if data.get("result") != "success":
+            raise Exception("Error retrieving the exchange rate!")
+
+        usd_rate = data["conversion_rates"]["USD"]
+
+        # Yapılandırmayı güncelle (yeni kur + bugünün tarihi)
+        config["exchangerate-api"]["usd_rate"] = str(usd_rate)
+        config["exchangerate-api"]["last_updated"] = today
+        with open("config.ini", "w") as configfile:
+            config.write(configfile)
+    else:
+        print("→ önbellekten okundu (API çağrısı yok)")   # (eklendi)
+
+    usd_value = eur * usd_rate
+    return round(usd_value, 2)
+
+print(eur_to_usd(100))
+print(eur_to_usd(250))
+print("\nconfig.ini şimdi:\n" + open("config.ini").read())</textarea></div>
+
+<p>Yapılandırma dosyasındaki her şey bir metin olduğu için dosyadaki döviz kurunun <code>float()</code> ile kayan noktalı sayıya dönüştürülmesi gerekir. Basitlik adına tarihi doğrudan metin olarak saklayacağız. <code>str(date.today())</code> bugünün tarihini şu biçime dönüştürür: <code>"2026-12-24"</code>. Tarihin yalnızca eşitliğini denetlemek istediğimiz için burada <code>datetime</code> nesnelerine ya da benzerlerine ihtiyacımız yok. İşlev çağrısı <code>last_updated == today</code> olduğunu belirlerse API çağrısı bölümünün tamamı atlanır ve dönüşüm katsayısı zaten <code>usd_rate</code> değişkeninde vardır; dosyadan alınmıştır. Ancak <code>last_updated != today</code> ise döviz kuru API üzerinden yüklenir ve hem <code>usd_rate</code> değişkenine hem de dosyaya geri yazılır.</p>
+
+<p>Bu önbellekleme yaklaşımı özellikle tekrar tekrar yapılan ve zaten her çağrıda aşağı yukarı aynı sonucu veren pahalı API çağrıları için değerlidir. API çağrıları çoğu zaman biraz yavaş olabildiği için bu, program yürütmesini gerçekten hızlandırır. Örnekte kullanılan ExchangeRate API'si ücretsiz plan kullanıcıları için döviz kurlarını zaten günde yalnızca bir kez günceller. Aynı gün farklı zamanlarda farklı kurlar döndüren başka bir API kullansaydık, önbelleğe dayalı yaklaşımımız kurları günde yalnızca bir kez güncellediğimiz için bazen güncel olmayan veri döndürürdü.</p>
+
+<p>API'nin sağladığı dönüşüm katsayısını güncel tarihle birlikte bir yapılandırma dosyasına yazdık. Bunlar nadiren değişen yalnızca iki küçük değer. Ancak bunun yerine pek çok farklı şehir için —çok sayıda sayı ve başka değerden oluşan— hava durumu verisini önbelleğe alsaydık, API yanıtlarını ayrı dosyalarda ya da bir veritabanında saklamak daha mantıklı olurdu. O zaman örneğin <em>Chicago.json</em> adlı bir dosyamız, <em>LA.json</em> adlı bir dosyamız vb. olurdu. Dosyanın meta verisi son değiştirilme tarihini sakladığı için bunu, istenen konum için hava durumunun bugün zaten alınıp alınmadığını belirlemekte kullanabiliriz. Öyleyse kaydedilmiş API yanıtını dosyadan yükleriz; değilse API isteğini yapar ve yanıtı dosyaya kaydederiz. Veritabanlarıyla tüm süreç daha da zarif hâle gelir: Hava durumu geçmişini ya da önümüzdeki günlerin tahminini de orada saklayabilir ve analizler yapabiliriz. Bunun nasıl yapılacağına kitabın 11. bölümünde bakılıyor.</p>
+
+<div class="cell" data-title="Ek: şehir başına JSON dosyasıyla önbellek"><textarea>import os, json, requests
+from datetime import date, datetime
+
+CITIES = {"Chicago": (41.85, -87.65), "LA": (34.05, -118.24)}
+
+def current_temp(city):
+    path = f"{city}.json"
+    if os.path.exists(path) and datetime.fromtimestamp(os.path.getmtime(path)).date() == date.today():
+        source, data = "dosyadan (önbellek)", json.load(open(path))
+    else:
+        lat, lon = CITIES[city]
+        data = requests.get("https://api.open-meteo.com/v1/forecast",
+                            params={"latitude": lat, "longitude": lon,
+                                    "current": "temperature_2m", "temperature_unit": "fahrenheit"}).json()
+        json.dump(data, open(path, "w"))
+        source = "API'den"
+    return data["current"]["temperature_2m"], source
+
+for city in ["Chicago", "LA", "Chicago"]:
+    t, src = current_temp(city)
+    print(f"{city:8} {t}°F  ← {src}")</textarea></div>
+
+<p>Son hücrede <code>requests.get</code>'e parametreleri URL'ye elle eklemek yerine <code>params=</code> sözlüğüyle verdik; <code>requests</code> URL'yi kendisi kurar ve özel karakterleri doğru biçimde kodlar.</p>
+
+<!-- ====================== 9.2 ====================== -->
+<h2 id="s92"><span class="num">9.2</span>Özel SDK'larla API Erişimi</h2>
+
+<p>Pek çok API JSON verisi döndürür. Bu, önceki kısımda tanıtılan yaklaşımı çeşitli kaynaklardan veri almak için kullanabileceğimiz anlamına gelir: Önce <code>requests</code> modülünü içe aktarırız, sonra gerekli tüm parametreleri URL'de ve gerekirse bir API anahtarını belirterek <code>requests.get</code> ile API URL'sine bir istek göndeririz. API daha sonra bir yanıt döndürür; bunu <code>response.json()</code> ile okur ve ona erişebilmek için bir Python sözlüğüne ya da listesine dönüştürürüz. JSON yerine CSV, XML ya da tümüyle farklı bir biçimde veri döndüren API'ler de vardır. Bu durumlarda da <code>requests</code> modülünü kullanabiliriz. Ancak bu tür durumlarda yanıtı <code>response.text</code> ile metin olarak alır ve oradan çalışırız. Tek tek biçimler için bunun nasıl işlediğini kitabın 4. bölümünde öğrendiniz.</p>
+
+<p>Pek çok geliştirici farklı API'ler için kendi <em>yazılım geliştirme kitlerini</em> (SDK) oluşturmuştur. Çeşitli programlama dilleri için SDK'lar vardır. API'lere <code>requests</code> ile erişmenin evrensel yöntemine bir alternatif sunarlar ve genellikle belirli bir API için özel olarak tasarlanmışlardır. Bir API için böyle bir SDK varsa genellikle ilgili modülü <code>pip</code> ile kurabilir ve ardından API URL'sini program koduna kendimiz girmek ya da <code>GET</code> istekleri vb. ile uğraşmak zorunda kalmadan basitçe işlevleri çağırabiliriz. Daha önce hava durumu verisini almak için kullanılan Open-Meteo API'sinin de bir SDK'sı vardır; ama sonraki örnek için OpenWeatherMap hizmetini kullanacağız. Bunun için <code>pip install pyowm</code> ile ilgili Python paketini kurmamız ve bir API anahtarı almak için <em>https://openweathermap.org</em>'da bir hesap oluşturmamız gerekir.</p>
+
+<div class="ro"><div class="ro-head">Salt okunur — pyowm Pyodide'de yok ve OpenWeatherMap API anahtarı gerektirir</div><pre>from pyowm import OWM
+
+owm = OWM('Enter API key here')
+mgr = owm.weather_manager()
+observation = mgr.weather_at_place('Chicago, US')
+
+weather = observation.weather
+temperature = weather.temperature('fahrenheit')["temp"]
+
+print(f"Temperature: {temperature}°F.")</pre></div>
+
+<p>pyowm paketini kullanmak için onu <code>pip install pyowm</code> ile kurmamız gerekir. Ardından API anahtarımızı verip <code>weather_at_place</code> ile belirli bir konum için hava durumu verisini alabiliriz. Özellikle bir API'ye farklı URL'ler altında sunulan çeşitli istekler yaparken bir SDK kullanmak <code>requests</code> kullanmaktan daha rahat olabilir. SDK'lar tek bir API için özel olarak, çoğu zaman API sağlayıcısının kendisi, bazen de başkaları tarafından tasarlanır. Ancak perde arkasında bir SDK tam olarak daha önce yaptığımız şeyi yapar. <code>weather_at_place</code> işlevini çağırdığımızda içeride <code>requests.get</code>'i çağırır ve orada döndürülen JSON'u işler. Ama biz kullanıcılar için teknik ayrıntılar soyutlandığı için işleri kolaylaştırır ve en önemli şeye odaklanmamızı sağlar.</p>
+
+<p>Bu fikri somutlaştırmak için Open-Meteo'ya küçük bir "SDK" yazalım: URL ve parametre ayrıntılarını bir sınıfın içine saklıyoruz; kullanıcı yalnızca anlamlı bir işlev çağırıyor.</p>
+
+<div class="cell" data-title="Ek: kendi mini SDK'nızı yazmak"><textarea>import requests
+
+class MiniWeather:
+    """Open-Meteo için oyuncak bir SDK: URL ayrıntılarını gizler."""
+    BASE = "https://api.open-meteo.com/v1/forecast"
+    PLACES = {"Chicago, US": (41.85, -87.65), "Seattle, US": (47.61, -122.33)}
+
+    def __init__(self, unit="fahrenheit"):
+        self.unit = unit
+
+    def temperature_at_place(self, place):
+        lat, lon = self.PLACES[place]
+        r = requests.get(self.BASE, params={"latitude": lat, "longitude": lon,
+                                            "current": "temperature_2m",
+                                            "temperature_unit": self.unit})
+        r.raise_for_status()
+        return r.json()["current"]["temperature_2m"]
+
+mgr = MiniWeather()
+temperature = mgr.temperature_at_place("Chicago, US")
+print(f"Temperature: {temperature}°F.")</textarea></div>
+
+<!-- ====================== 9.3 ====================== -->
+<h2 id="s93"><span class="num">9.3</span>API Verisini Görselleştirmek ve Analiz Etmek</h2>
+
+<p>Bir API üzerinden veri aldığımızda bu veri bize genellikle bir Python sözlüğü ya da bir liste biçiminde sunulur. Ardından güncel sıcaklık ya da daha önce sözü edilen euro-dolar kuru gibi bizi ilgilendiren değerlere doğrudan erişebiliriz. Sonuçlar bir liste olarak sunuluyorsa onun üzerinde dolaşabilir, tek tek elemanları yazdırabilir ya da onlarla çalışmaya devam edebiliriz.</p>
+
+<p>Şimdi bir API kullandığımız ve döndürdüğü veriyi Matplotlib ile görselleştirdiğimiz iki örneğe bakacağız. Veriyi Matplotlib'in çalışabileceği bir biçime dönüştürmemiz gerekir. Bir çizgi grafiği için örneğin iki listeye ihtiyacımız var: biri x değerleri, biri y değerleri. Belirli bir gün için sıcaklık eğilimini bir çizgi grafiği olarak çizmek istiyoruz. Bunun için istenen tarihe ait hava durumu verisini Open-Meteo API'sinden alırız —bu hem geçmiş tarihler hem de tahminler için çalışır— ve ölçüm saatini x ekseni değerleri, sıcaklıkları da y değerleri olarak kullanırız.</p>
+
+<div class="prompt"><div class="lbl">İstem</div><em><code>https://api.open-meteo.com/v1/forecast?latitude=41.85&amp;longitude=-87.65&amp;hourly=temperature_2m&amp;temperature_unit=fahrenheit&amp;start_date=2026-07-01&amp;end_date=2026-07-01</code> şunu döndürüyor:</em>
+<pre style="font-family:'JetBrains Mono',monospace;font-size:12px;margin:.5em 0;white-space:pre-wrap">{…, "hourly": { "time": ["2026-07-01T00:00", "2026-07-01T01:00", …],
+               "temperature_2m": [89.4, 86.7, …] } }</pre>
+<em>Günün her saati için sıcaklığı gösteren bir çizgi grafiğini Matplotlib ile oluşturan Python kodu yaz. API çıktısında listelenen son saat, ertesi günün gece yarısı (00:00) olduğu için atlanmalı.</em></div>
+
+<div class="cell" data-title="Saatlik sıcaklık grafiği (Şekil 9.1)"><textarea>import requests
+import matplotlib.pyplot as plt
+
+url = ("https://api.open-meteo.com/v1/forecast" +
+       "?latitude=41.85&amp;longitude=-87.65" +
+       "&amp;hourly=temperature_2m&amp;temperature_unit=fahrenheit" +
+       "&amp;start_date=2026-07-01&amp;end_date=2026-07-01" )
+response = requests.get(url)
+data = response.json()
+weather = data["hourly"]
+
+hours = [entry[11:13] for entry in weather["time"]]
+temps = weather["temperature_2m"]
+
+plt.figure(figsize=(10, 3))
+plt.plot(hours, temps, marker="o")
+
+plt.title("Temperature Trend on July 1, 2026")
+plt.xlabel("Hour")
+plt.ylabel("Temperature (°F)")
+plt.grid(True)
+plt.tight_layout()
+
+plt.show()
+print(len(hours), "saat:", hours[0], "…", hours[-1])</textarea></div>
+
+<div class="note"><b>İki not:</b> (1) İstemde "son saat ertesi günün 00:00'ı" deniyor; ama <code>start_date</code> ile <code>end_date</code> aynı gün olduğunda Open-Meteo yalnızca 00:00–23:00 arasındaki 24 saati döndürür. ChatGPT'nin kodu da hiçbir şeyi atlamıyor; yani istemdeki varsayım yanlış, kod doğru (yukarıdaki son satır 24 saati gösteriyor). (2) <code>/v1/forecast</code> uç noktası yalnızca yaklaşık son 3 ayı kapsar. Bu sayfayı açtığınız tarihte 1 Temmuz 2026 bu aralığın dışındaysa API <code>400</code> döndürür ve sayfa örnek veriye geçer. Eski tarihler için Open-Meteo'nun arşiv uç noktası <code>https://archive-api.open-meteo.com/v1/archive</code> kullanılır; aşağıdaki panel tarihe göre doğru uç noktayı seçiyor.</div>
+
+<div class="widget" id="hourWidget">
+  <h4>Etkileşimli: istediğiniz şehir ve günün saatlik sıcaklığı</h4>
+  <div class="ctrl">
+    <label>Şehir: <select id="hCity" class="sel"></select></label>
+    <label>Tarih: <input type="date" id="hDate" class="sel"></label>
+    <label><input type="checkbox" id="hF"> °F (kapalıysa °C)</label>
+    <button class="btn primary" id="hRun">Getir ve çiz</button>
+  </div>
+  <div class="readout" id="hInfo" style="font-size:13px;color:var(--muted)"></div>
+  <div id="hOut" class="out show" style="border:1px solid var(--line);border-radius:8px;min-height:40px">Python kodu bu panel tarafından üretilir ve Pyodide'de çalışır.</div>
+</div>
+
+<p>API isteğini <code>requests.get()</code> ile gönderdikten sonra hangi özniteliklerin bulunduğunu ve görüntülemek istediğimiz veriye nasıl erişebileceğimizi görmek için deneme amacıyla <code>data</code> değişkeninin içeriğini de yazdırabiliriz. Alternatif olarak URL'yi tarayıcıya girip JSON belgesini orada görüntüleyebiliriz. Az önce gösterildiği gibi kodu ChatGPT'ye ürettirirsek, bu JSON belgesinden alıntıları isteme eklemek yardımcı olur. Aksi hâlde ChatGPT sıklıkla halüsinasyon görür ve öznitelik adlarını tahmin eder —genellikle yanlış biçimde. Sonunda saatler ve API yanıtındaki sıcaklık verileriyle doldurulmuş iki listeyi, <code>hours</code> ve <code>temps</code>'i, çizgi grafiğini oluşturması için Matplotlib'e veririz. JSON yanıtında zaman damgaları şu biçimdedir: <code>2026-07-01T00:00</code>. Saat 11 ve 12 numaralı metin konumlarındadır; bu yüzden onu <code>[11:13]</code> ile çıkarabiliriz.</p>
+
+<div class="cell" data-title="Ek: [11:13] dilimi"><textarea>entry = "2026-07-01T09:00"
+for i, ch in enumerate(entry):
+    print(f"{i:2}: {ch}", "  ← saat" if i in (11, 12) else "")
+print("entry[11:13] =", entry[11:13])</textarea></div>
+
+<p>Sonraki örnekte dört milyondan fazla gıda ürünü içeren bir veritabanı olan <em>https://world.openfoodfacts.org</em> API'sini kullanacağız. Hizmet, <code>pip install openfoodfacts</code> ile kurulabilen bir Python SDK'sı sunar. Ardından modülü içe aktarıp ürün ayrıntılarını almak için işlevlerini çağırabiliriz. Aşağıdaki kod parçacığında <code>code</code> değişkeni Fruits Skittles'ın EAN barkodunu içerir. API bize içerik listesini sağlar; bunu Şekil 9.2'deki gibi bir pasta grafiği olarak görselleştirebiliriz.</p>
+
+<div class="ro"><div class="ro-head">Salt okunur — kitaptaki SDK sürümü (openfoodfacts paketi)</div><pre>import matplotlib.pyplot as plt
+import openfoodfacts
+
+api = openfoodfacts.API(user_agent="MyAwesomeApp/1.0")
+
+code = "4009900546089"
+product = api.product.get(code,
+                    fields=["code", "product_name", "ingredients"])
+# … (aşağıdaki hücrede aynı devam ediyor)</pre></div>
+
+<p>openfoodfacts SDK'sı Pyodide'de güvenilir biçimde kurulamadığı için aşağıdaki hücre, 9.2'de anlatıldığı gibi SDK'nın perde arkasında yaptığı işi doğrudan <code>requests</code> ile yapıyor. Yalnızca ilk satırlar farklı; geri kalanı kitaptakiyle aynı:</p>
+
+<div class="cell" data-title="Ürün içerikleri pasta grafiği (Şekil 9.2)"><textarea>import matplotlib.pyplot as plt
+import requests
+
+code = "4009900546089"
+# SDK'nın api.product.get(code, fields=[...]) çağrısının requests karşılığı:
+url = (f"https://world.openfoodfacts.org/api/v2/product/{code}"
+       "?fields=code,product_name,ingredients")
+product = requests.get(url).json()["product"]
+
+labels = []     # İçerik adları
+sizes = []      # Yüzdeler
+
+others = 0.0    # %2'den küçük içerikler için
+
+for ingredient in product["ingredients"]:
+    if "percent_estimate" in ingredient:
+        if ingredient["percent_estimate"] > 2:
+            labels.append(ingredient.get("id", "unknown"))
+            sizes.append(ingredient["percent_estimate"])
+        else:
+            others += ingredient["percent_estimate"]
+if others > 0:
+    labels.append("other")
+    sizes.append(others)
+
+# Pasta grafiği oluştur
+plt.figure(figsize=(8, 8))
+plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
+plt.title(product["product_name"])
+plt.show()</textarea></div>
+
+<div class="widget" id="offWidget">
+  <h4>Etkileşimli: barkodla ürün içeriği</h4>
+  <div class="ctrl">
+    <label>EAN barkodu: <input type="text" id="offCode" value="4009900546089" style="width:170px;font-family:'JetBrains Mono',monospace" class="sel"></label>
+    <label>Eşik %: <input type="number" id="offTh" value="2" min="0" max="20" step="0.5" style="width:70px"></label>
+    <button class="btn primary" id="offRun">Getir ve çiz</button>
+  </div>
+  <div style="font-family:Inter,sans-serif;font-size:12.5px;color:var(--muted)">Örnek yanıt yalnızca kitaptaki barkod için vardır; başka barkodlar canlı API'ye bağlıdır. Elinizdeki bir ürünün barkodunu deneyin.</div>
+  <div id="offOut" class="out show" style="border:1px solid var(--line);border-radius:8px;min-height:40px"></div>
+</div>
+
+<p>Matplotlib grafiği oluşturmak için yine iki listeye ihtiyaç duyduğundan, başta boş olan ve tek tek içerikler üzerinde dolaşan döngü içinde doldurulan iki değişken oluştururuz: <code>labels = []</code> ve <code>sizes = []</code>. <code>labels</code>, pasta grafiğinde bir dilim olması gereken içeriklerdir; <code>sizes</code> ise ilgili oranlarıdır. Grafiğin küçük miktarlı pek çok içerik nedeniyle okunamaz hâle gelmesini önlemek için bunları basitçe atlar, ama yüzde değerlerini bir <code>"other"</code> diliminde birleştiririz.</p>
+
+<p>Önceki örneklerde ya doğrudan bir API'nin sağladığı çıktıyla çalıştık —örneğin para birimlerini dönüştürmek ya da güncel sıcaklığı göstermek için— ya da döndürülen veri setleri üzerinde dolaşıp Matplotlib'in grafik oluşturmak için kullanabileceği listeler oluşturduk. Ancak bir API'nin döndürdüğü sonuçları bir pandas DataFrame'ine dönüştürmek de yararlı olabilir. Ardından kitabın diğer bölümlerinde zaten öğrendiğiniz şeyleri onunla yapabiliriz: veri analizi yapmak, grafik oluşturmak, veriyi makine öğrenmesi için eğitim verisi olarak kullanmak, YZ algoritmaları uygulamak ya da DataFrame'in içeriğini bir dosyaya ya da veritabanına kaydetmek. Bunları DataFrame'ler olmadan yapmak çoğu zaman mümkün olsa da onları kullanmak işi kolaylaştırabilir. Örneğin bir Jupyter Notebook'ta pandas DataFrame'ini veriyle doldurulduktan hemen sonra yazdırabiliriz:</p>
+
+<div class="ro"><div class="ro-head">Salt okunur — kitaptaki SDK sürümü</div><pre>import openfoodfacts
+import pandas as pd
+
+api = openfoodfacts.API(user_agent="MyAwesomeApp/1.0")
+products = api.product.text_search("Pizza Funghi")["products"]
+
+df = pd.DataFrame(products)
+df</pre></div>
+
+<div class="cell" data-title="Arama sonuçlarından DataFrame"><textarea>import requests
+import pandas as pd
+
+# SDK'nın api.product.text_search("Pizza Funghi") çağrısının requests karşılığı:
+products = requests.get("https://world.openfoodfacts.org/cgi/search.pl",
+                        params={"search_terms": "Pizza Funghi", "json": 1,
+                                "page_size": 20}).json()["products"]
+
+df = pd.DataFrame(products)
+print(df.shape[0], "satır,", df.shape[1], "sütun")
+df</textarea></div>
+
+<p>Jupyter Notebook'lar, çok fazla satırı ya da sütunu varsa büyük DataFrame'leri kısaltır. Kitaptaki DataFrame'in yalnızca 20 satırı ama 300'den fazla sütunu vardı. Sütun adlarını <code>print(df.columns.tolist())</code> ile yazdırabiliriz. Ancak deneme amacıyla pandas'a tüm sütunları gerçekten görmek istediğimizi de söyleyebiliriz: <code>pd.set_option("display.max_columns", None)</code>. Ardından hangi sütunları istediğimize karar verip DataFrame'i bu sütunlarla sınırlayabiliriz:</p>
+
+<div class="cell" data-title="Sütun seçimi"><textarea>print(df.columns.tolist()[:25], "…")
+cols = ["product_name", "brands", "quantity", "nutriscore_grade"]
+df = df[[c for c in cols if c in df.columns]]
+df</textarea></div>
+
+<p>DataFrame ile etkili çalışmak için veri temizliği adımları gereklidir. Örneğin <code>quantity</code> sütunundaki <code>"g"</code> (gram) sorunludur. Bazen önünde bir boşluk vardır, bazen yoktur. Ağırlığı metinden sayıya dönüştürmek mantıklıdır; böylece örneğin <code>440 g</code> 440 sayısına dönüşür. Bunun için önce <code>if isinstance(qty, str):</code> ile bir metin olup olmadığını denetleyen aşağıdaki işlevi geliştiriyoruz. Değilse ya da metin boşluklar kaldırıldıktan sonra sayıya dönüştürülemiyorsa işlev <code>None</code> değerini döndürür:</p>
+
+<div class="cell" data-title="parse_quantity ile temizlik"><textarea>def parse_quantity(qty):
+    if isinstance(qty, str):
+        qty = qty.lower().replace(" ", "")
+        if qty.endswith("g"):
+            try:
+                return int(qty[:-1])
+            except ValueError:
+                return None
+    return None
+
+df["quantity_grams"] = df["quantity"].apply(parse_quantity)
+df</textarea></div>
+
+<p>İşlev <code>"440g"</code> ve <code>"460 g"</code> gibi değerleri karşılık gelen sayılarla değiştirir. Ondalık sayıları ya da <code>"kg"</code> veya <code>"oz"</code> gibi başka birimleri de desteklemek isteseydik işlevi buna göre uyarlamamız gerekirdi. Şu anda bu tür durumlarda <code>None</code> döndürür (örnek veride <code>"1 kg"</code> ve <code>"16 oz"</code> bunu gösteriyor; dikkat: <code>"1kg"</code> de "g" ile bittiği için <code>int("1k")</code> denenir ve <code>None</code> döner).</p>
+
+<p>Ön işleme adımları tamamlandığına göre DataFrame ile çalışmaya devam edebiliriz. İşte birkaç örnek:</p>
+
+<div class="cell" data-title="Ortalama, marka sayıları ve CSV"><textarea>average_weight = df['quantity_grams'].mean()        # ürünlerin ortalama ağırlığı
+print("Ortalama ağırlık:", round(average_weight, 1), "g")
+
+brand_counts = df['brands'].value_counts()           # marka başına ürün sayısı
+print(brand_counts.head())
+
+df.to_csv("products.csv", index=False)               # CSV'ye kaydet
+print("\nproducts.csv kaydedildi (sol panel → Dosyalar)")</textarea></div>
+
+<p>Kitap ürünleri ağırlığa ve Nutri-Score'a göre kümelemek için şu satırı öneriyor:</p>
+
+<pre class="formula" style="text-align:left">df['cluster'] = ( KMeans(n_clusters=3, random_state=42)
+    .fit_predict(df[['quantity_grams', 'nutriscore_grade']]) )</pre>
+
+<div class="note"><b>Bu satır olduğu gibi çalışmaz:</b> <code>nutriscore_grade</code> sütununda <code>"c"</code>, <code>"d"</code>, <code>"unknown"</code> gibi harfler var; K-ortalamalar yalnızca sayılarla çalışır (<code>ValueError: could not convert string to float</code>). Ayrıca <code>quantity_grams</code>'ta <code>None</code>/<code>NaN</code> değerler var; K-ortalamalar eksik değer de kabul etmez. Önce harfleri sayıya çevirip (a=1 … e=5) eksik satırları atmak gerekir. İki sütunun ölçekleri de çok farklı (yüzlerce gram ile 1–5) olduğu için ölçeklemek de mantıklıdır (bkz. Bölüm 5.4.7 ve 7.5). Aşağıdaki hücre önce hatayı, sonra düzeltilmiş hâli gösteriyor.</div>
+
+<div class="cell" data-title="K-ortalamalar: hata ve düzeltme"><textarea>from sklearn.cluster import KMeans
+from sklearn.preprocessing import MinMaxScaler
+
+try:
+    df['cluster'] = (KMeans(n_clusters=3, random_state=42)
+                     .fit_predict(df[['quantity_grams', 'nutriscore_grade']]))
+except ValueError as e:
+    print("Kitaptaki satır →", type(e).__name__ + ":", str(e)[:90], "\n")
+
+grade_map = {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5}
+dk = df.assign(grade_num=df["nutriscore_grade"].map(grade_map)).dropna(subset=["quantity_grams", "grade_num"])
+X = MinMaxScaler().fit_transform(dk[["quantity_grams", "grade_num"]])
+dk["cluster"] = KMeans(n_clusters=3, random_state=42, n_init=10).fit_predict(X)
+print(len(df) - len(dk), "satır eksik değer nedeniyle dışarıda kaldı")
+dk[["product_name", "quantity_grams", "nutriscore_grade", "cluster"]]</textarea></div>
+
+<p>Nutri-Score notlarının sıklığını gösteren bir çubuk grafiğini Matplotlib ile oluşturmak:</p>
+
+<div class="cell" data-title="Nutri-Score dağılımı (Şekil 9.3)"><textarea>import matplotlib.pyplot as plt
+grade_counts = df['nutriscore_grade'].value_counts().sort_index()
+grade_counts.plot(kind='bar', color='skyblue')
+plt.xticks(rotation=0)
+plt.xlabel('Nutri-Score Grade')
+plt.ylabel('Number of Products')
+plt.title('Nutri-Score distribution for Pizza Funghi products')
+plt.show()</textarea></div>
+
+<!-- ====================== 9.4 ====================== -->
+<h2 id="s94"><span class="num">9.4</span>ChatGPT API'si</h2>
+
+<p>ChatGPT ve diğer büyük dil modellerini (BDM) yalnızca bir tarayıcı ve uygulama üzerinden kullanmakla kalmaz, bir API aracılığıyla Python uygulamalarımıza da entegre edebiliriz. Özellikle elimizde metin ya da görüntü verisi olduğunda bir BDM, basit Python araçlarıyla başaramayacağımız görevleri çözebilir. Örneğin ChatGPT veri temizliği ya da kategorizasyon, uzun metinleri özetleme ya da çeviri için kullanılabilir.</p>
+
+<p>Aşağıdaki örneklerde OpenAI'nin ücretli API'sini kullanacağız. Kullanmak için hesabınıza birkaç dolar yatırmanız gerekir. Standart API istekleri çok ucuz olsa da —özellikle temel bir model seçersek bir sentin yalnızca bir kesri kadar— zamanla çok sayıda istek yaparsanız bakiyeniz hızla tükenebilir.</p>
+
+<p><em>https://platform.openai.com</em>'da oturum açıp bakiyemizi yükledikten sonra Python programımızda kullanmak üzere bir API anahtarı oluşturabiliriz. <code>openai</code> paketini <code>pip install openai</code> ile kurarız.</p>
+
+<div class="note"><b>Bu sayfada <code>openai</code> ve <code>dotenv</code>:</b> Gerçek <code>openai</code> paketi Pyodide'de çalışmaz. Kitaptaki kod değişmeden çalışsın diye sayfa, sanal klasöre aynı arayüzü (<code>OpenAI(...)</code>, <code>client.responses.create</code>, <code>client.images.generate</code>) <code>requests</code> ile sağlayan küçük bir <code>openai.py</code> <b>uyumluluk katmanı</b> koydu; bu, 9.2'deki "SDK perde arkasında requests kullanır" fikrinin canlı bir örneği. Dosyayı sol panelden açıp okuyabilirsiniz. <code>python-dotenv</code> ise PyPI'den micropip ile kurulur (kurulamazsa yine küçük bir yedek kullanılır). Anahtarınızı sol paneldeki kutuya girip <b>.env'ye yaz</b>'a basınca sanal <code>.env</code> dosyası oluşur ve <code>dotenv.load_dotenv()</code> onu okur.</div>
+
+<div class="cell" data-title="summarize işlevi"><textarea>import os
+import dotenv
+from openai import OpenAI
+
+dotenv.load_dotenv()
+
+client = OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY"),
+)
+
+def summarize(text):
+    response = client.responses.create(
+        model="gpt-5-nano",
+        instructions="You are a component of my Python program that summarizes texts concisely but clearly. The output should be just one short sentence. Return only the summarized text as the response, without any further explanations.",
+        input="Here is the text you should summarize: " + text
+    )
+    return response.output_text
+print(summarize("Some text"))</textarea></div>
+
+<p>API anahtarını Python programımızda düz metin olarak tutmamak için burada bir <em>ortam değişkenine</em> erişiyoruz. <code>dotenv</code> modülüyle —<code>pip install python-dotenv</code> ile kurulur; kitapta <code>pip install dotenv</code> yazıyor, ama doğru paket adı <code>python-dotenv</code>'dir— API anahtarını Python programımızla aynı klasörde bulunan <em>.env</em> adlı bir dosyaya şöyle yazmak mümkündür: <code>OPENAI_API_KEY=…</code>. Ardından program içinde <code>os.environ.get("OPENAI_API_KEY")</code> ile okunabilir. <code>summarize</code> işlevimiz bir metin alır ve onu genel talimatları içeren bir <em>sistem istemiyle</em> (<code>instructions</code>) ve bir kullanıcı istemiyle (<code>input</code>) birlikte ChatGPT API'sine gönderir. Deneme çağrısında verilen <code>"Some text"</code> metni kitapta <code>"This is generic placeholder text."</code> olarak özetlenmiş. Ancak örneğin CNN.com RSS akışı aracılığıyla alabileceğimiz daha uzun bir metin de verebiliriz. Bunu <code>pip install feedparser</code> ile kurduğumuz <code>feedparser</code> modülüyle yaparız:</p>
+
+<div class="ro"><div class="ro-head">Salt okunur — feedparser Pyodide'de kurulamaz; CNN akışı tarayıcıdan okunmaya (CORS) izin vermez</div><pre>import feedparser
+
+RSS_URL = "http://rss.cnn.com/rss/edition_world.rss"
+
+feed = feedparser.parse(RSS_URL)
+
+print("Title:", feed.entries[0].title)
+print("Link:", feed.entries[0].link)
+print("Description:", feed.entries[0].summary)
+print("Summary:", summarize(feed.entries[0].summary))</pre></div>
+
+<p>RSS de sonuçta bir XML belgesidir. Aynı adımları Python'un yerleşik <code>xml.etree</code> modülüyle, sayfaya gömülü küçük bir <b>örnek</b> RSS metni üzerinde yapabiliriz (başlıklar örnek amaçlıdır, gerçek haber değildir):</p>
+
+<div class="cell" data-title="RSS'yi xml.etree ile okumak (örnek akış)"><textarea>import xml.etree.ElementTree as ET
+
+rss_text = """<?xml version="1.0"?>
+<rss version="2.0"><channel><title>Örnek Akış</title>
+  <item><title>Örnek haber başlığı 1</title><link>https://example.org/haber-1</link>
+    <description>Bu, RSS yapısını göstermek için yazılmış örnek bir açıklama metnidir. Gerçek bir haber
+    değildir. Uzun açıklamalar API ile tek cümleye özetlenebilir.</description></item>
+  <item><title>Örnek haber başlığı 2</title><link>https://example.org/haber-2</link>
+    <description>İkinci örnek kaydın açıklaması.</description></item>
+</channel></rss>"""
+
+items = ET.fromstring(rss_text).findall("./channel/item")
+first = items[0]
+print("Title:", first.findtext("title"))
+print("Link:", first.findtext("link"))
+print("Description:", " ".join(first.findtext("description").split()))
+print(len(items), "kayıt bulundu")
+# Anahtar girdiyseniz: print("Summary:", summarize(first.findtext("description")))</textarea></div>
+
+<p><code>feedparser</code>, CNN.com'dan ve diğer RSS akışlarından haber ögeleri yüklemenizi sağlar. Başlığı, bağlantıyı ve uzun açıklamayı yazdırdıktan sonra program ChatGPT'nin ürettiği özeti de yazdırır.</p>
+
+<p>ChatGPT API'sinin faturalandırması <em>girdi belirteçlerine</em> ve <em>çıktı belirteçlerine</em> (token) dayanır. Seçilen modele bağlı olarak bir milyon belirtecin maliyeti birkaç sentten birkaç dolara kadar değişir. Girdi belirteci sayısı istemimizin (sistem istemi dâhil) uzunluğuna, çıktı belirteci sayısı yanıtın uzunluğuna bağlıdır. Kullanılan belirteç sayısını da gösterebiliriz:</p>
+
+<div class="cell" data-title="Belirteç (token) kullanımı"><textarea>import os
+import dotenv
+from openai import OpenAI
+
+dotenv.load_dotenv()
+
+client = OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY"),
+)
+
+response = client.responses.create(
+    model="gpt-5-nano",
+    instructions="Just say 'ok'",
+    input="I'm just testing the API"
+)
+print(response.output_text)
+print("Input Tokens:", response.usage.input_tokens)
+print("Output Tokens:", response.usage.output_tokens)</textarea></div>
+
+<p>Kitaptaki çıktıda API yanıtı <code>"ok"</code>'a ek olarak 20 girdi belirteci ve 102 çıktı belirteci kullanıldığını görüyoruz. Bir belirteç çoğu zaman üç ila dört karakterlik bir metin parçasıdır. Bu, 20 sayısını da açıklar. Yanıtın 102 çıktı belirteci uzunluğunda olması, ChatGPT API'sinin asıl yanıtla birlikte bazı meta veriler göndermesindendir. (Daha doğrusu: <code>gpt-5-nano</code> bir akıl yürütme modelidir; çıktı belirteçlerine yanıttan önce üretilen ve görünmeyen "akıl yürütme belirteçleri" de dâhildir. Bunları <code>response.usage.output_tokens_details.reasoning_tokens</code>'ta görebilirsiniz.) Kullandığımız model <code>"gpt-5-nano"</code> olarak adlandırılıyor. Milyon girdi belirteci başına 0,05 $ ve milyon çıktı belirteci başına 0,40 $ fiyatla sorgumuzun toplam maliyeti bir sentin yüzde birinden azdır. Ancak sorgumuz 10 kat daha karmaşık olsaydı ve 10 kullanıcı günde bu türden 10 sorgu gönderseydi, maliyet 10 günün sonunda yarım ABD dolarından biraz az olurdu.</p>
+
+<div class="widget" id="costWidget">
+  <h4>Etkileşimli: belirteç maliyeti hesaplayıcı</h4>
+  <div class="ctrl">
+    <label>Girdi belirteci <input type="number" id="cIn" value="20" min="0" style="width:90px"></label>
+    <label>Çıktı belirteci <input type="number" id="cOut" value="102" min="0" style="width:90px"></label>
+    <label>$/M girdi <input type="number" id="cPin" value="0.05" step="0.01" min="0" style="width:80px"></label>
+    <label>$/M çıktı <input type="number" id="cPout" value="0.40" step="0.01" min="0" style="width:80px"></label>
+  </div>
+  <div class="ctrl">
+    <label>Karmaşıklık × <input type="number" id="cX" value="10" min="1" style="width:70px"></label>
+    <label>Kullanıcı <input type="number" id="cU" value="10" min="1" style="width:70px"></label>
+    <label>Sorgu/gün <input type="number" id="cQ" value="10" min="1" style="width:70px"></label>
+    <label>Gün <input type="number" id="cD" value="10" min="1" style="width:70px"></label>
+    <button class="btn" id="cImg">Görüntü örneği (1634 / 248)</button>
+  </div>
+  <div class="readout" id="cResult" style="font-family:'JetBrains Mono',monospace;font-size:13.5px;line-height:1.8"></div>
+  <div style="font-family:Inter,sans-serif;font-size:12px;color:var(--muted)">Fiyatlar kitaptaki değerlerdir; güncel fiyatlar için sağlayıcının fiyat sayfasına bakın.</div>
+</div>
+
+<p>ChatGPT API'si ve diğer BDM'lerin API'leriyle girdi olarak yalnızca düz metin vermek değil, görüntüler, belgeler ve diğer dosyaları da eklemek mümkündür. Bu API'ler çıktı olarak görüntü, video ve diğer dosya biçimlerini de üretebilir. Aşağıdaki kod örneğinde BDM'ye bir görüntü dosyası gönderiyor ve görüntüde ne görülebileceğini soruyoruz. (Sayfadaki <code>images/fruit.jpg</code>, Bölüm 8'deki çizilmiş soyulmuş muz görselidir.)</p>
+
+<div class="cell" data-title="Görüntüyü modele göndermek"><textarea>import os
+import base64
+import dotenv
+from openai import OpenAI
+
+dotenv.load_dotenv()
+
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+# Görüntüyü yükle ve Base64'e kodla
+image_path = "images/fruit.jpg"
+with open(image_path, "rb") as f:
+    image_bytes = f.read()
+image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+print("Base64 başı:", image_base64[:24], "… uzunluk:", len(image_base64))
+
+# Çok kipli (multimodal) bir modele istek
+response = client.responses.create(
+    model="gpt-5-nano",
+    input=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "input_text",
+                 "text": "What can you see in this picture?"},
+                {"type": "input_image",
+                 "image_url": f"data:image/jpeg;base64,{image_base64}"},
+            ],
+        }
+    ],
+)
+
+print(response.output_text)
+print("Input Tokens:", response.usage.input_tokens)
+print("Output Tokens:", response.usage.output_tokens)</textarea></div>
+
+<div class="ro-out" style="border:1px dashed var(--line);border-radius:8px;margin-top:-10px"><b>Kitaptaki çıktı (gerçek fotoğrafla):</b><pre style="white-space:pre-wrap;font-family:'JetBrains Mono',monospace;font-size:12.5px;margin:4px 0 0">A partially peeled banana. The yellow peel is curling away from the white inner fruit, set against a plain light background.
+Input Tokens: 1634
+Output Tokens: 248</pre></div>
+
+<p>Model görünüşte çok daha karmaşık bir görevi ele almış olsa da maliyet sonuçta basit deneme isteğimizdekinden yalnızca yaklaşık dört kat fazladır. Bazen görüntüyü göndermeden önce yeniden boyutlandırarak işleri daha da iyileştirebilirsiniz. Görüntü verisini API'ye vermek için dosyayı okuyup Base64 biçimine dönüştürmeniz gerekir. <code>decode("utf-8")</code> bundan şuna benzeyen uzun bir metin üretir: <code>'/9j/4AAQSkZJRg…'</code> (kitaptaki 85 KB'lık fotoğraf için 100.000 karakterden uzun). Görüntü verisinin tamamı bu metinde kodlanmıştır ve onu API'ye verebiliriz.</p>
+
+<div class="cell" data-title="Ek: Base64 gidiş-dönüş"><textarea>import base64
+raw = open("images/fruit.jpg", "rb").read()
+b64 = base64.b64encode(raw).decode("utf-8")
+print(f"{len(raw):,} bayt → {len(b64):,} Base64 karakteri (≈ 4/3 kat)")
+print("JPEG her zaman '/9j/' ile başlar:", b64[:4])
+with open("images/fruit_copy.jpg", "wb") as f:
+    f.write(base64.b64decode(b64))
+print("Geri çözülen dosya özgünüyle aynı mı?", open("images/fruit_copy.jpg", "rb").read() == raw)</textarea></div>
+
+<p>Bir Base64 metni, API'ler görüntü ya da başka dosyalar ürettiklerinde programımıza çoğu zaman döndürdükleri şeydir. Bu veriyi daha sonra bilgisayarımızda bir dosyaya geri kaydedebiliriz, örneğin: <code>f.write(base64.b64decode(image_base64))</code>. Ancak bazı API'ler üretilen görüntüyü yanıta hiç eklemez, yalnızca görüntüyü belirli bir süre içinde alabileceğimiz bir URL verir. Bu durumda görüntünün indirilmesini <code>requests.get</code> ile başlatabiliriz.</p>
+
+<div class="cell" data-title="Görüntü üretmek (ücretli; anahtar gerekir)"><textarea>import os
+import base64
+import dotenv
+import requests
+from openai import OpenAI
+
+dotenv.load_dotenv()
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+prompt = "A cartoon camel wearing headphones and eating cereal."
+result = client.images.generate(
+    model="gpt-image-2",
+    prompt=prompt,
+    size="1024x1024",
+)
+image_base64 = result.data[0].b64_json
+
+# Görüntüyü dosyaya kaydet
+output_file = "images/camel.png"
+with open(output_file, "wb") as f:
+    f.write(base64.b64decode(image_base64))
+
+print("Image saved as", output_file)
+
+import matplotlib.pyplot as plt, matplotlib.image as mpimg   # (eklendi: göstermek için)
+plt.imshow(mpimg.imread(output_file)); plt.axis("off"); plt.show()</textarea></div>
+
+<div class="note">Görüntü üretimi metin isteklerinden belirgin biçimde pahalıdır. Kitaptaki <code>import base64</code> satırı eksik olduğu için kod <code>NameError: name 'base64' is not defined</code> verirdi; burada eklendi. Model adı kitaptaki gibi bırakıldı; hesabınızda bu model yoksa API'nin hata iletisinde geçerli adları görürsünüz.</div>
+
+<p>ChatGPT ile Python kodu üretmek istiyorsanız elbette API anahtarlarını program koduna eklememelisiniz. Bu yüzden örneklerimizde gösterildiği gibi API anahtarını <em>.env</em> adlı bir dosyaya (içerik: <code>API_KEY=…</code>) kaydetmek ve bu dosyayı programın başında <code>dotenv.load_dotenv()</code> ile yüklemek mantıklıdır. Ayrıca ChatGPT ve benzeri araçlar program kodu üretirken sık sık çok sayıda hata yapar; çünkü bir API yanıtının neye benzediğini bilmezler, işlev ve parametre adları basitçe tahmin edilir ya da API'nin eski bir sürümü kullanılır. Burada API'nin nasıl kullanılacağına dair bilgileri —örneğin API belgelerinde bulunan— isteme eklemek yardımcı olur. <code>requests</code> ile bağlandığımız ve JSON döndüren API'ler için JSON'dan ilgili alıntıları isteme eklemek yardımcı olur. Önce işlevsel bir minimal programı kendiniz yazmak ve ardından bu kodu ChatGPT'ye verip programı belirli özelliklerle genişletmesini istemek de her zaman yararlıdır. Bu tür minimal programları resmî web sitelerinde, API belgelerinde, bloglarda ya da web forumlarında sıklıkla bulabilirsiniz. Burada kendiniz kod yazmanın, arama yapmanın ve ChatGPT kullanmanın birleşimi etkilidir. Yürütme sırasında ortaya çıkan hata iletilerini ChatGPT'ye vermek de BDM'nin program kodunu buna göre uyarlayabilmesine yardımcı olur.</p>
+
+</article></main>
+</div>
+
+<script>
+/* ---------- Tema ---------- */
+(function(){
+  const root=document.documentElement;
+  let saved=null; try{saved=localStorage.getItem('ml-theme')}catch(e){}
+  if(saved) root.setAttribute('data-theme',saved);
+  document.getElementById('themeBtn').onclick=()=>{
+    const dark = root.getAttribute('data-theme')==='dark' ||
+      (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    const next = dark?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem('ml-theme',next)}catch(e){}
+  };
+})();
+
+/* ---------- Pyodide ---------- */
+let pyodide=null, pyReady=null, runFn=null;
+const dot=document.getElementById('pyDot'), st=document.getElementById('pyState'), msg=document.getElementById('pyMsg');
+function errMsg(e){ if(!e) return 'bilinmeyen hata'; if(e.message) return e.message; if(e.errno!==undefined) return 'Pyodide dosya sistemi hatası (errno '+e.errno+')'; try{ return JSON.stringify(e); }catch(_){ return String(e); } }
+function setState(s,t,m){dot.className='dot '+s; st.textContent=t; if(m!==undefined) msg.textContent=m;}
+
+const IMGS = {"images/fruit.jpg": "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"};
+const SETUP = "import os, sys, json, re, math\nif os.getcwd() not in sys.path:\n    sys.path.insert(0, os.getcwd())\nimport pyodide_http\npyodide_http.patch_all()          # requests \u2192 taray\u0131c\u0131n\u0131n XMLHttpRequest'i\nimport requests\n\n# ---------------------------------------------------------------------------\n# \u00d6rnek (\u00e7evrimd\u0131\u015f\u0131) yan\u0131tlar \u2014 yaln\u0131zca canl\u0131 istek ba\u015far\u0131s\u0131z olursa ya da\n# \"\u00e7evrimd\u0131\u015f\u0131 mod\" a\u00e7\u0131ksa kullan\u0131l\u0131r. De\u011ferler kitaptaki \u00e7\u0131kt\u0131lardan al\u0131nm\u0131\u015ft\u0131r;\n# saatlik s\u0131cakl\u0131klar ve \u00fcr\u00fcn listesi kitaptaki \u015fekillerden YAKLA\u015eIK \u00fcretilmi\u015ftir.\n# ---------------------------------------------------------------------------\nOFFLINE = False\n\ndef _hourly_sample():\n    temps = [79.9, 83.6, 86.4, 89.4, 92.1, 94.6, 96.9, 98.8, 100.4, 101.3, 101.6, 101.2,\n             100.2, 98.5, 96.0, 93.9, 92.4, 90.6, 88.4, 86.2, 84.1, 82.4, 81.5, 81.6]\n    return {\"latitude\": 41.85271, \"longitude\": -87.65361, \"timezone\": \"GMT\",\n            \"hourly_units\": {\"time\": \"iso8601\", \"temperature_2m\": \"\u00b0F\"},\n            \"hourly\": {\"time\": [f\"2026-07-01T{h:02d}:00\" for h in range(24)],\n                       \"temperature_2m\": temps}}\n\ndef _current_sample():\n    return {\"latitude\": 41.85271, \"longitude\": -87.65361, \"generationtime_ms\": 0.01800060272216797,\n            \"utc_offset_seconds\": 0, \"timezone\": \"GMT\", \"timezone_abbreviation\": \"GMT\",\n            \"elevation\": 179.0,\n            \"current_units\": {\"time\": \"iso8601\", \"interval\": \"seconds\", \"temperature_2m\": \"\u00b0F\"},\n            \"current\": {\"time\": \"2026-10-27T06:00\", \"interval\": 900, \"temperature_2m\": 65.1}}\n\ndef _fx_sample(key_name=\"conversion_rates\"):\n    return {\"result\": \"success\", \"documentation\": \"https://www.exchangerate-api.com/docs\",\n            \"terms_of_use\": \"https://www.exchangerate-api.com/terms\",\n            \"time_last_update_unix\": 1761177602, \"time_last_update_utc\": \"Thu, 23 Oct 2025 00:00:02 +0000\",\n            \"time_next_update_unix\": 1761264002, \"time_next_update_utc\": \"Fri, 24 Oct 2025 00:00:02 +0000\",\n            \"base_code\": \"EUR\", key_name: {\"EUR\": 1, \"AED\": 4.2626, \"USD\": 1.1623, \"GBP\": 0.8695, \"TRY\": 48.7655}}\n\ndef _off_product_sample():\n    ing = [(\"en:sugar\", 54.5), (\"en:glucose-syrup\", 22.7), (\"en:palm-fat\", 11.4), (\"en:acid\", 5.7),\n           (\"en:e1400\", 2.8), (\"en:apple-juice-from-concentrate\", 1.0), (\"en:flavouring\", 1.0), (\"en:colour\", 0.9)]\n    return {\"code\": \"4009900546089\", \"status\": 1, \"status_verbose\": \"product found\",\n            \"product\": {\"code\": \"4009900546089\", \"product_name\": \"Fruits Skittles\",\n                        \"ingredients\": [{\"id\": i, \"percent_estimate\": p} for i, p in ing]}}\n\ndef _off_search_sample():\n    rows = [(\"Ristorante Pizza Funghi\", \"Dr. Oetker\", \"365 g\", \"c\"),\n            (\"La Numero Uno Prosciutto & Mushrooms\", \"ITALPIZZA\", \"440 g\", \"c\"),\n            (\"Prosciutto and Mushroom Pizza\", \"Gustavo Gusto\", \"460 g\", \"d\")]\n    grades = [\"c\"] * 10 + [\"d\"] * 6 + [\"unknown\"]\n    qty = [\"350 g\", \"400g\", \"410 g\", \"1 kg\", \"380 g\", \"420g\", \"330 g\", \"450 g\", \"390 g\", \"360 g\",\n           \"470 g\", \"520g\", \"300 g\", \"405 g\", \"16 oz\", \"435 g\", \"395 g\"]\n    for i, g in enumerate(grades):\n        rows.append((f\"\u00d6rnek Pizza Funghi {i + 4}\", f\"\u00d6rnek Marka {chr(65 + i % 6)}\", qty[i], g))\n    prods = [{\"_id\": f\"00000000{i:05d}\", \"product_name\": n, \"brands\": b, \"quantity\": q, \"nutriscore_grade\": g,\n              \"_keywords\": [\"pizza\", \"mushrooms\"], \"added_countries_tags\": []} for i, (n, b, q, g) in enumerate(rows)]\n    return {\"count\": len(prods), \"page\": 1, \"page_size\": len(prods), \"products\": prods}\n\n_SAMPLES = [\n    (r\"api\\.open-meteo\\.com/v1/forecast.*hourly=\", _hourly_sample),\n    (r\"archive-api\\.open-meteo\\.com/.*hourly=\", _hourly_sample),\n    (r\"api\\.open-meteo\\.com/v1/forecast.*current=\", _current_sample),\n    (r\"v6\\.exchangerate-api\\.com/v6/.*/latest/EUR\", _fx_sample),\n    (r\"open\\.er-api\\.com/v6/latest/EUR\", lambda: _fx_sample(\"rates\")),\n    (r\"openfoodfacts\\.org/api/v2/product/4009900546089\", _off_product_sample),\n    (r\"openfoodfacts\\.org/cgi/search\\.pl.*(Pizza|pizza).*(Funghi|funghi)\", _off_search_sample),\n]\n\nclass _SampleResponse:\n    status_code = 200\n    ok = True\n    reason = \"OK (\u00f6rnek yan\u0131t)\"\n    def __init__(self, data, url):\n        self._data, self.url = data, url\n        self.text = json.dumps(data, ensure_ascii=False)\n        self.content = self.text.encode()\n        self.headers = {\"content-type\": \"application/json\"}\n    def json(self):\n        return json.loads(self.text)\n    def raise_for_status(self):\n        pass\n\ndef _sample_for(url):\n    for pat, fn in _SAMPLES:\n        if re.search(pat, url):\n            return fn()\n    return None\n\ndef _full_url(url, params):\n    if not params:\n        return url\n    from urllib.parse import urlencode\n    return url + (\"&\" if \"?\" in url else \"?\") + urlencode(params)\n\n_real_get = requests.get\ndef _get(url, *args, **kwargs):\n    full = _full_url(url, kwargs.get(\"params\"))\n    sample = _sample_for(full)\n    if OFFLINE and sample is not None:\n        print(\"[sayfa] \u00c7evrimd\u0131\u015f\u0131 mod \u2192 \u00f6rnek yan\u0131t kullan\u0131ld\u0131.\")\n        return _SampleResponse(sample, full)\n    try:\n        r = _real_get(url, *args, **kwargs)\n    except Exception as e:\n        if sample is None:\n            raise\n        print(f\"[sayfa] Canl\u0131 istek yap\u0131lamad\u0131 ({type(e).__name__}); \u00f6rnek yan\u0131t kullan\u0131ld\u0131.\")\n        return _SampleResponse(sample, full)\n    if r.status_code >= 400 and sample is not None:\n        print(f\"[sayfa] Canl\u0131 API {r.status_code} d\u00f6nd\u00fcrd\u00fc: {r.text[:160]!r}\\n\"\n              f\"[sayfa] \u2192 Kitaptaki ak\u0131\u015f\u0131 s\u00fcrd\u00fcrmek i\u00e7in \u00f6rnek yan\u0131t kullan\u0131ld\u0131.\")\n        return _SampleResponse(sample, full)\n    return r\nrequests.get = _get\n\n# ---------------------------------------------------------------------------\n# K\u00fc\u00e7\u00fck \"openai\" uyumluluk katman\u0131: ger\u00e7ek openai paketi Pyodide'de yok.\n# Kitaptaki kod de\u011fi\u015fmeden \u00e7al\u0131\u015fs\u0131n diye ayn\u0131 aray\u00fcz\u00fc requests ile sa\u011flar.\n# ---------------------------------------------------------------------------\n_OPENAI_SHIM = r'''\n\"\"\"Pyodide i\u00e7in k\u00fc\u00e7\u00fck openai uyumluluk katman\u0131 (ger\u00e7ek paketin yerine ge\u00e7mez).\"\"\"\nimport requests, json\nfrom types import SimpleNamespace\n\nclass OpenAIError(Exception):\n    pass\n\ndef _obj(d):\n    if isinstance(d, dict):\n        return SimpleNamespace(**{k: _obj(v) for k, v in d.items()})\n    if isinstance(d, list):\n        return [_obj(x) for x in d]\n    return d\n\nclass _Endpoint:\n    def __init__(self, client):\n        self._c = client\n    def _post(self, path, payload):\n        if not self._c.api_key:\n            raise OpenAIError(\"API anahtar\u0131 yok. Sol paneldeki 'OpenAI API anahtar\u0131' kutusuna anahtar\u0131n\u0131z\u0131 girip \"\n                              \"'.env'ye yaz' d\u00fc\u011fmesine bas\u0131n, sonra h\u00fccreyi yeniden \u00e7al\u0131\u015ft\u0131r\u0131n.\")\n        r = requests.post(self._c.base_url + path, data=json.dumps(payload),\n                          headers={\"Authorization\": \"Bearer \" + self._c.api_key,\n                                   \"Content-Type\": \"application/json\"})\n        data = r.json()\n        if r.status_code >= 400:\n            raise OpenAIError(f\"{r.status_code}: {data.get('error', {}).get('message', data)}\")\n        return data\n\nclass _Responses(_Endpoint):\n    def create(self, **kwargs):\n        data = self._post(\"/responses\", kwargs)\n        texts = [c.get(\"text\", \"\") for item in data.get(\"output\", []) if item.get(\"type\") == \"message\"\n                 for c in item.get(\"content\", []) if c.get(\"type\") == \"output_text\"]\n        resp = _obj(data)\n        resp.output_text = \"\".join(texts)\n        return resp\n\nclass _Images(_Endpoint):\n    def generate(self, **kwargs):\n        return _obj(self._post(\"/images/generations\", kwargs))\n\nclass OpenAI:\n    def __init__(self, api_key=None, base_url=\"https://api.openai.com/v1\"):\n        import os\n        self.api_key = api_key or os.environ.get(\"OPENAI_API_KEY\")\n        self.base_url = base_url\n        self.responses = _Responses(self)\n        self.images = _Images(self)\n'''\nwith open(\"openai.py\", \"w\", encoding=\"utf-8\") as _f:\n    _f.write(_OPENAI_SHIM)\n\nos.makedirs(\"images\", exist_ok=True)\nwith open(\"config.ini\", \"w\") as _f:\n    _f.write(\"[exchangerate-api]\\napi_key = YOUR_API_KEY_HERE\\nusd_rate = 0\\nlast_updated =\\n\")\n\n_DOTENV_SHIM = r'''\n\"\"\"python-dotenv kurulamazsa kullan\u0131lan \u00e7ok k\u00fc\u00e7\u00fck yedek (yaln\u0131zca load_dotenv).\"\"\"\nimport os\ndef load_dotenv(path=\".env\", override=False):\n    try:\n        with open(path) as f:\n            for line in f:\n                line = line.strip()\n                if line and not line.startswith(\"#\") and \"=\" in line:\n                    k, v = line.split(\"=\", 1)\n                    k, v = k.strip(), v.strip().strip('\"').strip(\"'\")\n                    if override or k not in os.environ:\n                        os.environ[k] = v\n        return True\n    except FileNotFoundError:\n        return False\n'''\n";
+const HELPER = `import sys, io, ast, base64, traceback, json, inspect, os, warnings
+os.environ['MPLBACKEND'] = 'AGG'
+warnings.filterwarnings('ignore', message='.*non-interactive.*')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+NS = {"__name__": "__main__"}
+_FLAGS = ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
+
+async def _run_cell(code):
+    buf = io.StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    sys.stdout = sys.stderr = buf
+    html = None; ok = True
+    try:
+        tree = ast.parse(code)
+        last = None
+        if tree.body and isinstance(tree.body[-1], ast.Expr):
+            last = ast.Expression(tree.body.pop().value)
+        r = eval(compile(tree, "<hücre>", "exec", flags=_FLAGS), NS)
+        if inspect.iscoroutine(r):
+            await r
+        if last is not None:
+            val = eval(compile(last, "<hücre>", "eval", flags=_FLAGS), NS)
+            if inspect.iscoroutine(val):
+                val = await val
+            if val is not None:
+                if hasattr(val, "to_html"):
+                    html = val.to_html(max_rows=40)
+                else:
+                    print(repr(val))
+    except BaseException as e:
+        ok = False
+        frames = [f for f in traceback.extract_tb(e.__traceback__) if f.filename == "<hücre>"]
+        if frames:
+            print("Traceback (most recent call last):")
+            print("".join(traceback.format_list(frames)), end="")
+        print("".join(traceback.format_exception_only(type(e), e)), end="")
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
+    imgs = []
+    if "matplotlib.pyplot" in sys.modules:
+        plt = sys.modules["matplotlib.pyplot"]
+        for n in plt.get_fignums():
+            b = io.BytesIO()
+            plt.figure(n).savefig(b, format="png", dpi=110, bbox_inches="tight")
+            imgs.append(base64.b64encode(b.getvalue()).decode())
+        plt.close("all")
+    return json.dumps({"out": buf.getvalue(), "html": html, "imgs": imgs, "ok": ok})
+`;
+
+
+function loadPython(){
+  if(pyReady) return pyReady;
+  setState('loading','Python yükleniyor…','Pyodide çekirdeği indiriliyor.');
+  pyReady = (async()=>{
+    pyodide = await loadPyodide();
+    pyodide.setStdin({stdin: () => { const v = window.prompt('Python input() bir değer bekliyor:'); return v === null ? undefined : v; }});
+    setState('loading','Paketler yükleniyor…','requests ve pyodide-http indiriliyor; pandas, matplotlib, scikit-learn ilk kullanıldıkları hücrede yüklenir.');
+    await pyodide.loadPackage(['requests','pyodide-http','micropip']);
+    await pyodide.runPythonAsync(HELPER);
+    const HOME=pyodide.FS.cwd();
+    for(const [p,b64] of Object.entries(IMGS)){ const d=p.split('/').slice(0,-1).join('/'); if(d) pyodide.FS.mkdirTree(HOME+'/'+d); pyodide.FS.writeFile(HOME+'/'+p, Uint8Array.from(atob(b64),c=>c.charCodeAt(0))); }
+    await pyodide.runPythonAsync('exec(' + JSON.stringify(SETUP) + ', NS)');
+    pyodide.runPython('globals().update({"_DOTENV_SHIM": NS["_DOTENV_SHIM"]})');
+    runFn = pyodide.globals.get('_run_cell');
+    const ver = 'Python ' + pyodide.runPython('import sys; sys.version.split()[0]') + ' · requests ' + pyodide.runPython('import requests; requests.__version__');
+    if(window.refreshFiles) refreshFiles();
+    setState('ready','Python hazır',ver);
+    document.getElementById('preload').style.display='none';
+  })().catch(e=>{ setState('','Yükleme başarısız','Sayfayı yenileyip tekrar deneyin. Ayrıntı: '+errMsg(e)); console.error(e); pyReady=null; throw e;});
+  return pyReady;
+}
+document.getElementById('preload').onclick=loadPython;
+
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+/* ---------- Kod hücreleri ---------- */
+document.querySelectorAll('.cell').forEach((cell,i)=>{
+  const ta=cell.querySelector('textarea');
+  const original=ta.value;
+  ta.spellcheck=false;
+  ta.rows=Math.min(ta.value.split('\n').length+1,40);
+  const head=document.createElement('div'); head.className='cell-head';
+  head.innerHTML=`<span class="title">In [${i+1}] · ${cell.dataset.title||'Python'}</span>`;
+  const run=document.createElement('button'); run.className='btn primary'; run.textContent='▶ Çalıştır';
+  const reset=document.createElement('button'); reset.className='btn'; reset.textContent='↺'; reset.title='Özgün koda dön';
+  head.append(run,reset); cell.prepend(head);
+  const out=document.createElement('div'); out.className='out'; cell.append(out);
+
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Tab'){e.preventDefault();const s=ta.selectionStart;ta.setRangeText('    ',s,ta.selectionEnd,'end');}
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run.click();}
+  });
+  reset.onclick=()=>{ta.value=original; out.className='out'; out.innerHTML='';};
+  run.onclick=async()=>{
+    run.disabled=true; out.className='out show'; out.textContent='⏳ Çalışıyor…';
+    try{
+      await loadPython();
+      out.textContent='⏳ Paketler denetleniyor…';
+      await pyodide.loadPackagesFromImports(ta.value);
+      await ensurePkgs(ta.value);
+      out.textContent='⏳ Çalışıyor…';
+      await new Promise(r=>setTimeout(r,20));
+      const res=JSON.parse(await runFn(ta.value));
+      let h='';
+      if(res.out) h+=esc(res.out);
+      if(res.html) h+=`<div>${res.html}</div>`;
+      res.imgs.forEach(b=>h+=`<img alt="grafik" src="data:image/png;base64,${b}">`);
+      if(!h) h='<span style="color:var(--ok)">✓ Çalıştı (çıktı yok)</span>';
+      out.innerHTML=h; if(window.refreshFiles) refreshFiles(); out.className='out show'+(res.ok?'':' err');
+    }catch(e){ out.className='out show err'; out.textContent=errMsg(e); }
+    run.disabled=false;
+  };
+});
+
+/* ---------- Yardımcılar ---------- */
+async function py(code){ await loadPython(); await pyodide.loadPackagesFromImports(code); await ensurePkgs(code); return JSON.parse(await runFn(code)); }
+function showRes(el, r){
+  let h=''; if(r.out) h+=esc(r.out); if(r.html) h+=`<div>${r.html}</div>`;
+  r.imgs.forEach(b=>h+=`<img alt="grafik" src="data:image/png;base64,${b}">`);
+  el.innerHTML=h||'✓'; el.className='out show'+(r.ok?'':' err');
+}
+const CITIES={"Chicago, US":[41.85,-87.65],"Seattle, US":[47.61,-122.33],"İstanbul":[41.01,28.98],"Ankara":[39.93,32.86],"Sakarya (Adapazarı)":[40.78,30.40],"İzmir":[38.42,27.14],"Berlin":[52.52,13.40]};
+function fillCities(sel){ Object.keys(CITIES).forEach(c=>{const o=document.createElement('option');o.textContent=c;sel.append(o);}); }
+
+/* ---------- micropip ile gerektiğinde paket ---------- */
+const _installed=new Set();
+async function ensurePkgs(code){
+  if(/\b(import|from)\s+dotenv\b/.test(code) && !_installed.has('dotenv')){
+    setState('loading','python-dotenv kuruluyor…','PyPI üzerinden micropip ile (yalnızca ilk sefer).');
+    try{ await pyodide.loadPackage('micropip'); await pyodide.runPythonAsync("import micropip\nawait micropip.install('python-dotenv')"); }
+    catch(e){ pyodide.runPython('open("dotenv.py","w").write(_DOTENV_SHIM)'); console.warn('python-dotenv kurulamadı, yedek kullanılıyor', e); }
+    _installed.add('dotenv'); setState('ready','Python hazır','');
+  }
+}
+
+/* ---------- Dosya paneli ---------- */
+(function(){
+  const list=document.getElementById('fileList');
+  async function refresh(){
+    if(!pyodide){ list.innerHTML='<i>Python yüklenince görünür.</i>'; return; }
+    const files=JSON.parse(pyodide.runPython(`import os, json
+_r=[]
+for _d,_s,_fs in os.walk('.'):
+    _s[:]=[x for x in _s if not x.startswith('.') and x!='__pycache__']
+    for _f in sorted(_fs):
+        _p=os.path.join(_d,_f)[2:]
+        _r.append([_p, os.path.getsize(_p)])
+json.dumps(sorted(_r))`));
+    list.innerHTML=files.length?'':'<i>(boş)</i>';
+    files.forEach(([p,sz])=>{
+      const a=document.createElement('a'); a.href='#'; a.textContent=`${p} (${sz<1024?sz+' B':(sz/1024).toFixed(1)+' KB'})`;
+      a.style.cssText='display:block;padding:2px 0;font-size:12px;color:var(--accent);word-break:break-all';
+      a.onclick=e=>{e.preventDefault();
+        const full=pyodide.FS.cwd()+'/'+p, data=pyodide.FS.readFile(full);
+        if(/\.(ini|py|json|csv|txt)$/.test(p) || p==='.env'){ const w=document.getElementById('filePeek'); w.style.display='block'; w.textContent=`── ${p} ──\n`+new TextDecoder().decode(data).replace(/(OPENAI_API_KEY=)(\S{6})\S+/,'$1$2••••••'); return; }
+        const u=URL.createObjectURL(new Blob([data]));const l=document.createElement('a');l.href=u;l.download=p.split('/').pop();l.click();setTimeout(()=>URL.revokeObjectURL(u),2000);};
+      list.append(a);
+    });
+  }
+  window.refreshFiles=refresh;
+  document.getElementById('fileRefresh').onclick=async()=>{await loadPython();refresh();};
+})();
+
+/* ---------- Çevrimdışı mod ---------- */
+document.getElementById('offline').onchange=async e=>{
+  await loadPython(); pyodide.runPython(`NS["OFFLINE"] = ${e.target.checked?'True':'False'}`);
+};
+
+/* ---------- OpenAI anahtarı ---------- */
+(function(){
+  const inp=document.getElementById('keyIn'), msg=document.getElementById('keyMsg');
+  document.getElementById('keySave').onclick=async()=>{
+    const k=inp.value.trim(); if(!k){ msg.textContent='Önce anahtarı yapıştırın.'; return; }
+    await loadPython();
+    pyodide.globals.set('_k', k);
+    pyodide.runPython(`import os\nopen(".env","w").write("OPENAI_API_KEY=" + _k + "\\n")\nos.environ["OPENAI_API_KEY"] = _k\ndel _k`);
+    inp.value=''; msg.textContent='✓ .env yazıldı (yalnızca bu sekmede).'; if(window.refreshFiles) refreshFiles();
+  };
+  document.getElementById('keyDel').onclick=async()=>{
+    await loadPython();
+    pyodide.runPython(`import os\nif os.path.exists(".env"): os.remove(".env")\nos.environ.pop("OPENAI_API_KEY", None)`);
+    msg.textContent='Anahtar silindi.'; if(window.refreshFiles) refreshFiles();
+  };
+})();
+
+/* ---------- URL kurucu (fetch) ---------- */
+(function(){
+  const city=document.getElementById('uCity'), lat=document.getElementById('uLat'), lon=document.getElementById('uLon'),
+        v=document.getElementById('uVar'), f=document.getElementById('uF'), urlEl=document.getElementById('uUrl'),
+        params=document.getElementById('uParams'), out=document.getElementById('uOut');
+  fillCities(city);
+  function setCity(){ const [a,b]=CITIES[city.value]; lat.value=a; lon.value=b; build(); }
+  function cur(){
+    const p=[['latitude',lat.value],['longitude',lon.value],['current',v.value]];
+    if(f.checked) p.push(['temperature_unit','fahrenheit']);
+    return p;
+  }
+  function build(){
+    const p=cur(), base='https://api.open-meteo.com/v1/forecast';
+    urlEl.innerHTML=`<span style="color:var(--muted)">${base}</span><b style="color:var(--warn)">?</b>`+
+      p.map(([k,val])=>`<span style="color:var(--accent)">${k}</span>=<span>${esc(String(val))}</span>`).join('<b style="color:var(--warn)">&amp;</b>');
+    params.innerHTML='<table class="data" style="font-size:12.5px;margin:0"><tr><th>parametre</th><th>değer</th></tr>'+p.map(([k,val])=>`<tr><td><code>${k}</code></td><td><code>${esc(String(val))}</code></td></tr>`).join('')+'</table>';
+    return base+'?'+p.map(([k,val])=>`${k}=${encodeURIComponent(val)}`).join('&');
+  }
+  document.getElementById('uSend').onclick=async()=>{
+    const u=build(); out.textContent='⏳ istek gönderiliyor…';
+    try{
+      const r=await fetch(u); const t=await r.text(); let j=t; try{ j=JSON.stringify(JSON.parse(t),null,1); }catch(_){}
+      out.textContent=`HTTP ${r.status} ${r.statusText}\n\n`+j;
+    }catch(e){ out.textContent='İstek yapılamadı: '+e.message+'\n(İnternet bağlantısını ya da tarayıcı eklentilerini denetleyin.)'; }
+  };
+  city.onchange=setCity; [lat,lon].forEach(x=>x.oninput=build); v.onchange=build; f.onchange=build; setCity();
+})();
+
+/* ---------- Saatlik grafik paneli ---------- */
+(function(){
+  const city=document.getElementById('hCity'), d=document.getElementById('hDate'), f=document.getElementById('hF'), info=document.getElementById('hInfo'), out=document.getElementById('hOut');
+  fillCities(city);
+  const today=new Date(); const y=new Date(today); y.setDate(today.getDate()-1); d.value=y.toISOString().slice(0,10);
+  function endpoint(){ const days=(today-new Date(d.value))/86400000; return days>85?'https://archive-api.open-meteo.com/v1/archive':'https://api.open-meteo.com/v1/forecast'; }
+  function upd(){ info.textContent='Kullanılacak uç nokta: '+endpoint()+(endpoint().includes('archive')?' (eski tarih → arşiv; son birkaç gün arşivde henüz olmayabilir)':''); }
+  document.getElementById('hRun').onclick=async()=>{
+    const [la,lo]=CITIES[city.value], unit=f.checked?'fahrenheit':'celsius', sym=f.checked?'°F':'°C';
+    const code=`import requests
+import matplotlib.pyplot as plt
+r = requests.get(${JSON.stringify(endpoint())}, params={
+    "latitude": ${la}, "longitude": ${lo}, "hourly": "temperature_2m",
+    "temperature_unit": "${unit}", "timezone": "auto",
+    "start_date": "${d.value}", "end_date": "${d.value}"})
+print("HTTP", r.status_code)
+data = r.json()
+if "hourly" not in data:
+    print("Yanıt:", data)
+else:
+    hours = [t[11:13] for t in data["hourly"]["time"]]
+    temps = data["hourly"]["temperature_2m"]
+    plt.figure(figsize=(10, 3))
+    plt.plot(hours, temps, marker="o")
+    plt.title(${JSON.stringify(city.value)} + " — ${d.value}")
+    plt.xlabel("Hour"); plt.ylabel("Temperature (${sym})"); plt.grid(True); plt.tight_layout()
+    plt.show()
+    print(f"en düşük {min(t for t in temps if t is not None)}${sym}, en yüksek {max(t for t in temps if t is not None)}${sym}")`;
+    out.textContent='⏳'; try{ showRes(out, await py(code)); }catch(e){ out.textContent=errMsg(e); }
+  };
+  d.onchange=upd; upd();
+})();
+
+/* ---------- Open Food Facts paneli ---------- */
+(function(){
+  const c=document.getElementById('offCode'), th=document.getElementById('offTh'), out=document.getElementById('offOut');
+  document.getElementById('offRun').onclick=async()=>{
+    const code=c.value.replace(/\D/g,''); if(!code){out.textContent='Barkod girin.';return;}
+    const py_code=`import requests, matplotlib.pyplot as plt
+r = requests.get("https://world.openfoodfacts.org/api/v2/product/${code}",
+                 params={"fields": "code,product_name,ingredients"})
+data = r.json()
+product = data.get("product")
+if not product:
+    print("Ürün bulunamadı:", data.get("status_verbose", data))
+elif not any("percent_estimate" in i for i in product.get("ingredients", [])):
+    print(product.get("product_name"), "— içerik yüzdesi bilgisi yok.")
+else:
+    labels, sizes, others = [], [], 0.0
+    for ing in product["ingredients"]:
+        if "percent_estimate" in ing:
+            if ing["percent_estimate"] > ${parseFloat(th.value)||0}:
+                labels.append(ing.get("id", "unknown")); sizes.append(ing["percent_estimate"])
+            else:
+                others += ing["percent_estimate"]
+    if others > 0:
+        labels.append("other"); sizes.append(others)
+    plt.figure(figsize=(6.5, 6.5))
+    plt.pie(sizes, labels=labels, autopct="%1.1f%%", startangle=90)
+    plt.title(product.get("product_name", "${code}"))
+    plt.show()`;
+    out.textContent='⏳'; try{ showRes(out, await py(py_code)); }catch(e){ out.textContent=errMsg(e); }
+  };
+})();
+
+/* ---------- Maliyet hesaplayıcı ---------- */
+(function(){
+  const ids=['cIn','cOut','cPin','cPout','cX','cU','cQ','cD'], el=Object.fromEntries(ids.map(i=>[i,document.getElementById(i)])), out=document.getElementById('cResult');
+  const usd=x=>x<0.01?`$${x.toFixed(6)} (${(x*100).toFixed(4)} sent)`:`$${x.toFixed(4)}`;
+  function calc(){
+    const v=Object.fromEntries(ids.map(i=>[i,parseFloat(el[i].value)||0]));
+    const one=v.cIn*v.cPin/1e6+v.cOut*v.cPout/1e6, n=v.cU*v.cQ*v.cD, total=one*v.cX*n;
+    out.innerHTML=`Tek sorgu: ${v.cIn} × ${v.cPin}/1M + ${v.cOut} × ${v.cPout}/1M = <b>${usd(one)}</b><br>`+
+      `Senaryo: ${v.cX}× karmaşık · ${v.cU} kullanıcı × ${v.cQ} sorgu/gün × ${v.cD} gün = ${n.toLocaleString('tr-TR')} sorgu → <b>${usd(total)}</b>`;
+  }
+  ids.forEach(i=>el[i].oninput=calc);
+  document.getElementById('cImg').onclick=()=>{el.cIn.value=1634;el.cOut.value=248;calc();out.innerHTML+=`<br><span style="color:var(--muted);font-family:Inter,sans-serif;font-size:13px">Metin örneğine (20/102) göre ≈ ${((1634*0.05+248*0.4)/(20*0.05+102*0.4)).toFixed(1)} kat — kitaptaki "yaklaşık dört kat".</span>`;};
+  calc();
+})();
+
+/* ---------- İçindekiler vurgusu ---------- */
+(function(){
+  const links=[...document.querySelectorAll('nav.toc a')];
+  const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.remove('active'));links[secs.indexOf(e.target)].classList.add('active');}}),{rootMargin:'-10% 0px -80% 0px'});
+  secs.forEach(s=>io.observe(s));
+})();
+</script>
+</body>
+</html>

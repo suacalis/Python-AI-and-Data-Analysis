@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python ile Web</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+<style>
+:root{
+  --bg:#f7f5f0; --paper:#ffffff; --ink:#1d1f24; --muted:#5d6270; --line:#e2ded4;
+  --accent:#1f5f8b; --accent-soft:#e3eef6; --warn:#9a5b00; --warn-soft:#fbf1dc;
+  --code-bg:#f2f0ea; --code-ink:#22252b; --ok:#2f7a4a; --err:#b3261e;
+  --prompt-bg:#efece4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+    --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+    --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+  --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+  --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Serif 4",Georgia,serif;font-size:18px;line-height:1.65}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1200px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:28px 18px;border-right:1px solid var(--line);font-family:Inter,sans-serif;font-size:14px}
+nav.toc .brand{font-weight:600;color:var(--accent);font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;padding:6px 8px;border-radius:6px}
+nav.toc a:hover,nav.toc a.active{background:var(--accent-soft);color:var(--ink)}
+.status{margin-top:22px;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;color:var(--muted);background:var(--paper)}
+.status b{color:var(--ink)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#999;margin-right:6px;vertical-align:middle}
+.dot.loading{background:var(--warn);animation:pulse 1s infinite}
+.dot.ready{background:var(--ok)}
+@keyframes pulse{50%{opacity:.3}}
+.toc button,.btn{font-family:Inter,sans-serif;font-size:13px;font-weight:500;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:6px 12px;border-radius:6px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.5;cursor:wait}
+main{padding:40px 48px 120px;min-width:0}
+article{max-width:780px}
+h1{font-size:2.4rem;line-height:1.15;margin:0 0 .3em;color:var(--accent)}
+h2{font-size:1.55rem;margin:2.6em 0 .6em;padding-top:.4em;border-top:1px solid var(--line);color:var(--accent)}
+h3{font-size:1.2rem;margin:2em 0 .5em;color:var(--ink);font-family:Inter,sans-serif;font-weight:600}
+h2 .num{font-family:Inter,sans-serif;font-weight:600;font-size:.8em;color:var(--muted);margin-right:.4em}
+.lead{font-style:italic;color:var(--muted);font-size:1.08rem;border-left:3px solid var(--accent);padding-left:16px;margin:1.2em 0 2em}
+code{font-family:"JetBrains Mono",monospace;font-size:.82em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.terms{display:grid;gap:12px;margin:1.2em 0}
+.term{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+.term b{font-family:Inter,sans-serif;color:var(--accent)}
+.note{background:var(--warn-soft);border-left:3px solid var(--warn);padding:12px 16px;border-radius:0 8px 8px 0;font-size:.95rem;margin:1.2em 0}
+.formula{font-family:"JetBrains Mono",monospace;background:var(--paper);border:1px dashed var(--line);padding:12px 16px;border-radius:8px;text-align:center;font-size:.95rem;margin:1em 0;overflow-x:auto}
+.prompt{background:var(--prompt-bg);border-radius:10px;padding:14px 18px;margin:1.2em 0;font-size:.95rem}
+.prompt .lbl{font-family:Inter,sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.prompt em{display:block;margin-top:6px}
+/* Kod hücresi */
+.cell{margin:1.3em 0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--paper)}
+.cell-head{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--code-bg);border-bottom:1px solid var(--line);font-family:Inter,sans-serif;font-size:12px;color:var(--muted)}
+.cell-head .title{flex:1}
+.cell textarea{display:block;width:100%;border:0;resize:vertical;padding:14px 16px;background:var(--code-bg);color:var(--code-ink);font-family:"JetBrains Mono",monospace;font-size:13.5px;line-height:1.55;tab-size:4;outline:none;min-height:80px;white-space:pre;overflow:auto}
+.out{display:none;border-top:1px solid var(--line);padding:12px 16px;font-family:"JetBrains Mono",monospace;font-size:13px;white-space:pre-wrap;overflow-x:auto}
+.out.show{display:block}
+.out.err{color:var(--err)}
+.out img{max-width:100%;background:#fff;border-radius:6px;margin-top:8px;display:block}
+.out table{border-collapse:collapse;font-size:12.5px;margin:6px 0;white-space:nowrap}
+.out th,.out td{border:1px solid var(--line);padding:3px 8px;text-align:right}
+.out th{background:var(--code-bg)}
+/* Tablo */
+table.data{border-collapse:collapse;font-family:Inter,sans-serif;font-size:14px;margin:1em 0}
+table.data th,table.data td{border:1px solid var(--line);padding:6px 10px}
+table.data th{background:var(--code-bg)}
+.caption{font-family:Inter,sans-serif;font-size:13px;color:var(--muted);margin-top:-4px}
+/* Widget */
+.widget{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px;margin:1.5em 0}
+.widget h4{margin:0 0 6px;font-family:Inter,sans-serif;font-size:14px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.widget .ctrl{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-family:Inter,sans-serif;font-size:14px;margin:10px 0}
+.widget svg{width:100%;height:auto;display:block}
+.widget .readout{font-family:Inter,sans-serif;font-size:15px}
+.widget .readout b{color:var(--accent)}
+input[type=range]{accent-color:var(--accent)}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  main{padding:24px 16px 80px}
+  h1{font-size:1.9rem}
+}
+h3{font-size:1.15rem;margin:2em 0 .5em;color:var(--ink);font-family:Inter,sans-serif;font-weight:600}
+kbd{font-family:"JetBrains Mono",monospace;font-size:.8em;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--paper)}
+input[type=number]{padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:"JetBrains Mono",monospace}
+@media (max-width:700px){.wh-grid{grid-template-columns:1fr !important}}
+.ro{margin:1.3em 0;border:1px dashed var(--line);border-radius:10px;overflow:hidden;background:var(--paper)}
+.ro-head{padding:6px 12px;background:var(--warn-soft);color:var(--warn);font-family:Inter,sans-serif;font-size:12px;font-weight:600}
+.ro pre{margin:0;padding:12px 16px;background:var(--code-bg);color:var(--code-ink);font-family:"JetBrains Mono",monospace;font-size:13px;line-height:1.5;overflow-x:auto}
+.ro-out{padding:8px 16px;border-top:1px solid var(--line);font-family:Inter,sans-serif;font-size:13px}
+.ro-out pre{background:none;padding:4px 0}
+.ro-tag{background:var(--warn-soft);color:var(--warn);font-family:Inter,sans-serif;font-size:12px;font-weight:600;padding:1px 6px;border-radius:4px}
+.sel{padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink)}
+.h-grid iframe{min-width:0}
+@media (max-width:760px){.h-grid{grid-template-columns:1fr !important}}
+@media (max-width:700px){table.data{display:block;overflow-x:auto;max-width:100%}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" id="toc">
+  <div class="brand">Bölüm 10</div>
+  <a href="#giris">Giriş: Web'den veri</a>
+  <a href="#s101">10.1 HTML</a>
+  <a href="#s102">10.2 Flask</a>
+  <a href="#s103">10.3 Streamlit</a>
+  <a href="#s104">10.4 Beautiful Soup</a>
+  <a href="#s105">10.5 Selenium</a>
+  <a href="#s106">10.6 E-posta ve ileti</a>
+  <div class="status">
+    <div><span class="dot" id="pyDot"></span><b id="pyState">Python yüklenmedi</b></div>
+    <div id="pyMsg" style="margin:6px 0 8px">Kodlar tarayıcıda Pyodide ile çalışır; istekler gerçekten İnternet'e gider.</div>
+    <button class="btn" id="preload">Python'u şimdi yükle</button>
+    <div style="margin-top:8px"><label style="font-size:12.5px"><input type="checkbox" id="offline"> Çevrimdışı mod (Wikipedia için örnek sayfa)</label></div>
+    <div style="margin-top:8px"><button class="btn" id="themeBtn">Tema değiştir</button></div>
+  </div>
+  <div class="status">
+    <b>Dosyalar</b> <span style="font-size:11.5px">(metin dosyaları burada açılır)</span>
+    <div id="fileList" style="margin:6px 0;max-height:180px;overflow:auto"><i>Python yüklenince görünür.</i></div>
+    <button class="btn" id="fileRefresh">Yenile</button>
+    <pre id="filePeek" style="display:none;margin:8px 0 0;max-height:220px;overflow:auto;font-size:11px;background:var(--code-bg);padding:6px;border-radius:6px;white-space:pre-wrap"></pre>
+  </div>
+</nav>
+
+<main><article>
+<h1 id="giris">10 · Python'u Web'de Kullanmak</h1>
+<p class="lead">Bu bölüm klasik HTML web sayfalarından veri çıkarmaya odaklanıyor. Ayrıca Python ile web sayfaları ve API'ler sunmaya ve e-posta göndermeye bakacağız.</p>
+
+<p>Önceki bölümde, Python programlarımızda hava durumu verisini, döviz kurlarını ve İnternet'ten çok daha fazlasını almamızı sağlayan pek çok amaca yönelik hazır uygulama programlama arayüzleri (API'ler) olduğunu gördük. Ancak bizi ilgilendiren daha özel içerikler söz konusu olduğunda bunlar için bir API olmayabilir: Bu hafta şirket kantininin menüsünde ne var? Tüm çalışanların telefon numaralarını nasıl alırım? Önümüzdeki aylarda hangi konserler var? Pek çok durumda bu tür bilgiler yalnızca bir web sitesinde bulunur ve çoğu zaman bir API üzerinden erişilemez.</p>
+
+<p>Bu bölümde, Yaz Olimpiyatları'nın yapıldığı ve yapılacağı yılları ve ev sahibi şehirleri bir web sitesinden nasıl çıkaracağımıza dair bir örneğe bakacağız. Aslında tam bu veri için bir API var, dolayısıyla kendimizi bu zahmetten kurtarabilirdik; ama amaç yalnızca genel yaklaşımı öğrenmek. Bu bilgiyle çevrimiçi mağazalardan ürün fiyatlarını, etkinlik tarihlerini, haberleri, menüleri, iletişim bilgilerini, emlak ve iş ilanlarını, istatistikleri, tabloları ve çok daha fazlasını çıkarabilirsiniz. Şimdi Python'da bizim adımıza İnternet'te içerik arayan ve veriyi bize sunan bir bot programlayacağız; böylece onu kaydedebilir, analiz edebilir, görselleştirebilir, e-postayla gönderebilir ya da başka biçimde işleyebiliriz.</p>
+
+<p>Burada çoğu web sitesinin otomatik olarak kazınmak (scrape) üzere tasarlanmadığını belirtmekte yarar var. Hizmet koşulları çoğu zaman bot kullanımını yasaklar. İhlal, erişim yasağına ya da hukuki sonuçlara yol açabilir. Bu yüzden resmî bir API olup olmadığını ve neye izin verilip neyin yasaklandığını önceden denetlemek önemlidir. Bazı web siteleri botları algılar ve sonuç olarak erişimi engeller. Bir botun o anda bir web sitesine eriştiğinin bir göstergesi, kısa bir süre içinde olağan dışı yüksek sayıda ziyarettir. Ayrıca web siteleri bot erişimini önlemek için sıklıkla CAPTCHA'lar kullanır. Bunlar insan olduğunuzu doğrulamak için tasarlanmış küçük görevlerdir. Örneğin bir CAPTCHA bulanık metin içeren bir görüntü gösteriyorsa bu metin basit programlama yöntemleriyle güvenilir biçimde çıkarılamaz. CAPTCHA'lar artık bilgisayarlar için çoğu zaman insanlardan daha kolay çözülebilir olsa da basit betik geliştiricilerinin web sitelerinden içerik çıkarmasını engelleyen küçük bir engel oluşturmaya devam ediyor.</p>
+
+<p>Ayrıca web sitelerinin çoğu zaman sabit bir yapıya uymaması ve sık sık değişmesi sorunuyla da karşılaşacağız. Bugün bir web sitesinden güvenilir biçimde veri çıkaran bir betik yazarsak, düzen, başlıklar ya da betiği yazarken hesaba katmadığımız başka ayrıntılar değiştiği için bir ay ya da bir yıl sonra artık çalışmayabilir. Web siteleri sonuçta öncelikle insanlar için tasarlanır. Çoğu durumda içerik de az çok elle, insanlar tarafından oluşturulmuştur. Bir çalışan bugün başlık olarak tireyle <code>"Jazz-Concert Dates"</code>, yarın tiresiz <code>"Jazz Concert Dates"</code> yazarsa programımızın artık çalışmamasının nedeni tam olarak bu olabilir —tam da böyle bir senaryoyu önceden hesaba katmadıysak. Ama her özel durumu her zaman öngörmek muhtemelen imkânsızdır.</p>
+
+<p>Web sitelerinden içerik çıkarmaya dalmadan önce HTML'in temellerine bakalım. Bu, web sitelerinin yazıldığı dildir. Tarayıcımıza bir URL girip <kbd>Enter</kbd>'a bastığımızda ya da bir bağlantıya tıkladığımızda tarayıcı bir web sunucusuna bir HTTPS isteği gönderir. Sunucu genellikle tarayıcının daha sonra gösterdiği bir HTML sayfasıyla yanıt verir.</p>
+
+<div class="note"><b>Bu sayfa nasıl çalışır?</b> Kodlar tarayıcıda Pyodide ile çalışır; <code>requests</code> gerçekten İnternet'e gider (Bölüm 9'daki gibi). Tarayıcı ortamının sınırları nedeniyle bazı bölümler uyarlandı:
+<ul style="margin:.4em 0 0">
+<li><b>Flask (10.2):</b> Gerçek bir sunucu başlatılamaz; bu yüzden <code>app.run()</code> uygulamayı sayfadaki bir <b>sanal tarayıcıya</b> bağlar. İstekler Flask'ın kendi test istemcisiyle işlenir; yani Flask kodu gerçekten çalışır.</li>
+<li><b>Streamlit (10.3):</b> Streamlit'in tarayıcıda çalışan sürümü <b>stlite</b> ile gerçek bir Streamlit uygulaması başlatabilirsiniz.</li>
+<li><b>Beautiful Soup (10.4):</b> Tarayıcı Wikipedia'nın <code>/wiki/</code> sayfalarını doğrudan okuyamaz (CORS). Sayfa bu adresleri aynı içeriği veren Wikipedia REST API'sine yönlendirir ve bunu çıktıda <code>[sayfa]</code> satırıyla yazar; o da olmazsa basitleştirilmiş bir <b>örnek sayfa</b> kullanır.</li>
+<li><b>Selenium (10.5) ve SMTP (10.6):</b> Tarayıcıda çalışamaz; kodlar salt okunur gösterilir, yanlarında aynı fikri tarayıcıda gösteren çalışan karşılıkları vardır.</li>
+</ul></div>
+
+<!-- ====================== 10.1 ====================== -->
+<h2 id="s101"><span class="num">10.1</span>HTML</h2>
+
+<p>Hypertext Markup Language (HTML), web sayfalarını tasarlamak için kullanılan standart dildir. Bir tarayıcının gösterdiği web sayfası bir HTML belgesi biçiminde teslim edilir ve ardından tam olarak HTML kaynak kodunda betimlendiği gibi işlenip görüntülenir. Aşağıdaki örnek bir HTML belgesinin temel yapısını gösteriyor. Soldaki kodu düzenledikçe sağdaki önizleme anında güncellenir:</p>
+
+<div class="widget" id="htmlWidget">
+  <h4>Etkileşimli: HTML düzenleyici ve önizleme (Şekil 10.1)</h4>
+  <div class="ctrl" style="gap:6px" id="htmlEx"></div>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px" class="h-grid">
+    <textarea id="htmlIn" spellcheck="false" style="width:100%;min-height:250px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--code-bg);color:var(--code-ink);font-family:'JetBrains Mono',monospace;font-size:13px">&lt;!doctype html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;title&gt;The Title of the Page&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;This is a Heading&lt;/h1&gt;
+  &lt;p&gt;Click &lt;a href="./info.html"&gt;here&lt;/a&gt; to continue.&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</textarea>
+    <div>
+      <div id="htmlTab" style="font:12px Inter,sans-serif;background:#eee;color:#333;padding:4px 8px;border-radius:6px 6px 0 0;border:1px solid #ccc;border-bottom:0">🗎 The Title of the Page</div>
+      <iframe id="htmlPrev" sandbox style="width:100%;height:225px;border:1px solid #ccc;border-radius:0 0 6px 6px;background:#fff"></iframe>
+    </div>
+  </div>
+  <div class="readout" id="htmlTree" style="max-height:230px;overflow:auto;font-family:'JetBrains Mono',monospace;font-size:12.5px;margin-top:8px"></div>
+</div>
+
+<p>HTML belgelerini oluşturan öğeler XML öğelerine benzer. Bir <em>öğe etiketi</em> (tag) her zaman <code>&lt;that&gt;</code> gibi açılır ve <code>&lt;/that&gt;</code> gibi yeniden kapatılır. Öğeler ve açılış ile kapanış etiketleri arasındaki metin içeriği oluşturur. Öznitelikler (attribute) öğeleri daha ayrıntılı betimlemek için kullanılır; örneğin <code>href="./info.html"</code>. Bu öznitelik, <b>here</b>'e tıkladığınızda bir bağlantının nereye gideceğini belirtir. Metin içeriği böylece <em>neyin</em> gösterileceğini belirler; öznitelikler de öğenin ek bilgisini ya da davranışını belirtir.</p>
+
+<p>Bir HTML belgesi her zaman bir <code>&lt;html&gt;</code> öğesiyle başlar. Ondan önce yalnızca örneğimizde gösterilen belge türü gibi meta veriler vardır. <code>&lt;html&gt;</code> öğesinin iki alt öğesi vardır: <code>&lt;head&gt;</code> web sayfası hakkında görüntülenmeyen genel bilgileri içerirken <code>&lt;body&gt;</code> asıl içeriği içerir. Sonunda gördüğünüz budur.</p>
+
+<p><code>&lt;head&gt;</code> içindeki tipik öğeler şunlardır:</p>
+<div class="terms">
+<div class="term"><b>&lt;meta charset="utf-8"&gt;</b> — Sayfanın kullandığı karakter kümesi.</div>
+<div class="term"><b>&lt;meta name="viewport" …&gt;</b> — Akıllı telefonlar için ayarlar; örneğin varsayılan yakınlaştırma düzeyi ya da yakınlaştırmaya izin verilip verilmeyeceği.</div>
+<div class="term"><b>&lt;title&gt;</b> — Tarayıcı sekmesinde görünen sayfa başlığı.</div>
+<div class="term"><b>&lt;link&gt;</b> — Basamaklı stil sayfalarını (CSS) ya da bir simgeyi eklemek için dosyalara başvurular.</div>
+<div class="term"><b>&lt;style&gt;</b> — CSS stil tanımları.</div>
+<div class="term"><b>&lt;script&gt;</b> — Bir <em>.js</em> dosyasından yüklenen ya da doğrudan bu öğeye gömülen JavaScript kodu.</div>
+</div>
+
+<p>Bu kitapta CSS'i ya da JavaScript'i ele almıyoruz. CSS bir sayfanın görünümünü tasarlamak için kullanılır; JavaScript programlama dili ise web sayfalarına etkileşimli öğeler eklemek için doğrudan web tarayıcısında çalışan betikler yazmakta kullanılır. (Bu sayfanın kendisi de HTML, CSS ve JavaScript'ten oluşuyor; Python'u çalıştıran Pyodide de bir JavaScript kütüphanesidir.)</p>
+
+<p><code>&lt;body&gt;</code> içindeki tipik öğeler:</p>
+<table class="data">
+<tr><th>Öğe</th><th>Anlamı</th></tr>
+<tr><td><code>&lt;h1&gt;</code>, <code>&lt;h2&gt;</code>, <code>&lt;h3&gt;</code>, …</td><td>Başlıklar; <code>&lt;h1&gt;</code> en büyük başlıktır.</td></tr>
+<tr><td><code>&lt;p&gt;</code></td><td>Paragraflar.</td></tr>
+<tr><td><code>&lt;br&gt;</code></td><td>Satır sonu.</td></tr>
+<tr><td><code>&lt;img src="image.png"&gt;</code></td><td>Görüntüler.</td></tr>
+<tr><td><code>&lt;a href="https://www.example.com"&gt;</code></td><td>Başka sayfalara bağlantılar.</td></tr>
+<tr><td><code>&lt;ul&gt;</code>, <code>&lt;ol&gt;</code></td><td>Numarasız ve numaralı listeler.</td></tr>
+<tr><td><code>&lt;li&gt;</code></td><td>Bu listelerdeki maddeler.</td></tr>
+<tr><td><code>&lt;b&gt;</code>, <code>&lt;em&gt;</code> / <code>&lt;i&gt;</code>, <code>&lt;u&gt;</code></td><td>Kalın, italik, altı çizili.</td></tr>
+<tr><td><code>&lt;div&gt;</code>, <code>&lt;span&gt;</code></td><td>Bölümler ve metin blokları.</td></tr>
+<tr><td><code>&lt;table&gt;</code></td><td>Satırları <code>&lt;tr&gt;</code>, sütunları <code>&lt;td&gt;</code> / <code>&lt;th&gt;</code> olan tablolar.</td></tr>
+</table>
+
+<p>Bu öğelerin hepsi (<code>&lt;br&gt;</code> ve <code>&lt;img&gt;</code> hariç) her zaman bir açılış etiketiyle başlar ve sonunda kapatılır: <code>In &lt;b&gt;this&lt;/b&gt; sentence, the word &lt;a href="info.html"&gt;this&lt;/a&gt; is written in bold in one instance and a link to another page in the other.</code> (Yukarıdaki düzenleyicide "Kalın + bağlantı" örneğini deneyin.)</p>
+
+<p>HTML'i kendiniz denemek isterseniz HTML kodunu bir dosyaya kaydedip ona <em>.html</em> uzantısını vermeniz (ör. <em>test.html</em>) ve tarayıcınızda açıp görüntülemek için dosyaya çift tıklamanız yeterlidir. Web sayfalarının kaynak kodunu görmek için web sayfasında herhangi bir yere sağ tıklayıp <b>Sayfa Kaynağını Görüntüle</b>'yi seçebilir ya da <kbd>Ctrl</kbd> + <kbd>U</kbd>'ya (Mac'te <kbd>Command</kbd> + <kbd>Option</kbd> + <kbd>U</kbd>) basabilirsiniz. Alternatif olarak <kbd>F12</kbd>'ye basarak ya da bir öğeye sağ tıklayıp ardından <b>İncele</b>'ye tıklayarak geliştirici araçlarını açabilirsiniz. Sayfanın kaynak kodu orada da görünür.</p>
+
+<p>Python ile de bir HTML dosyası yazıp sonucu görebiliriz. Bu sayfada <code>HTML(...)</code> adlı küçük bir yardımcı, verilen HTML'i hücrenin altında yalıtılmış bir çerçevede gösterir (Jupyter'deki <code>IPython.display.HTML</code>'in karşılığı):</p>
+
+<div class="cell" data-title="Python'dan test.html yazmak"><textarea>page = """&lt;!doctype html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;title&gt;The Title of the Page&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;This is a Heading&lt;/h1&gt;
+  &lt;p&gt;Click &lt;a href="./info.html"&gt;here&lt;/a&gt; to continue.&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;"""
+
+with open("test.html", "w", encoding="utf-8") as f:
+    f.write(page)
+print("test.html yazıldı:", len(page), "karakter (sol panel → Dosyalar)")
+
+HTML(page, height=150, url="C:/code/test.html")</textarea></div>
+
+<!-- ====================== 10.2 ====================== -->
+<h2 id="s102"><span class="num">10.2</span>Flask: Bir Python Web Sunucusu</h2>
+
+<p>Bu kitap size kendi web sitelerinizi nasıl geliştireceğinizi öğretmeyi amaçlamıyor. Yine de İnternet'in nasıl çalıştığını daha iyi anlamak için temellere kısaca bakacağız. Bu yolla HTML'i de daha iyi tanıyacaksınız.</p>
+
+<p>Bir web sunucusu, bir HTTPS isteği gönderebileceğimiz ve ardından örneğin tarayıcımızın gösterebileceği bir HTML belgesi biçiminde bir yanıtla karşılık veren bir bilgisayardır. Böyle bir web sunucusunu Python paketi Flask ile başlatabiliriz. Flask'ı <code>pip install flask</code> ile kurarız (bu sayfa onu ilk kullanımda micropip ile PyPI'den kurar):</p>
+
+<div class="cell" data-title="İlk Flask uygulaması"><textarea>from flask import Flask, request, render_template
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Hello!"
+
+if __name__ == "__main__":
+    app.run(debug=True)</textarea></div>
+
+<p>Kitap, bu betiği bir Jupyter Notebook'ta değil, sıradan bir <em>.py</em> programı olarak, örneğin <em>webserver.py</em> olarak çalıştırmayı öneriyor. Program o zaman biz <kbd>Ctrl</kbd> + <kbd>C</kbd> ya da <kbd>Command</kbd> + <kbd>C</kbd> (Mac) ile sonlandırana kadar sürekli çalışır. Programın konsol çıktısı şunu gösterir: <code>* Running on http://127.0.0.1:5000</code>.</p>
+
+<p><code>127.0.0.1</code> IP adresi <em>localhost</em> (yerel makine) anlamına gelir. Bu, o anda üzerinde çalıştığımız bilgisayardır. <code>5000</code>, web sunucusunun çalıştığı <em>port</em>'tur. Gösterilen adresi, yani "http://127.0.0.1:5000"'i web tarayıcısına girersek çıktıyı görürüz: <b>Hello!</b> Bu sayfada aynı şeyi aşağıdaki sanal tarayıcıyla yapabilirsiniz:</p>
+
+<div class="widget" id="flaskWidget">
+  <h4>Sanal tarayıcı — Flask uygulamanıza bağlı (Şekil 10.2 / 10.3)</h4>
+  <div class="ctrl" style="gap:6px">
+    <button class="btn" id="fBack" title="Geri">←</button>
+    <input type="text" id="fUrl" value="http://127.0.0.1:5000/" style="flex:1;min-width:220px;padding:6px 10px;border:1px solid var(--line);border-radius:18px;background:var(--code-bg);color:var(--ink);font-family:'JetBrains Mono',monospace;font-size:13px">
+    <button class="btn primary" id="fGo">Git</button>
+    <label style="font-size:12.5px"><input type="checkbox" id="fSrc"> kaynak kodu göster</label>
+  </div>
+  <div class="ctrl" style="gap:6px" id="fQuick"></div>
+  <div class="readout" id="fStatus" style="font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted)">Önce yukarıdaki Flask hücresini çalıştırın.</div>
+  <iframe id="fView" sandbox style="width:100%;height:170px;border:1px solid #ccc;border-radius:6px;background:#fff;margin-top:6px"></iframe>
+  <pre id="fCode" style="display:none;font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--code-bg);padding:8px;border-radius:6px;white-space:pre-wrap;margin:6px 0 0"></pre>
+</div>
+
+<p><code>home()</code> işlevinin üstündeki satıra yazdığımız <code>@app.route("/")</code> dekoratörüyle (decorator), biri <code>"/"</code> sayfasını ziyaret ettiğinde tam olarak bu işlevin çalıştırılacağını belirtiriz. <code>"/"</code> her zaman ana sayfayı ifade eder. Biri <code>http://127.0.0.1:5000/test</code> adresini çağırdığında çalıştırılan ikinci bir işlev de oluşturabiliriz:</p>
+
+<div class="cell" data-title="İkinci yol: /test"><textarea>@app.route("/test")
+def test():
+     return "Test Page"
+
+print("Tanımlı yollar:", [str(r) for r in app.url_map.iter_rules() if r.endpoint != "static"])
+print("Sanal tarayıcıda http://127.0.0.1:5000/test adresini deneyin.")</textarea></div>
+
+<p>Burada artık yukarıdan aşağıya basitçe çalışan bir program yazmıyoruz; bir "şu olduğunda bunu yap" mantığı kullanıyoruz: Biri ana sayfaya gittiğinde <code>home()</code> işlevini çalıştır. Bu işlevin döndürdüğü şey web sunucumuzun istemciye yanıtıdır. Biri <em>/test</em> sayfasını ziyaret ederse <code>test()</code>'i çalıştır. Program tüm zaman boyunca arka planda çalışır, istekleri kabul eder ve onlara yanıt verir.</p>
+
+<p>Şimdi ana sayfayı yeniden, ama bu kez bir <em>URL parametresiyle</em> ziyaret edelim: <code>http://127.0.0.1:5000/?name=Olivia</code>. Aşağıdaki kodda bu parametrelere <code>request.args</code> adlı bir sözlük üzerinden erişiriz:</p>
+
+<div class="cell" data-title="URL parametresi: request.args"><textarea>@app.route("/", endpoint="home_v2")
+def home():
+    if "name" in request.args:
+        return f"Hello {request.args["name"]}!"
+    else:
+        return "Hello!"
+
+# Aynı "/" yolu için yeni işlev, eskisinin yerine geçsin:
+app.view_functions["home"] = home
+print("Sanal tarayıcıda http://127.0.0.1:5000/?name=Olivia adresini deneyin.")</textarea></div>
+
+<div class="note"><b>Neden <code>endpoint=</code> ve <code>view_functions</code>?</b> Kitapta her örnek ayrı bir <em>.py</em> dosyası gibi düşünülmüş; dosya her seferinde baştan çalıştırılır. Burada ise hücreler aynı uygulamaya eklendiği için, aynı <code>home</code> adını ikinci kez kaydetmek Flask'ta <code>AssertionError: View function mapping is overwriting an existing endpoint function</code> hatası verir. Bu iki satır yalnızca eski işlevi yenisiyle değiştirmek içindir. (Ayrıca <code>f"…{request.args["name"]}…"</code> içinde aynı tırnağın yeniden kullanılması yalnızca Python 3.12 ve sonrasında geçerlidir; daha eski sürümlerde <code>request.args['name']</code> yazın.)</div>
+
+<p>Bu bilgiyle artık eksiksiz web siteleri ve hatta kendi API'lerimizi programlayabilir, onları bir arama işlevi, dil seçimi ve çok daha fazlasıyla donatabilirdik.</p>
+
+<p>Uygulamamızın yalnızca düz metin değil eksiksiz bir HTML sayfası çıkarmasını sağlamak için <em>şablonlar</em> (templates) kullanılması önerilir. Bunlar <code>{{ name }}</code> gibi yer tutucular kullanabileceğimiz HTML dosyalarıdır. HTML şablon dosyalarımızı, örneğin <em>/templates/home.html</em> dosyasını saklayabileceğimiz <code>"templates"</code> adlı bir klasör oluşturmak en iyisidir:</p>
+
+<div class="cell" data-title="templates/home.html şablonu"><textarea>template = """&lt;!doctype html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;title&gt;Hello&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;Hello {{ name }}!&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;"""
+with open("templates/home.html", "w", encoding="utf-8") as f:
+    f.write(template)
+print("templates/home.html yazıldı.")</textarea></div>
+
+<p>Program kodumuzda artık böyle bir şablonu yükleyip içindeki yer tutucuları değerlerle doldurabiliriz. Bu değerler daha sonra uygun yerlere yerleştirilir:</p>
+
+<div class="cell" data-title="render_template"><textarea>@app.route("/", endpoint="home_v3")
+def home():
+    name = request.args.get("name", "you")
+    return render_template("home.html", name=name)
+
+app.view_functions["home"] = home     # (sayfa için: önceki home'un yerine)
+print("Sanal tarayıcıda / ve /?name=Olivia adreslerini deneyin.")</textarea></div>
+
+<p>Web sitemiz artık büyük bir yazıyla <b>Hello you!</b> ya da URL parametresiyle bir ad verildiyse o adı gösteriyor. Şablon motoru (Jinja2) değerleri HTML'e yerleştirirken özel karakterleri otomatik olarak kaçışlar; <code>?name=&lt;b&gt;X&lt;/b&gt;</code> gibi bir girdi kalın yazı değil, düz metin olarak görünür. Bu, kullanıcı girdisinin sayfaya kod olarak sızmasını önler. Sanal tarayıcıda deneyin.</p>
+
+<!-- ====================== 10.3 ====================== -->
+<h2 id="s103"><span class="num">10.3</span>Streamlit ile Etkileşimli Web Araçları</h2>
+
+<p>Flask'a, Jupyter Notebook'lara ve kullanıcıdan <code>input(...)</code> ile bir şey girmesini istediğiniz basit konsol uygulamalarına alternatif olarak, Python için yalnızca birkaç satır kodla etkileşimli web uygulamaları geliştirmenizi sağlayan pratik araçlar vardır. Streamlit bunlardan biridir ve onu <code>pip install streamlit</code> ile kurabiliriz. Onunla tarayıcı üzerinden kullanabileceğiniz bir uygulama kurabilirsiniz.</p>
+
+<p>Aşağıdaki örnek, metin girebileceğiniz çok satırlı bir giriş alanı ve bir düğme oluşturur. Düğmeye tıklandığında girilen metindeki sözcükler sayılır ve bu sayı gösterilir. Kodu düzenleyip <b>Streamlit'te çalıştır</b>'a basın; tarayıcıda çalışan Streamlit (stlite) uygulamayı aşağıda açar:</p>
+
+<div class="widget" id="stWidget">
+  <h4>Etkileşimli: gerçek Streamlit uygulaması (stlite) — Şekil 10.4</h4>
+  <textarea id="stCode" spellcheck="false" style="width:100%;min-height:170px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--code-bg);color:var(--code-ink);font-family:'JetBrains Mono',monospace;font-size:13px">import streamlit as st
+
+st.title("Word Count")
+
+text = st.text_area("Your Text:")
+if st.button("Count Words"):
+  words = text.split()
+  st.write(f"Number of words: {len(words)}")</textarea>
+  <div class="ctrl" style="gap:6px"><button class="btn primary" id="stRun">▶ Streamlit'te çalıştır</button> <button class="btn" id="stEx">Daha çok bileşenli örnek</button> <span class="readout" id="stMsg" style="font-size:12.5px;color:var(--muted)">İlk çalıştırma, stlite ve Streamlit'i indirdiği için bir dakika kadar sürebilir.</span></div>
+  <div id="stFrame"></div>
+</div>
+
+<p>Streamlit uygulamalarını basitçe <code>python wordcount.py</code> ile çalıştıramayacağınızı ve Visual Studio Code'daki <b>Run</b> düğmesiyle de çalıştıramayacağınızı belirtmek önemlidir. Bunun yerine programı konsoldan (ör. Visual Studio Code'un altında gösterilen terminal) <code>streamlit run wordcount.py</code> komutuyla başlatırsınız. Bilgisayarınız Streamlit programını bulamazsa <code>python -m streamlit run wordcount.py</code> komutunu da kullanabilirsiniz.</p>
+
+<p>Tıpkı Flask uygulamalarında olduğu gibi konsolda artık tarayıcınızda açabileceğiniz bir URL görünür: <em>http://localhost:8501</em>.</p>
+
+<p>Streamlit ile çalışmak çok basittir ve konsol uygulamalarında <code>print</code> ve <code>input</code> ile programlamaya benzer. <code>st.title</code> ve <code>st.write</code> metin göstermek için kullanılır; ilki büyük bir başlık oluşturur, ikincisi normal metin gösterir. <code>st.text_area</code> web uygulamasında çok satırlı bir metin alanını temsil eder. Oraya girilen metin programımızda <code>text</code> değişkeninde saklanır. <code>st.button</code> klasik bir düğme gösterir ve tıklanana kadar bekler. Bu olur olmaz <code>if st.button</code> satırını izleyen kod bloğundaki program kodu çalıştırılır. (Daha doğrusu: Streamlit her etkileşimde betiğin tamamını baştan çalıştırır; düğmeye tıklandığı o çalıştırmada <code>st.button</code> <code>True</code> döndürür.)</p>
+
+<p>Streamlit başka pek çok giriş, seçim ve çıkış öğesi sunar. İşte en önemlilerine genel bir bakış:</p>
+<table class="data">
+<tr><th>İşlev</th><th>Ne yapar?</th><th>İşlev</th><th>Ne yapar?</th></tr>
+<tr><td><code>st.text_input()</code></td><td>Tek satırlı metin girişi</td><td><code>st.button()</code></td><td>Klasik düğme</td></tr>
+<tr><td><code>st.text_area()</code></td><td>Büyük, çok satırlı metin alanı</td><td><code>st.download_button()</code></td><td>Bir dosyayı indirilebilir yapar</td></tr>
+<tr><td><code>st.number_input()</code></td><td>Sayılar için metin alanı</td><td><code>st.write()</code></td><td>Metin yazdırır</td></tr>
+<tr><td><code>st.slider()</code></td><td>Kaydırıcı</td><td><code>st.table()</code> / <code>st.dataframe()</code></td><td>Tablo gösterir</td></tr>
+<tr><td><code>st.selectbox()</code></td><td>Açılır menü</td><td><code>st.image()</code></td><td>Görüntü gösterir</td></tr>
+<tr><td><code>st.multiselect()</code></td><td>Çoklu seçim</td><td><code>st.audio()</code> / <code>st.video()</code></td><td>Medya oynatır</td></tr>
+<tr><td><code>st.radio()</code></td><td>Tek seçimli düğmeler</td><td><code>st.progress()</code></td><td>İlerleme çubuğu</td></tr>
+<tr><td><code>st.checkbox()</code></td><td>Onay kutusu</td><td><code>st.spinner()</code></td><td>Yükleniyor göstergesi</td></tr>
+<tr><td><code>st.date_input()</code> / <code>st.time_input()</code></td><td>Tarih/saat seçimi</td><td><code>st.toast()</code></td><td>Küçük açılır bildirim</td></tr>
+<tr><td><code>st.file_uploader()</code></td><td>Dosya yükleme</td><td></td><td></td></tr>
+</table>
+
+<p>Bu kitapta zaten programladığımız betiklerle —YZ uygulamaları ve metin analizleri gibi— Streamlit kullanarak etkileşimli kullanıma izin veren ilgi çekici bir uygulamayı kolayca kurabilirsiniz. Örneğin bir fotoğrafın yüklenmesini sağlamak için <code>st.file_uploader()</code> kullanabilir, bu fotoğrafı YZ algoritmalarıyla analiz edebilir, sınıflandırabilir ya da değiştirebilir ve yeni bir görüntüyü ve ek metin ya da tabloları doğrudan tarayıcıda gösterebilirsiniz. (Yukarıdaki "Daha çok bileşenli örnek" düğmesi birkaç bileşeni bir arada gösteriyor.)</p>
+
+<!-- ====================== 10.4 ====================== -->
+<h2 id="s104"><span class="num">10.4</span>Beautiful Soup ile Web İçeriği Okumak</h2>
+
+<p>İnternet'ten veri almak için önceki bölümde <code>requests</code> modülünü kullandık. <code>response = requests.get(...)</code> çağırıp istenen sayfanın URL'sini vererek API çağrıları yaptık. Yanıtın JSON mu yoksa başka bir biçimde mi olduğuna bağlı olarak döndürülen içeriğe <code>response.json()</code> ya da <code>response.text</code> ile erişebiliriz. Bir API yerine insanlar için tasarlanmış klasik bir web sitesini aldığımızda <code>response.text</code> sayfanın tam HTML kaynak kodunu döndürür. Bu çoğu zaman pek çok HTML öğesi, stil tanımı, denetim, menü ve çok daha fazlasını içeren çok uzun bir metindir. Bunun çoğu analizimiz için ilgisizdir, ama belirli kısımları ilgilidir. Bir HTML sayfasının bizi ilgilendiren içeriğine rahatça erişmek için <em>Beautiful Soup</em> adlı kullanışlı bir çerçeve vardır. Bu araca tam kaynak kodu veririz ve onu, sonradan belirli öğeleri arayabileceğimiz biçimde ayrıştırır (parse). Beautiful Soup'u <code>pip install bs4</code> ile kurarız (asıl paket adı <code>beautifulsoup4</code>'tür; <code>bs4</code> yalnızca ona yönlendiren boş bir pakettir), ardından içe aktarıp kullanabiliriz:</p>
+
+<div class="cell" data-title="Sayfayı indir ve ayrıştır"><textarea>import requests
+from bs4 import BeautifulSoup
+
+url = "https://en.wikipedia.org/wiki/Summer_Olympic_Games"
+headers = { "User-Agent": "MyPythonScript" }
+
+response = requests.get(url, headers=headers)
+soup = BeautifulSoup(response.text, "html.parser")
+
+print(soup.title.string)
+print(len(response.text), "karakter HTML")</textarea></div>
+
+<p>Wikipedia, belirli kurallara uyulması koşuluyla sayfalarına betiklerle erişime izin verir. Örneğin kısa bir süre içinde çok fazla istek göndermemelisiniz ve istek yaparken bir User-Agent ayarlamalısınız. Bu, isteği yapan tarayıcının (Firefox, Chrome vb.) ya da uygulamanın adını ifade eder. (Tarayıcılar güvenlik nedeniyle <code>User-Agent</code> başlığının değiştirilmesine izin vermez; bu sayfada ayar sessizce yok sayılır. Kendi bilgisayarınızda çalıştırdığınızda geçerlidir.) Örneğimizde <code>requests.get</code> tam kaynak kodu döndürür; bunu <code>response.text</code> ile de yazdırabilirdik. Önceki örneklerde kullandığımız <code>response.json()</code>'un aksine burada tam metni bir string olarak alırız; sonuçta elimizde JSON değil HTML kaynak kodu var. Şimdi bu kaynak kodu Beautiful Soup'a verip web sayfasının başlığına erişmek istiyoruz. <code>soup</code> değişkeni aracılığıyla sayfadaki her şeye erişimimiz vardır; <code>soup.title</code> HTML kaynak kodundaki <code>&lt;title&gt;</code> öğesini, <code>soup.title.string</code> de bu öğenin içeriğini temsil eder; kitaptaki durumda: <code>"Summer Olympic Games - Wikipedia"</code>.</p>
+
+<p>Şimdi Wikipedia sayfasında bulunan tablodan (kitaptaki Şekil 10.5) Yaz Olimpiyatları'nın yapıldığı yılları ve ev sahibi şehirleri çıkarmak istiyoruz.</p>
+
+<p>Önce programımıza ilgilendiğimiz tablonun gerçekte nerede başladığını göstermemiz gerekiyor. Bunun için <code>"List of Summer Olympic Games"</code> metnini içeren başlığı bulana kadar tüm başlıklarda (<code>&lt;h2&gt;</code> ve <code>&lt;h3&gt;</code>) arama yapabiliriz:</p>
+
+<div class="cell" data-title="Başlığı bulmak"><textarea>heading = None
+for tag in soup.find_all(["h2", "h3"]):
+    if "List of Summer Olympic Games" in tag.get_text():
+        heading = tag
+        break
+
+print(heading)</textarea></div>
+
+<p><code>heading</code> değişkeni artık ya —eşleşen bir başlık bulunmadıysa— <code>None</code>'ı ya da başlığı içeren <code>&lt;h2&gt;</code> veya <code>&lt;h3&gt;</code> öğesini içerir. Başlığın bir <code>&lt;h2&gt;</code> ya da <code>&lt;h3&gt;</code> öğesinin içinde olduğunu bilmek için sayfanın HTML kaynak kodunu denetlememiz gerekir. Bunu yapmanın en kolay yolu sayfayı tarayıcınızda açmak, başlığa sağ tıklamak ve <b>İncele</b>'ye tıklamaktır. Orada <code>&lt;h2 id="…"&gt;List of Summer Olympic Games&lt;/h2&gt;</code> bulursunuz.</p>
+
+<p>Yalnızca <code>&lt;h2&gt;</code> için değil <code>&lt;h3&gt;</code> için de arama yaparak, başlık boyutu değişse bile konumu gelecekte de bulabiliriz. Metindeki değişiklikleri (ör. "List of <em>the</em> Summer Olympic Games") algılamazdık ve uygulamamız bu tür durumlarda artık çalışmazdı.</p>
+
+<p>Sonra bulunan başlığı izleyen ilk tabloyu arar ve içeriğini okuruz:</p>
+
+<div class="cell" data-title="Tabloyu okumak (ilk deneme)"><textarea>table = heading.find_next("table")
+for tr in table.find_all("tr")[1:]:
+    tds = tr.find_all("td")
+    if len(tds) &lt; 3:
+        continue
+
+    year = tds[0].get_text(strip=True)
+    city = tds[2].get_text(strip=True)
+
+    print(year, "-", city)</textarea></div>
+
+<p>Tablolarda (<code>&lt;table&gt;</code>) her <code>&lt;tr&gt;</code> öğesi bir satırı temsil eder ve bir satır içinde her <code>&lt;td&gt;</code> öğesi tek tek sütunlardaki veriyi temsil eder. <code>for</code> döngüsündeki <code>[1:]</code> operatörünü kullanarak başlığı içeren ilk satırı atlarız. Yalnızca bir satırdaki <code>&lt;td&gt;</code> öğeleriyle ilgileniyoruz. En az üç <code>&lt;td&gt;</code> sütunu içeren tüm satırlardan yılı ilk sütundan (<code>tds[0]</code>), yeri de üçüncü sütundan (<code>tds[2]</code>) çıkarırız. Ekran görüntüsünde gösterilen ve Roma rakamlarını içeren ikinci sütun ve diğer tüm sütunlar programımız tarafından yok sayılır. Tüm bu ilgili bilgilerin nerede bulunduğunu anlamak için sayfanın kaynak kodunu tekrar tekrar incelemek gerekir. Alternatif olarak Python'un belirli öğelerin HTML kodunu doğrudan yazdırmasını da sağlayabiliriz; örneğin bir tablo satırının tam içeriğini göstermek için <code>print(tr)</code> kullanarak:</p>
+
+<div class="cell" data-title="Bir satırın HTML'ine bakmak"><textarea>first_row = [tr for tr in table.find_all("tr")[1:] if len(tr.find_all("td")) &gt;= 3][0]
+print(first_row.prettify()[:700])</textarea></div>
+
+<p>HTML kaynak kodunu ayrıştırmak bazen biraz zahmetli olabilir ve gelecekte web sitesinde öngörmediğimiz bir şey değişirse sonunda düzgün çalışmayı bırakabilir. Ayrıca programımızın doğru çıktı üretmediği dikkat çekiyor —yıla dipnotlar eklenmiş: <code>1896[68] - Athens</code>, <code>1900[69] - Paris</code>, <code>1904[73] - St. Louis</code>…</p>
+
+<p>Bunun nedeni, <code>&lt;td&gt;</code> hücresinde yıldan sonra bir dipnot bağlantısı olmasıdır: <code>1896&lt;sup class="reference" …&gt;</code>. Bu yüzden <code>&lt;td&gt;</code> öğesinin tüm metin içeriğini değil, yalnızca doğrudan metin dizesini —alt öğelerin içeriğini değil— çıkarmalıyız:</p>
+
+<div class="cell" data-title="Dipnotsuz: find(string=True)"><textarea>results = []
+for tr in table.find_all("tr")[1:]:
+    tds = tr.find_all("td")
+    if len(tds) &lt; 3:
+        continue
+
+    year = tds[0].find(string=True).strip()
+    city = tds[2].get_text(strip=True)
+
+    print(year, "-", city)
+    results.append((year, city))</textarea></div>
+
+<p>Artık çıktı doğru: <code>1896 - Athens</code>, <code>1900 - Paris</code>, <code>1904 - St. Louis</code>…</p>
+
+<p>Çıkardığımız veri artık Python'da; önceki bölümlerde öğrendiklerimizi uygulayabiliriz. Örneğin hangi şehirlerin oyunlara en çok ev sahipliği yaptığını sayalım:</p>
+
+<div class="cell" data-title="Ek: kazınan veriyi analiz etmek"><textarea>import pandas as pd
+df = pd.DataFrame(results, columns=["year", "city"])
+df["year"] = pd.to_numeric(df["year"].str[:4], errors="coerce")
+print(df.shape[0], "satır")
+df["city"].value_counts().head(6)</textarea></div>
+
+<div class="widget" id="soupWidget">
+  <h4>Etkileşimli: Beautiful Soup seçici deneme alanı</h4>
+  <div style="font-family:Inter,sans-serif;font-size:13px;color:var(--muted);margin-bottom:6px">Yukarıda indirilen <code>soup</code> üzerinde bir ifade deneyin. Hazır örneklerden birini seçin ya da kendiniz yazın.</div>
+  <div class="ctrl" style="gap:6px" id="soupEx"></div>
+  <div class="ctrl"><input type="text" id="soupIn" value='soup.select("h2")[:5]' style="flex:1;min-width:220px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:'JetBrains Mono',monospace"> <button class="btn primary" id="soupRun">Çalıştır</button></div>
+  <div id="soupOut" class="out show" style="border:1px solid var(--line);border-radius:8px;min-height:36px;max-height:300px;overflow:auto"></div>
+</div>
+
+<p>Bu kısım, Beautiful Soup kullanarak web sayfalarından içeriğin nasıl çıkarılacağını göstermeliydi. Bunun için HTML kaynak kodunu dikkatle incelememiz ve sayfa değişirse gelecekte de çalışacak biçimde sağlam bir yolla nasıl ilerleyeceğimizi düşünmemiz gerekir. Önce ihtiyaç duyduğumuz verinin kaynak kodun neresinde bulunduğuna bakarız. Çoğu zaman bir tabloda, bir listede ya da <code>&lt;p&gt;</code>, <code>&lt;div&gt;</code> veya <code>&lt;span&gt;</code> gibi belirli HTML öğelerinde bulunur. Yapı netleştiğinde mümkün olan en kararlı çapa noktasını —küçük düzen ayarlamalarıyla bile kolayca değişmeyecek olanı— bulmaya çalışırız. Bu bir başlık, bir tablo başlığı, belirli bir öznitelik ya da ayırt edici bir öğe olabilir. Oradan asıl içeriğe doğru ilerleriz.</p>
+
+<p>Bu arada burada yaptığımız şeye <em>web kazıma</em> (web scraping) denir. Bilgiyi ilgilendiğimiz bir web sitesinden kazırız. Gördüğümüz gibi bu ne yazık ki zaman alıcı ve hataya açık olabilir; ama API'ler tam da bu yüzden var. Web siteleri insanlar için yapılır; API'ler makineler için. Dolayısıyla bir API mevcutsa onu kullanmalısınız; HTML kaynak kodunu ayrıştırmayı yalnızca kullanabileceğiniz bir API yoksa düşünün.</p>
+
+<!-- ====================== 10.5 ====================== -->
+<h2 id="s105"><span class="num">10.5</span>Selenium ile Tarayıcıyı Uzaktan Denetlemek</h2>
+
+<p>Web tarayıcınızla etkileşime girerken izleyebileceğiniz, sayfadan sayfaya tıklayan, giriş alanlarını dolduran ve formları gönderen bir Python programınız olduğunu düşünün. <em>Selenium</em> ile tam olarak bunu yapabilirsiniz. Beautiful Soup ile her şey arka planda olurken (sayfayı yüklemek ve kaynak kodu bir değişkene yükleyip sonra onunla çalışmak), Selenium bir web sitesiyle gerçek bir tarayıcıda etkileşime girmenizi sağlar. Bazen web siteleri o kadar karmaşıktır ki Beautiful Soup ile istenen içeriğe erişmek neredeyse imkânsızdır. Bazı sitelerde içerik kaynak kodda doğrudan bulunmaz bile —JavaScript ile dinamik olarak yüklenir. Web tarayıcınız sayfayı ziyaret ettiğinizde ilgili JavaScript kodunu çalıştırır. Ancak Beautiful Soup bunu yapmaz. Selenium'un yaklaşımı bu yüzden oldukça farklıdır: Bir tarayıcı penceresi açar ve tıpkı bir insanın yapacağı gibi içinde gezinir. Python kodunuzla tam olarak hangi eylemlerin gerçekleştirileceğini, hangi bağlantılara tıklanacağını, ne girileceğini ve sayfalardan hangi içeriğin çıkarılacağını programlarsınız. Selenium'u <code>pip install selenium</code> ile kurup kullanabilirsiniz.</p>
+
+<p>Aşağıdaki örnek, önceki kısımda Beautiful Soup ile yaptığımız şeyin aynısını yapar. Yaz Olimpiyatları'nın yıllarını ve ev sahibi şehirlerini ilgili Wikipedia sayfasından çıkarır:</p>
+
+<div class="ro"><div class="ro-head">Salt okunur — Selenium bir tarayıcı sürücüsü ve gerçek bir tarayıcı başlatır; Pyodide'de çalışamaz</div><pre>from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+
+url = "https://en.wikipedia.org/wiki/Summer_Olympic_Games"
+
+# Tarayıcıyı başlat
+driver = webdriver.Chrome(service=Service())
+driver.get(url)
+
+# Başlığı bul
+heading = None
+for h in driver.find_elements(By.XPATH, "//h2 | //h3"):
+    if "List of Summer Olympic Games" in h.text:
+        heading = h
+        break
+
+# Başlıktan sonraki tabloyu bul
+table = heading.find_element(By.XPATH, "following::table[1]")
+rows = table.find_elements(By.TAG_NAME, "tr")
+
+for row in rows[1:]:
+    cells = row.find_elements(By.TAG_NAME, "td")
+    if len(cells) < 3:
+        continue
+
+    # Yalnızca [ işaretinden önceki kısmı al
+    year = cells[0].text.split('[')[0].strip()
+    city = cells[2].text.strip()
+
+    print(year, "-", city)
+
+driver.quit()</pre></div>
+
+<p>Selenium burada öğeleri <em>XPath</em> ifadeleriyle buluyor: <code>//h2 | //h3</code> "belgedeki tüm h2 ya da h3 öğeleri", <code>following::table[1]</code> ise "bu öğeden sonra gelen ilk tablo" demektir. Aynı XPath ifadelerini tarayıcı açmadan, <code>lxml</code> kütüphanesiyle önceki kısımda indirdiğimiz HTML üzerinde de çalıştırabiliriz:</p>
+
+<div class="cell" data-title="Aynı XPath'ler lxml ile"><textarea>from lxml import html as lxml_html
+
+tree = lxml_html.fromstring(response.text)
+
+# (Adlar x_ ile başlıyor ki 10.4'teki Beautiful Soup değişkenleri bozulmasın)
+x_heading = None
+for h in tree.xpath("//h2 | //h3"):
+    if "List of Summer Olympic Games" in h.text_content():
+        x_heading = h
+        break
+
+x_table = x_heading.xpath("following::table[1]")[0]
+rows = x_table.xpath(".//tr")
+
+for row in rows[1:6]:
+    cells = row.xpath("./td")
+    if len(cells) &lt; 3:
+        continue
+    year = cells[0].text_content().split('[')[0].strip()
+    city = cells[2].text_content().strip()
+    print(year, "-", city)
+print("…")</textarea></div>
+
+<p>Programı çalıştırdığınızda kısa bir süre bir Chrome tarayıcı penceresinin açılıp Wikipedia sayfasını gösterdiğini görürsünüz. Ancak bu pencere hızla kapanır. Bu arada program tüm veriyi çıkarıp konsola yazdırmıştır. Wikipedia örneğimiz için Selenium, Beautiful Soup'a göre hiçbir avantaj sunmaz. Daha yavaştır ve gerçekten bir tarayıcı açması gerektiği için daha fazla kaynak tüketir. Ancak web sayfasının içeriği yalnızca sayfa yüklendikten sonra yükleniyorsa ya da önce oturum açmanız veya benzer bir eylem gerçekleştirmeniz gerekiyorsa Selenium, Beautiful Soup'tan daha uygundur. Web sayfalarıyla tıpkı bir insan gibi etkileşime girer: Tıklayabilir, yazabilir, kaydırabilir, klavyedeki tuşlara basabilir ve çok daha fazlasını yapabilir. Selenium, web uygulamalarını otomatik olarak test etmek için de sıklıkla kullanılır: Örneğin bir sosyal medya sitesine ya da bir çevrimiçi mağazaya yeni bir özellik eklendiğinde Selenium sayfada tıklayarak ilerler, oturum açar, alışveriş sepetine ürün ekler vb. Bu süreçte bir hata oluşursa bu, bir şeyin düzgün çalışmadığının işaretidir. Bu hata test olmadan fark edilmemiş olabilir.</p>
+
+<p>Bir başka gösterim uygulaması olarak şimdi şunu geliştireceğiz: Selenium Wikipedia ana sayfasını açmalı ve üstteki <b>Search</b> (Arama) alanına "pyth" dört harfini girmeli. Wikipedia sitesinin geliştiricileri bu noktaya otomatik tamamlama yapan JavaScript eklemiştir. Girilen arama dizesiyle başlayan sayfalar için bir öneri listesi giriş alanının altında açılır (kitaptaki Şekil 10.6).</p>
+
+<p>Programımız <b>Search</b> alanına metin girdikten sonra önerilen tüm başlıkları konsolda göstermeli, ilk sonuca tıklamalı ve ardından oradan göz atmaya devam edebilmemiz için o sayfada kalmalıdır:</p>
+
+<div class="ro"><div class="ro-head">Salt okunur — Selenium</div><pre>from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+
+options = Options()
+options.add_experimental_option("detach", True) # Tarayıcıyı açık tut
+
+driver = webdriver.Chrome(service=Service(), options=options)
+driver.maximize_window()
+driver.get("https://en.wikipedia.org/")
+
+# Arama alanını bul
+search_field = driver.find_element(By.ID, "searchInput")
+
+# "pyth" gir
+search_field.send_keys("pyth")
+
+# Öneriler görünene kadar bekle
+list = WebDriverWait(driver, 10).until(
+    EC.visibility_of_element_located((By.CSS_SELECTOR,
+                                      "ul.cdx-menu__listbox"))
+)
+
+# Tüm &lt;li&gt; girdilerini al ve önerileri göster
+items = list.find_elements(By.CSS_SELECTOR, "li.cdx-menu-item")
+for item in items:
+    print(item.text)
+
+# İlk öğeye tıkla
+items[0].click()</pre></div>
+
+<div class="note">Kitaptaki kodda değişken adı olarak <code>list</code> kullanılıyor. Bu, Python'un yerleşik <code>list</code> türünü gölgeler; aynı programda sonra <code>list(...)</code> çağırırsanız hata alırsınız. <code>suggestions</code> gibi bir ad tercih edin.</div>
+
+<p>Wikipedia'nın otomatik tamamlaması perde arkasında bir API'ye (<em>OpenSearch</em>) istek gönderir. Selenium'un tarayıcıda gördüğü önerileri, tarayıcı açmadan doğrudan bu API'den alabiliriz —10.4'ün sonundaki "API varsa onu kullanın" ilkesinin güzel bir örneği:</p>
+
+<div class="cell" data-title="Aynı öneriler, doğrudan API'den"><textarea>import requests
+
+r = requests.get("https://en.wikipedia.org/w/api.php",
+                 params={"action": "opensearch", "search": "pyth",
+                         "limit": 10, "namespace": 0, "format": "json"})
+query, titles, _, links = r.json()
+for title in titles:
+    print(title)
+print("\nİlk sonuca 'tıklamak' =", links[0])</textarea></div>
+
+<div class="widget" id="acWidget">
+  <h4>Etkileşimli: Wikipedia otomatik tamamlama (Şekil 10.6 eşdeğeri)</h4>
+  <div class="ctrl">
+    <select id="acLang" class="sel"><option value="en">en</option><option value="tr">tr</option><option value="de">de</option></select>
+    <div style="position:relative;flex:1;min-width:220px">
+      <input type="text" id="acIn" value="" placeholder="Wikipedia'da ara… (ör. pyth)" autocomplete="off" style="width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);font-family:Inter,sans-serif">
+      <ul id="acList" style="position:absolute;left:0;right:0;top:100%;margin:2px 0 0;padding:0;list-style:none;background:var(--paper);border:1px solid var(--line);border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.12);display:none;z-index:5;font-family:Inter,sans-serif;font-size:14px"></ul>
+    </div>
+  </div>
+  <div class="readout" id="acOut" style="font-size:13px;color:var(--muted)">Yazdıkça öneriler gelir; bir öneriye tıklamak sayfayı yeni sekmede açar.</div>
+</div>
+
+<p>Böyle bir program kodunu ChatGPT'ye ürettirdiğinizde BDM çoğu zaman HTML kaynak kodundaki öğelerin adının ne olabileceğini tahmin eder ya da kodu web sitesinin eski bir sürümüne dayanarak oluşturur. Bu durumda örneğin metni girdikten sonra görünen öneri listesinden kaynak kod alıntılarını isteme eklemek yardımcı olur.</p>
+
+<p>Gösterilen programda <code>"detach"</code> tarayıcı seçeneği <code>True</code> olarak ayarlandı. Bu, başta açılan tarayıcının Python programı çalışmayı bitirdikten sonra yeniden kapanmamasını sağlar. <code>driver.maximize_window()</code> ile tarayıcı penceresi tam ekran boyutuna büyütülür. Aksi hâlde görüntü çok dar olabilir ve Wikipedia hiç arama alanı göstermeyebilir. Arama alanı <code>"searchInput"</code> kimliğiyle (ID) bulunduktan sonra <code>search_field.send_keys("pyth")</code> ile metin girilir. Ardından program öğe görünene kadar bekler. Bu öneri listesidir. İçerdiği <code>&lt;li&gt;</code> öğeleri üzerinde dolaşıp içeriklerini yazdırabiliriz. <code>items[0].click()</code> tıklama eylemini gerçekleştirir.</p>
+
+<p>Her şey tarayıcıda çalıştığı için pek çok şeyi dert etmeniz gerekmez: Çerezler, oturumlar, JavaScript, açılır pencereler vb. tam olarak web sitelerini elle ziyaret ettiğinizde olacağı gibi gerçekleşir. Selenium'un nereye tıklayacağı ve nereye metin gireceği genellikle ilgili öğelerin kimlikleriyle denetlenir. Örneğimizde <code>&lt;input id="searchInput" …&gt;</code> arama alanıdır. Bunun avantajı, arama alanı gelecekte farklı bir yere taşınsa ya da Wikipedia'nın farklı bir dil sürümünü açsak bile otomasyonun çalışmaya devam etmesidir.</p>
+
+<p>Örneğimizdekiyle aynı biçimde oturum açma formları da bir kullanıcı adı ve parolayla doldurulup gönderilebilir. Bu, programlarımızın önce oturum açmayı gerektiren sayfalara erişmesini sağlar. Selenium web sayfalarının ekran görüntülerini almaya ve kaydetmeye de yeteneklidir. <code>driver.save_screenshot("wiki.png")</code> tüm sayfayı, <code>list.screenshot("autocomplete.png")</code> ise tek bir öğeyi yakalar.</p>
+
+<!-- ====================== 10.6 ====================== -->
+<h2 id="s106"><span class="num">10.6</span>E-posta ve Anlık İleti Göndermek</h2>
+
+<p>Python betiğinizden her gün bir özet almak ya da programınızın sizi hatalar ve başka iletiler hakkında bilgilendirmesini istiyor olun, Python programlarınızın size ya da başkalarına e-posta veya anlık ileti göndermesi çok yararlı olabilir.</p>
+
+<p>E-posta 1970'lerden beri var; hatta aslında İnternet'ten daha eskidir. 1980'lerde <em>Simple Mail Transfer Protocol</em> (SMTP) standartlaştırıldı. Şöyle çalışır: Bir e-posta göndermek istediğinizde e-posta programınız bir SMTP sunucusuna bağlanır. E-posta programı Outlook, Thunderbird, bir web posta hizmeti, hatta kendi Python uygulamanız olabilir. SMTP sunucusuna bağlanırken genellikle bir kullanıcı adı ve parolayla kimliğinizi doğrulamanız gerekir. Bu bilgileri e-posta sağlayıcınızdan, örneğin Gmail, Yahoo, üniversiteniz ya da iş yerinizden alabilirsiniz. E-posta adresiniz gmail.com'dansa SMTP sunucusu <code>smtp.gmail.com</code>'dur ve kullanıcı adınız tam e-posta adresidir: <code>…@gmail.com</code>. SMTP sunucusuyla bağlantı kurulduktan sonra uygulamanız e-postayı gönderebilir. E-posta bir konu satırından, bir alıcıdan, bir göndericiden, metinden ve olası ek başlık verilerinden ya da eklerden oluşur. SMTP sunucusu e-postayı alır, denetler ve ardından uygun alıcı sunuculara iletir. Alıcı sonunda e-postayı Internet Messaging Access Protocol (IMAP) gibi başka bir protokolle alıp görüntüleyebilir.</p>
+
+<p>Aşağıdaki örnekte Python paketi <code>smtplib</code> kullanarak bir SMTP sunucusuna bağlanıp bir e-posta gönderiyoruz. <code>smtplib</code> Python standart kütüphanesinin parçasıdır; bu yüzden ayrıca kurulması gerekmez.</p>
+
+<div class="ro"><div class="ro-head">Salt okunur — tarayıcılar SMTP sunucularına doğrudan bağlantı (soket) açamaz</div><pre>import smtplib
+import dotenv
+from email.mime.text import MIMEText
+
+dotenv.load_dotenv()
+
+SMTP_SERVER = dotenv.get_key(".env", "SMTP_SERVER")
+SMTP_USER = dotenv.get_key(".env", "SMTP_USER")
+SMTP_PASSWORD = dotenv.get_key(".env", "SMTP_PASSWORD")
+
+msg = MIMEText("Hello, this is a test email from Python!")
+msg["Subject"] = "Test"
+msg["From"] = "test@example.com"
+msg["To"] = "test@example.com"
+
+with smtplib.SMTP_SSL(SMTP_SERVER, 465) as server:
+    server.login(SMTP_USER, SMTP_PASSWORD)
+    server.send_message(msg)</pre></div>
+
+<p>SMTP sunucusu verilerinin —ve özellikle parolanın— program kodunda düz metin olarak saklanmamasını sağlamak için burada <code>dotenv</code> kullanıyoruz. Modül <em>.env</em> adlı bir dosyadan üç değer yükler. Onu Python betiğimizle aynı klasöre kaydederiz. (Kitaptaki kodda <code>load_dotenv()</code> ile <code>get_key()</code> birlikte kullanılıyor; ikisinden biri yeterli: <code>load_dotenv()</code>'dan sonra değerler <code>os.environ</code>'dan da okunabilir.) Gönderme dışındaki her şey tarayıcıda da çalışır; aşağıdaki hücre örnek bir <em>.env</em> yazar, değerleri okur ve sunucuya gidecek iletinin ham hâlini gösterir:</p>
+
+<div class="cell" data-title=".env ve iletiyi hazırlamak (gönderme hariç)"><textarea>with open(".env", "w") as f:          # örnek değerler (gerçek değil)
+    f.write("SMTP_SERVER=smtp.example.com\n"
+            "SMTP_USER=test@example.com\n"
+            "SMTP_PASSWORD=gizli-parola\n")
+
+import dotenv
+from email.mime.text import MIMEText
+
+dotenv.load_dotenv()
+SMTP_SERVER = dotenv.get_key(".env", "SMTP_SERVER")
+SMTP_USER = dotenv.get_key(".env", "SMTP_USER")
+print("SMTP_SERVER =", SMTP_SERVER, "| SMTP_USER =", SMTP_USER)
+
+msg = MIMEText("Hello, this is a test email from Python!")
+msg["Subject"] = "Test"
+msg["From"] = "test@example.com"
+msg["To"] = "test@example.com"
+
+print("\n--- SMTP sunucusuna gidecek ham ileti ---")
+print(msg.as_string())</textarea></div>
+
+<p>Python programımızda gönderilecek e-posta iletisini temsil eden bir <code>msg</code> nesnesi oluştururuz. Metni verir ve konuyu, göndericiyi ve alıcıyı ayarlarız. <code>MIMEText</code> yerine <code>MIMEMultipart</code> da kullanabilirsiniz. Bu, HTML biçiminde e-posta göndermenizi sağlar; böylece yalnızca metin değil biçimlendirme, renkler, bağlantılar, görüntüler ve daha fazlasını da içerebilirler. Ek olarak <code>MIMEMultipart</code> e-postaya ek eklemenize izin verir:</p>
+
+<div class="cell" data-title="Ek: HTML e-posta + dosya eki (MIMEMultipart)"><textarea>from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
+
+msg = MIMEMultipart("mixed")
+msg["Subject"] = "Haftalık özet"
+msg["From"] = "bot@example.com"
+msg["To"] = "test@example.com"
+
+body = MIMEMultipart("alternative")
+body.attach(MIMEText("Metin sürümü (HTML desteklenmiyorsa)", "plain"))
+html_body = "&lt;h1&gt;Merhaba!&lt;/h1&gt;&lt;p&gt;Bu e-posta &lt;b&gt;Python&lt;/b&gt; ile hazırlandı.&lt;/p&gt;"
+body.attach(MIMEText(html_body, "html"))
+msg.attach(body)
+
+attachment = MIMEApplication(open("test.html", "rb").read() if __import__("os").path.exists("test.html") else b"ornek", Name="test.html")
+attachment["Content-Disposition"] = 'attachment; filename="test.html"'
+msg.attach(attachment)
+
+print("Parçalar:", [p.get_content_type() for p in msg.walk()])
+HTML(html_body, height=110)</textarea></div>
+
+<p>Burada bağlandığımız SMTP sunucusu Secure Sockets Layer (SSL) şifrelemesi ve 465 numaralı portu kullanır. STARTTLS (port 587) ile birlikte bu, e-postaları güvenli biçimde iletmenin iki yaygın yönteminden biridir. Bağlandıktan hemen sonra <code>server.login</code> ile kullanıcı adı ve parolayla oturum açar ve e-postayı <code>server.send_message</code> ile göndeririz.</p>
+
+<p>SMTP'ye alternatif olarak e-posta göndermek için kendi API'lerini sunan özel e-posta hizmetleri de vardır. Bu tür sağlayıcılara birkaç örnek Brevo, Mailjet ya da SendGrid'dir. Yalnızca birkaç e-posta gönderiyorsanız bu hizmetler ücretsiz de kullanılabilir. Mailjet, <code>pip install mailjet-rest</code> ile kurabileceğimiz kendi Python modülünü sunar. Mailjet web sitesinde bir hesap oluşturduktan sonra Python'dan e-posta göndermek için kullanabileceğimiz bir API anahtarı ve bir API sırrı (secret) alırız:</p>
+
+<div class="ro"><div class="ro-head">Salt okunur — API sırrı tarayıcıdaki bir sayfaya yazılmamalıdır; Mailjet de tarayıcıdan doğrudan çağrılmaya izin vermez</div><pre>from mailjet_rest import Client
+
+API_KEY = "…"
+API_SECRET = "…"
+
+mailjet = Client(auth=(API_KEY, API_SECRET), version='v3.1')
+
+body = {
+    "Messages": [
+        {
+            "From": { "Email": "…", "Name": "…" },
+            "To": [ { "Email": "…", "Name": "…" } ],
+            "Subject": "Hello!",
+            "TextPart": "Text (if HTML is not supported)",
+            "HTMLPart": "&lt;h1&gt;Hi!&lt;/h1&gt;&lt;p&gt;I'm testing.&lt;/p&gt;"
+        }
+    ]
+}
+
+response = mailjet.send.create(data=body)
+print(response.status_code)
+print(response.json())</pre></div>
+
+<p>Aynı biçimde Python'dan SMS ve anlık ileti de gönderebilirsiniz. Bir sağlayıcı seçer, bir hesap oluşturur, bir API anahtarı alır ve ardından iletiyi göndermek için ya özel bir Python modülü ya da klasik bir requests çağrısı kullanırız. Twilio, Plivo, Telnyx ya da Vonage gibi SMS göndermek için pek çok sağlayıcı vardır. Ancak her SMS'in birkaç sente mal olduğunu ve bakiyenizi yüklemeniz gerektiğini belirtmek önemlidir. WhatsApp iletilerini bir API üzerinden göndermek de ücretsiz değildir. API erişimini yalnızca bir WhatsApp Business hesabıyla elde edersiniz. Burada da faturalandırma gönderilen ileti başınadır.</p>
+
+<p>Anlık ileti göndermenin basit ve ücretsiz bir yolunu —en azından kendinize— <em>Telegram</em> sunar. Bu platform standart bir requests çağrısıyla kullanabileceğiniz resmî bir API sağlar.</p>
+
+<p>Telegram API'sini kullanmak için önce telefonunuzda bir bot oluşturmanız gerekir. Bunun için Telegram uygulamasında "BotFather"ı arayın ve ona <code>/newbot</code> iletisini gönderin. Ardından bota bir ad vermeniz istenir ve bir Telegram belirteci (token) ile bota bir bağlantı görürsünüz. Bağlantıya ve ardından <b>Start</b>'a tıkladıktan sonra bot hazırdır. Ancak bota ileti göndermek için bir sohbet kimliğine (chat ID) de ihtiyacınız olacak. Bunu bir Python betiğinden bir API çağrısıyla alabilirsiniz. Belirtecinizi aşağıdaki kutuya yazarsanız hücreler onu kullanır (yalnızca bu sekmenin belleğinde tutulur):</p>
+
+<div class="widget" id="tgWidget">
+  <h4>Telegram bilgileri (isteğe bağlı)</h4>
+  <div class="ctrl">
+    <label>TOKEN <input type="password" id="tgTok" placeholder="123456:ABC…" autocomplete="off" style="width:240px" class="sel"></label>
+    <label>CHAT_ID <input type="text" id="tgChat" placeholder="1234567890" style="width:140px" class="sel"></label>
+    <button class="btn" id="tgSave">Kaydet</button>
+    <span class="readout" id="tgMsg" style="font-size:12.5px;color:var(--muted)">Boş bırakırsanız hücreler kitaptaki yer tutucularla çalışır ve API hata döndürür.</span>
+  </div>
+</div>
+
+<div class="cell" data-title="getUpdates ile sohbet kimliğini bulmak"><textarea>import os, requests
+
+TOKEN = os.environ.get("TELEGRAM_TOKEN", "…")      # (sayfa: yukarıdaki kutudan)
+url = f"https://api.telegram.org/bot{TOKEN}/getUpdates"
+response = requests.get(url).json()
+print(response)
+
+for update in response.get("result", []):
+    chat = update.get("message", {}).get("chat", {})
+    if chat:
+        print("chat id:", chat["id"], "|", chat.get("first_name", ""))</textarea></div>
+
+<p>Yanıt şuna benzer: <code>{'ok': True, 'result': […, 'chat': {'id': 1234567890, …}]}</code>. Orada sohbet kimliğini bulursunuz; onu Telegram API belirteciyle birlikte telefonunuza ileti göndermek için verirsiniz. (Liste boşsa önce telefondan bota bir ileti yazın.)</p>
+
+<div class="prompt"><div class="lbl">İstem</div><em>Bir Telegram belirtecim ve bir sohbet kimliğim var. "Hello" iletisini gönderen bir Python programı yaz.</em></div>
+
+<div class="cell" data-title="Telegram ile ileti göndermek"><textarea>import os, requests
+
+TOKEN = os.environ.get("TELEGRAM_TOKEN", "YOUR_TELEGRAM_TOKEN")   # (sayfa: kutudan)
+CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "YOUR_CHAT_ID")      # (sayfa: kutudan)
+TEXT = "Hello"
+
+url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+payload = {"chat_id": CHAT_ID, "text": TEXT}
+
+r = requests.post(url, json=payload)
+
+print("Status:", r.status_code)
+print("Response:", r.json())</textarea></div>
+
+<p>Belirteç doğruysa birkaç saniye içinde telefonunuzda kitaptaki Şekil 10.7'deki gibi bir anlık bildirim belirir. Yer tutucularla çalıştırırsanız Telegram <code>404</code> ya da <code>401</code> döndürür: Bölüm 9'daki durum kodlarının gerçek bir örneği.</p>
+
+</article></main>
+</div>
+
+<script>
+/* ---------- Tema ---------- */
+(function(){
+  const root=document.documentElement;
+  let saved=null; try{saved=localStorage.getItem('ml-theme')}catch(e){}
+  if(saved) root.setAttribute('data-theme',saved);
+  document.getElementById('themeBtn').onclick=()=>{
+    const dark = root.getAttribute('data-theme')==='dark' ||
+      (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    const next = dark?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem('ml-theme',next)}catch(e){}
+  };
+})();
+
+/* ---------- Pyodide ---------- */
+let pyodide=null, pyReady=null, runFn=null;
+const dot=document.getElementById('pyDot'), st=document.getElementById('pyState'), msg=document.getElementById('pyMsg');
+function errMsg(e){ if(!e) return 'bilinmeyen hata'; if(e.message) return e.message; if(e.errno!==undefined) return 'Pyodide dosya sistemi hatası (errno '+e.errno+')'; try{ return JSON.stringify(e); }catch(_){ return String(e); } }
+function setState(s,t,m){dot.className='dot '+s; st.textContent=t; if(m!==undefined) msg.textContent=m;}
+
+const SETUP = "import os, sys, json, re, html as _html\nif os.getcwd() not in sys.path:\n    sys.path.insert(0, os.getcwd())\nimport pyodide_http\npyodide_http.patch_all()\nimport requests\n\nOFFLINE = False\n\n# ---------------------------------------------------------------------------\n# \u00d6rnek Wikipedia sayfas\u0131 (basitle\u015ftirilmi\u015f). Ger\u00e7ek sayfaya ula\u015f\u0131lamazsa kullan\u0131l\u0131r.\n# Yap\u0131, kitab\u0131n anlatt\u0131\u011f\u0131 yap\u0131yla ayn\u0131: <title>, \"List of Summer Olympic Games\"\n# ba\u015fl\u0131\u011f\u0131, ard\u0131ndan y\u0131l\u0131n yan\u0131nda dipnot (<sup class=\"reference\">) olan bir tablo.\n# ---------------------------------------------------------------------------\n_GAMES = [(1896, \"I\", \"Athens\", \"Greece\", 68), (1900, \"II\", \"Paris\", \"France\", 69),\n          (1904, \"III\", \"St. Louis\", \"United States\", 73), (1908, \"IV\", \"London\", \"United Kingdom\", 74),\n          (1912, \"V\", \"Stockholm\", \"Sweden\", 75), (1916, \"VI\", \"Berlin\", \"Germany\", 76),\n          (1920, \"VII\", \"Antwerp\", \"Belgium\", 77), (1924, \"VIII\", \"Paris\", \"France\", 78),\n          (1928, \"IX\", \"Amsterdam\", \"Netherlands\", 79), (1932, \"X\", \"Los Angeles\", \"United States\", 80),\n          (1936, \"XI\", \"Berlin\", \"Germany\", 81), (1948, \"XIV\", \"London\", \"United Kingdom\", 84),\n          (1952, \"XV\", \"Helsinki\", \"Finland\", 85), (1956, \"XVI\", \"Melbourne\", \"Australia\", 86),\n          (1960, \"XVII\", \"Rome\", \"Italy\", 87), (1964, \"XVIII\", \"Tokyo\", \"Japan\", 88),\n          (1968, \"XIX\", \"Mexico City\", \"Mexico\", 89), (1972, \"XX\", \"Munich\", \"West Germany\", 90),\n          (1976, \"XXI\", \"Montreal\", \"Canada\", 91), (1980, \"XXII\", \"Moscow\", \"Soviet Union\", 92),\n          (1984, \"XXIII\", \"Los Angeles\", \"United States\", 93), (1988, \"XXIV\", \"Seoul\", \"South Korea\", 94),\n          (1992, \"XXV\", \"Barcelona\", \"Spain\", 95), (1996, \"XXVI\", \"Atlanta\", \"United States\", 96),\n          (2000, \"XXVII\", \"Sydney\", \"Australia\", 97), (2004, \"XXVIII\", \"Athens\", \"Greece\", 98),\n          (2008, \"XXIX\", \"Beijing\", \"China\", 99), (2012, \"XXX\", \"London\", \"United Kingdom\", 100),\n          (2016, \"XXXI\", \"Rio de Janeiro\", \"Brazil\", 101), (2020, \"XXXII\", \"Tokyo\", \"Japan\", 102),\n          (2024, \"XXXIII\", \"Paris\", \"France\", 103), (2028, \"XXXIV\", \"Los Angeles\", \"United States\", 104),\n          (2032, \"XXXV\", \"Brisbane\", \"Australia\", 105)]\n\ndef _olympics_html():\n    rows = \"\\n\".join(\n        f'<tr><td>{y}<sup class=\"reference\"><a href=\"#cite_note-{n}\">[{n}]</a></sup></td>'\n        f'<td>{r}</td><td><a href=\"/wiki/{c.replace(\" \", \"_\")}\">{c}</a></td><td>{k}</td></tr>'\n        for y, r, c, k, n in _GAMES)\n    return f\"\"\"<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">\n<title>Summer Olympic Games - Wikipedia</title></head><body>\n<h1>Summer Olympic Games</h1>\n<p>[\u00d6RNEK SAYFA \u2014 sayfan\u0131n sundu\u011fu basitle\u015ftirilmi\u015f kopya]</p>\n<h2 id=\"History\">History</h2><p>\u2026</p>\n<table class=\"wikitable\"><tr><th>Sport</th><th>Years</th></tr><tr><td>Athletics</td><td>All</td></tr></table>\n<h2 id=\"List_of_Summer_Olympic_Games\">List of Summer Olympic Games</h2>\n<table class=\"wikitable sortable\">\n<tr><th>Olympiad</th><th>No.</th><th>City</th><th>Country</th></tr>\n{rows}\n</table></body></html>\"\"\"\n\ndef _opensearch_sample(q=\"pyth\"):\n    t = [\"Python (programming language)\", \"Pythagorean theorem\", \"Python\", \"Pythagoras\",\n         \"Python (genus)\", \"Pythia\", \"Pythagorean tuning\", \"Python Software Foundation\"]\n    return [q, t, [\"\"] * len(t), [f\"https://en.wikipedia.org/wiki/{x.replace(' ', '_')}\" for x in t]]\n\nclass _SampleResponse:\n    status_code = 200\n    ok = True\n    reason = \"OK (\u00f6rnek yan\u0131t)\"\n    def __init__(self, text, url, ctype=\"text/html\"):\n        self.text, self.url = text, url\n        self.content = text.encode()\n        self.headers = {\"content-type\": ctype}\n    def json(self):\n        return json.loads(self.text)\n    def raise_for_status(self):\n        pass\n\n_real_get = requests.get\n\ndef _sample_for(url):\n    if re.search(r\"wikipedia\\.org/(wiki|api/rest_v1/page/html)/Summer_Olympic_Games\", url):\n        return _SampleResponse(_olympics_html(), url)\n    if re.search(r\"wikipedia\\.org/w/api\\.php.*action=opensearch\", url):\n        q = re.search(r\"search=([^&]+)\", url)\n        return _SampleResponse(json.dumps(_opensearch_sample(q.group(1) if q else \"pyth\")), url, \"application/json\")\n    return None\n\ndef _get(url, *args, **kwargs):\n    from urllib.parse import urlencode\n    full = url + ((\"&\" if \"?\" in url else \"?\") + urlencode(kwargs[\"params\"]) if kwargs.get(\"params\") else \"\")\n    sample = _sample_for(full)\n    if OFFLINE and sample is not None:\n        print(\"[sayfa] \u00c7evrimd\u0131\u015f\u0131 mod \u2192 \u00f6rnek yan\u0131t kullan\u0131ld\u0131.\")\n        return sample\n    target = url\n    m = re.match(r\"https?://(\\w+)\\.wikipedia\\.org/wiki/([^?#]+)$\", url)\n    if m:\n        target = f\"https://{m.group(1)}.wikipedia.org/api/rest_v1/page/html/{m.group(2)}\"\n        print(\"[sayfa] Taray\u0131c\u0131 /wiki/ sayfalar\u0131n\u0131 do\u011frudan okuyamaz (CORS); ayn\u0131 i\u00e7eri\u011fi Wikipedia'n\u0131n\\n\"\n              f\"        REST API'sinden al\u0131yoruz: {target}\")\n    if isinstance(kwargs.get(\"headers\"), dict):   # taray\u0131c\u0131 User-Agent'\u0131 de\u011fi\u015ftirmeye izin vermez\n        kwargs[\"headers\"] = {k: v for k, v in kwargs[\"headers\"].items() if k.lower() != \"user-agent\"}\n    if \"wikipedia.org/w/api.php\" in full and \"origin=\" not in full:\n        kwargs.setdefault(\"params\", {})\n        if isinstance(kwargs[\"params\"], dict):\n            kwargs[\"params\"] = {**kwargs[\"params\"], \"origin\": \"*\"}\n    try:\n        r = _real_get(target, *args, **kwargs)\n    except Exception as e:\n        if sample is None:\n            raise\n        print(f\"[sayfa] Canl\u0131 istek yap\u0131lamad\u0131 ({type(e).__name__}); \u00f6rnek yan\u0131t kullan\u0131ld\u0131.\")\n        return sample\n    if r.status_code >= 400 and sample is not None:\n        print(f\"[sayfa] Canl\u0131 istek {r.status_code} d\u00f6nd\u00fcrd\u00fc; \u00f6rnek yan\u0131t kullan\u0131ld\u0131.\")\n        return sample\n    return r\nrequests.get = _get\n\n# ---------------------------------------------------------------------------\n# HTML'i h\u00fccre \u00e7\u0131kt\u0131s\u0131nda, yal\u0131t\u0131lm\u0131\u015f bir \u00e7er\u00e7evede g\u00f6stermek i\u00e7in\n# ---------------------------------------------------------------------------\nclass HTML:\n    def __init__(self, source, height=220, url=None):\n        self.source, self.height, self.url = source, height, url\n    def to_html(self, max_rows=None):\n        bar = (f'<div style=\"font:12px Inter,sans-serif;background:#eee;color:#333;padding:4px 8px;'\n               f'border-radius:6px 6px 0 0;border:1px solid #ccc;border-bottom:0\">\ud83d\udd12 {_html.escape(self.url)}</div>'\n               if self.url else \"\")\n        return (bar + f'<iframe sandbox srcdoc=\"{_html.escape(self.source, quote=True)}\" '\n                f'style=\"width:100%;height:{self.height}px;border:1px solid #ccc;background:#fff;'\n                f'border-radius:{\"0 0 6px 6px\" if self.url else \"6px\"}\"></iframe>')\n\n# ---------------------------------------------------------------------------\n# Flask: ger\u00e7ek sunucu taray\u0131c\u0131da ba\u015flat\u0131lamaz. app.run() yerine uygulama\n# sayfadaki sanal taray\u0131c\u0131ya ba\u011flan\u0131r; istekler Flask'\u0131n test istemcisiyle i\u015flenir.\n# ---------------------------------------------------------------------------\n_APP = None\ndef _patch_flask():\n    import flask\n    if getattr(flask.Flask, \"_sayfa\", False):\n        return\n    _init = flask.Flask.__init__\n    def __init__(self, import_name, *a, **k):\n        k.setdefault(\"root_path\", os.getcwd())\n        _init(self, import_name, *a, **k)\n    def run(self, *a, **k):\n        global _APP\n        _APP = self\n        print(\" * Running on http://127.0.0.1:5000\\nPress CTRL+C to quit\")\n        print(\"[sayfa] Taray\u0131c\u0131da ger\u00e7ek bir sunucu ba\u015flat\u0131lamaz. Uygulama, h\u00fccrenin alt\u0131ndaki\\n\"\n              \"        'sanal taray\u0131c\u0131' paneline ba\u011fland\u0131; adres \u00e7ubu\u011funa URL yaz\u0131p deneyin.\")\n    flask.Flask.__init__ = __init__\n    flask.Flask.run = run\n    flask.Flask._sayfa = True\n\ndef _flask_get(path):\n    if _APP is None:\n        return json.dumps({\"err\": \"\u00d6nce bir Flask uygulamas\u0131 tan\u0131mlay\u0131p app.run() sat\u0131r\u0131n\u0131 i\u00e7eren h\u00fccreyi \u00e7al\u0131\u015ft\u0131r\u0131n.\"})\n    r = _APP.test_client().get(path)\n    _APP._got_first_request = False   # h\u00fccrelerde sonradan yeni yollar eklenebilsin\n    return json.dumps({\"status\": r.status, \"ctype\": r.content_type, \"body\": r.get_data(as_text=True),\n                       \"routes\": sorted({str(x) for x in _APP.url_map.iter_rules() if x.endpoint != \"static\"})})\n\nos.makedirs(\"templates\", exist_ok=True)\n\n_DOTENV_SHIM = r'''\n\"\"\"python-dotenv kurulamazsa kullan\u0131lan \u00e7ok k\u00fc\u00e7\u00fck yedek (load_dotenv, get_key).\"\"\"\nimport os\ndef _read(path):\n    out = {}\n    try:\n        with open(path) as f:\n            for line in f:\n                line = line.strip()\n                if line and not line.startswith(\"#\") and \"=\" in line:\n                    k, v = line.split(\"=\", 1)\n                    out[k.strip()] = v.strip().strip('\"').strip(\"'\")\n    except FileNotFoundError:\n        pass\n    return out\ndef load_dotenv(path=\".env\", override=False):\n    d = _read(path)\n    for k, v in d.items():\n        if override or k not in os.environ:\n            os.environ[k] = v\n    return bool(d)\ndef get_key(path, key):\n    return _read(path).get(key)\n'''\n";
+const HELPER = `import sys, io, ast, base64, traceback, json, inspect, os, warnings
+os.environ['MPLBACKEND'] = 'AGG'
+warnings.filterwarnings('ignore', message='.*non-interactive.*')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+NS = {"__name__": "__main__"}
+_FLAGS = ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
+
+async def _run_cell(code):
+    buf = io.StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    sys.stdout = sys.stderr = buf
+    html = None; ok = True
+    try:
+        tree = ast.parse(code)
+        last = None
+        if tree.body and isinstance(tree.body[-1], ast.Expr):
+            last = ast.Expression(tree.body.pop().value)
+        r = eval(compile(tree, "<hücre>", "exec", flags=_FLAGS), NS)
+        if inspect.iscoroutine(r):
+            await r
+        if last is not None:
+            val = eval(compile(last, "<hücre>", "eval", flags=_FLAGS), NS)
+            if inspect.iscoroutine(val):
+                val = await val
+            if val is not None:
+                if hasattr(val, "to_html"):
+                    html = val.to_html(max_rows=40)
+                else:
+                    print(repr(val))
+    except BaseException as e:
+        ok = False
+        frames = [f for f in traceback.extract_tb(e.__traceback__) if f.filename == "<hücre>"]
+        if frames:
+            print("Traceback (most recent call last):")
+            print("".join(traceback.format_list(frames)), end="")
+        print("".join(traceback.format_exception_only(type(e), e)), end="")
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
+    imgs = []
+    if "matplotlib.pyplot" in sys.modules:
+        plt = sys.modules["matplotlib.pyplot"]
+        for n in plt.get_fignums():
+            b = io.BytesIO()
+            plt.figure(n).savefig(b, format="png", dpi=110, bbox_inches="tight")
+            imgs.append(base64.b64encode(b.getvalue()).decode())
+        plt.close("all")
+    return json.dumps({"out": buf.getvalue(), "html": html, "imgs": imgs, "ok": ok})
+`;
+
+
+function loadPython(){
+  if(pyReady) return pyReady;
+  setState('loading','Python yükleniyor…','Pyodide çekirdeği indiriliyor.');
+  pyReady = (async()=>{
+    pyodide = await loadPyodide();
+    pyodide.setStdin({stdin: () => { const v = window.prompt('Python input() bir değer bekliyor:'); return v === null ? undefined : v; }});
+    setState('loading','Paketler yükleniyor…','requests ve pyodide-http indiriliyor; Flask, Beautiful Soup, lxml ilk kullanıldıkları hücrede yüklenir.');
+    await pyodide.loadPackage(['requests','pyodide-http','micropip']);
+    await pyodide.runPythonAsync(HELPER);
+    await pyodide.runPythonAsync('exec(' + JSON.stringify(SETUP) + ', NS)');
+    pyodide.runPython('globals().update({"_DOTENV_SHIM": NS["_DOTENV_SHIM"]})');
+    runFn = pyodide.globals.get('_run_cell');
+    const ver = 'Python ' + pyodide.runPython('import sys; sys.version.split()[0]') + ' · requests ' + pyodide.runPython('import requests; requests.__version__');
+    if(window.refreshFiles) refreshFiles();
+    setState('ready','Python hazır',ver);
+    document.getElementById('preload').style.display='none';
+  })().catch(e=>{ setState('','Yükleme başarısız','Sayfayı yenileyip tekrar deneyin. Ayrıntı: '+errMsg(e)); console.error(e); pyReady=null; throw e;});
+  return pyReady;
+}
+document.getElementById('preload').onclick=loadPython;
+
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+/* ---------- Kod hücreleri ---------- */
+document.querySelectorAll('.cell').forEach((cell,i)=>{
+  const ta=cell.querySelector('textarea');
+  const original=ta.value;
+  ta.spellcheck=false;
+  ta.rows=Math.min(ta.value.split('\n').length+1,40);
+  const head=document.createElement('div'); head.className='cell-head';
+  head.innerHTML=`<span class="title">In [${i+1}] · ${cell.dataset.title||'Python'}</span>`;
+  const run=document.createElement('button'); run.className='btn primary'; run.textContent='▶ Çalıştır';
+  const reset=document.createElement('button'); reset.className='btn'; reset.textContent='↺'; reset.title='Özgün koda dön';
+  head.append(run,reset); cell.prepend(head);
+  const out=document.createElement('div'); out.className='out'; cell.append(out);
+
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Tab'){e.preventDefault();const s=ta.selectionStart;ta.setRangeText('    ',s,ta.selectionEnd,'end');}
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run.click();}
+  });
+  reset.onclick=()=>{ta.value=original; out.className='out'; out.innerHTML='';};
+  run.onclick=async()=>{
+    run.disabled=true; out.className='out show'; out.textContent='⏳ Çalışıyor…';
+    try{
+      await loadPython();
+      out.textContent='⏳ Paketler denetleniyor…';
+      await pyodide.loadPackagesFromImports(ta.value);
+      await ensurePkgs(ta.value);
+      out.textContent='⏳ Çalışıyor…';
+      await new Promise(r=>setTimeout(r,20));
+      const res=JSON.parse(await runFn(ta.value));
+      let h='';
+      if(res.out) h+=esc(res.out);
+      if(res.html) h+=`<div>${res.html}</div>`;
+      res.imgs.forEach(b=>h+=`<img alt="grafik" src="data:image/png;base64,${b}">`);
+      if(!h) h='<span style="color:var(--ok)">✓ Çalıştı (çıktı yok)</span>';
+      out.innerHTML=h; if(window.refreshFiles) refreshFiles(); document.dispatchEvent(new CustomEvent('cellran',{detail:ta.value})); out.className='out show'+(res.ok?'':' err');
+    }catch(e){ out.className='out show err'; out.textContent=errMsg(e); }
+    run.disabled=false;
+  };
+});
+
+/* ---------- Yardımcılar ---------- */
+async function py(code){ await loadPython(); await pyodide.loadPackagesFromImports(code); await ensurePkgs(code); return JSON.parse(await runFn(code)); }
+function showRes(el, r){
+  let h=''; if(r.out) h+=esc(r.out); if(r.html) h+=`<div>${r.html}</div>`;
+  r.imgs.forEach(b=>h+=`<img alt="grafik" src="data:image/png;base64,${b}">`);
+  el.innerHTML=h||'✓'; el.className='out show'+(r.ok?'':' err');
+}
+const CITIES={"Chicago, US":[41.85,-87.65],"Seattle, US":[47.61,-122.33],"İstanbul":[41.01,28.98],"Ankara":[39.93,32.86],"Sakarya (Adapazarı)":[40.78,30.40],"İzmir":[38.42,27.14],"Berlin":[52.52,13.40]};
+function fillCities(sel){ Object.keys(CITIES).forEach(c=>{const o=document.createElement('option');o.textContent=c;sel.append(o);}); }
+
+/* ---------- micropip ile gerektiğinde paket ---------- */
+const _installed=new Set();
+async function ensurePkgs(code){
+  if(/\b(import|from)\s+dotenv\b/.test(code) && !_installed.has('dotenv')){
+    setState('loading','python-dotenv kuruluyor…','PyPI üzerinden micropip ile (yalnızca ilk sefer).');
+    try{ await pyodide.loadPackage('micropip'); await pyodide.runPythonAsync("import micropip\nawait micropip.install('python-dotenv')"); }
+    catch(e){ pyodide.runPython('open("dotenv.py","w").write(_DOTENV_SHIM)'); console.warn('python-dotenv kurulamadı, yedek kullanılıyor', e); }
+    _installed.add('dotenv'); setState('ready','Python hazır','');
+  }
+  if(/\b(import|from)\s+flask\b/.test(code) && !_installed.has('flask')){
+    setState('loading','Flask kuruluyor…','PyPI üzerinden micropip ile (yalnızca ilk sefer, birkaç saniye).');
+    try{ await pyodide.loadPackage(['micropip','markupsafe']); await pyodide.runPythonAsync("import micropip\nawait micropip.install('flask')"); }
+    catch(e){ setState('ready','Python hazır',''); throw new Error('Flask kurulamadı: '+errMsg(e)); }
+    pyodide.runPython('NS["_patch_flask"]()');
+    _installed.add('flask'); setState('ready','Python hazır','');
+  }
+}
+
+/* ---------- Dosya paneli ---------- */
+(function(){
+  const list=document.getElementById('fileList');
+  async function refresh(){
+    if(!pyodide){ list.innerHTML='<i>Python yüklenince görünür.</i>'; return; }
+    const files=JSON.parse(pyodide.runPython(`import os, json
+_r=[]
+for _d,_s,_fs in os.walk('.'):
+    _s[:]=[x for x in _s if not x.startswith('.') and x!='__pycache__']
+    for _f in sorted(_fs):
+        _p=os.path.join(_d,_f)[2:]
+        _r.append([_p, os.path.getsize(_p)])
+json.dumps(sorted(_r))`));
+    list.innerHTML=files.length?'':'<i>(boş)</i>';
+    files.forEach(([p,sz])=>{
+      const a=document.createElement('a'); a.href='#'; a.textContent=`${p} (${sz<1024?sz+' B':(sz/1024).toFixed(1)+' KB'})`;
+      a.style.cssText='display:block;padding:2px 0;font-size:12px;color:var(--accent);word-break:break-all';
+      a.onclick=e=>{e.preventDefault();
+        const full=pyodide.FS.cwd()+'/'+p, data=pyodide.FS.readFile(full);
+        if(/\.(ini|py|json|csv|txt)$/.test(p) || p==='.env'){ const w=document.getElementById('filePeek'); w.style.display='block'; w.textContent=`── ${p} ──\n`+new TextDecoder().decode(data).replace(/(OPENAI_API_KEY=)(\S{6})\S+/,'$1$2••••••'); return; }
+        const u=URL.createObjectURL(new Blob([data]));const l=document.createElement('a');l.href=u;l.download=p.split('/').pop();l.click();setTimeout(()=>URL.revokeObjectURL(u),2000);};
+      list.append(a);
+    });
+  }
+  window.refreshFiles=refresh;
+  document.getElementById('fileRefresh').onclick=async()=>{await loadPython();refresh();};
+})();
+
+/* ---------- Çevrimdışı mod ---------- */
+document.getElementById('offline').onchange=async e=>{
+  await loadPython(); pyodide.runPython(`NS["OFFLINE"] = ${e.target.checked?'True':'False'}`);
+};
+
+/* ---------- 10.1 HTML düzenleyici ---------- */
+(function(){
+  const ta=document.getElementById('htmlIn'), fr=document.getElementById('htmlPrev'), tab=document.getElementById('htmlTab'), tree=document.getElementById('htmlTree'), ex=document.getElementById('htmlEx');
+  const EX={
+    'Kitap örneği': ta.value,
+    'Kalın + bağlantı': `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Bold and link</title>
+</head>
+<body>
+  <p>In <b>this</b> sentence, the word <a href="info.html">this</a> is written in bold in one instance and a link to another page in the other.</p>
+</body>
+</html>`,
+    'Liste ve tablo': `<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Kantin menüsü</title>
+  <style> td, th { border: 1px solid #999; padding: 4px 8px } </style>
+</head>
+<body>
+  <h2>Bu haftanın menüsü</h2>
+  <ul>
+    <li>Pazartesi: <em>mercimek çorbası</em></li>
+    <li>Salı: <b>kuru fasulye</b></li>
+  </ul>
+  <ol>
+    <li>Birinci madde</li>
+    <li>İkinci madde</li>
+  </ol>
+  <table>
+    <tr><th>Year</th><th>City</th></tr>
+    <tr><td>1896<sup>[1]</sup></td><td>Athens</td></tr>
+    <tr><td>1900<sup>[2]</sup></td><td>Paris</td></tr>
+  </table>
+</body>
+</html>`
+  };
+  Object.keys(EX).forEach(k=>{const b=document.createElement('button');b.className='btn';b.textContent=k;b.onclick=()=>{ta.value=EX[k];upd();};ex.append(b);});
+  function walk(n,d,out){
+    for(const c of n.children){
+      const attrs=[...c.attributes].map(a=>`${a.name}="${a.value}"`).join(' ');
+      let txt=[...c.childNodes].filter(x=>x.nodeType===3).map(x=>x.textContent.trim()).filter(Boolean).join(' ');
+      if(txt.length>40) txt=txt.slice(0,40)+'…';
+      out.push('&nbsp;'.repeat(d*3)+`<span style="color:var(--accent)">&lt;${c.tagName.toLowerCase()}</span>${attrs?' <span style="color:var(--warn)">'+esc(attrs)+'</span>':''}<span style="color:var(--accent)">&gt;</span>${txt?' <span style="color:var(--muted)">“'+esc(txt)+'”</span>':''}`);
+      if(out.length<60) walk(c,d+1,out);
+    }
+  }
+  function upd(){
+    fr.srcdoc=ta.value;
+    const doc=new DOMParser().parseFromString(ta.value,'text/html');
+    tab.textContent='🗎 '+(doc.title||'(başlık yok)');
+    const out=['<b>Öğe ağacı</b> (tarayıcının ayrıştırdığı hâli — tabloya kendiliğinden eklenen &lt;tbody&gt; öğesine dikkat):']; walk(doc,0,out);
+    tree.innerHTML=out.join('<br>');
+  }
+  let t; ta.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(upd,250);});
+  ta.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();const s=ta.selectionStart;ta.setRangeText('  ',s,ta.selectionEnd,'end');}});
+  upd();
+})();
+
+/* ---------- 10.2 Sanal tarayıcı (Flask) ---------- */
+(function(){
+  const url=document.getElementById('fUrl'), status=document.getElementById('fStatus'), view=document.getElementById('fView'),
+        code=document.getElementById('fCode'), src=document.getElementById('fSrc'), quick=document.getElementById('fQuick');
+  const hist=[];
+  ['/','/test','/?name=Olivia','/?name=<b>Olivia</b>','/yok-boyle-sayfa'].forEach(p=>{
+    const b=document.createElement('button'); b.className='btn'; b.textContent=p; b.style.fontFamily="'JetBrains Mono',monospace";
+    b.onclick=()=>{url.value='http://127.0.0.1:5000'+p; go();}; quick.append(b);
+  });
+  function pathOf(u){
+    u=u.trim();
+    const m=u.match(/^(?:https?:\/\/)?(?:127\.0\.0\.1|localhost)(?::\d+)?(\/.*)?$/i);
+    if(m) return m[1]||'/';
+    if(u.startsWith('/')) return u;
+    return null;
+  }
+  async function go(push=true){
+    const p=pathOf(url.value);
+    if(p===null){ status.innerHTML='Bu sanal tarayıcı yalnızca <code>http://127.0.0.1:5000/…</code> adreslerini açar (yerel Flask uygulamanız).'; return; }
+    status.textContent='⏳ GET '+p;
+    try{
+      await loadPython();
+      pyodide.globals.set('_fpath', p);
+      const r=JSON.parse(pyodide.runPython('NS["_flask_get"](_fpath)'));
+      if(r.err){ status.textContent=r.err; view.srcdoc=''; code.textContent=''; return; }
+      if(push && hist[hist.length-1]!==p) hist.push(p);
+      const ok=r.status.startsWith('2');
+      status.innerHTML=`<span style="color:${ok?'var(--ok)':'var(--warn)'}">HTTP ${esc(r.status)}</span> · ${esc(r.ctype)} · ${r.body.length} bayt · tanımlı yollar: ${r.routes.map(x=>'<code>'+esc(x)+'</code>').join(', ')}`;
+      view.srcdoc = /text\/plain/.test(r.ctype) ? '<pre>'+esc(r.body)+'</pre>' : r.body;
+      code.textContent=r.body;
+    }catch(e){ status.textContent='Hata: '+errMsg(e); }
+  }
+  src.onchange=()=>{ code.style.display=src.checked?'block':'none'; };
+  document.getElementById('fGo').onclick=()=>go();
+  url.addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
+  document.getElementById('fBack').onclick=()=>{ if(hist.length>1){ hist.pop(); url.value='http://127.0.0.1:5000'+hist[hist.length-1]; go(false);} };
+  document.addEventListener('cellran',e=>{ if(/@app\.route|app\.run|render_template|view_functions/.test(e.detail) && pyodide && pyodide.runPython('NS["_APP"] is not None')) go(false); });
+})();
+
+/* ---------- 10.3 Streamlit (stlite) ---------- */
+(function(){
+  const ta=document.getElementById('stCode'), box=document.getElementById('stFrame'), m=document.getElementById('stMsg');
+  const BOOK=ta.value;
+  const MORE=`import streamlit as st
+import pandas as pd
+import numpy as np
+
+st.title("Streamlit bileşenleri")
+
+name = st.text_input("Adınız:", "Olivia")
+age = st.slider("Yaşınız:", 0, 100, 30)
+color = st.selectbox("Sevdiğiniz renk:", ["kırmızı", "yeşil", "mavi"])
+if st.checkbox("Selam ver"):
+    st.write(f"Merhaba {name}! {age} yaşındasınız ve {color} seviyorsunuz.")
+
+st.subheader("Rastgele veri")
+n = st.number_input("Satır sayısı", 5, 200, 30)
+df = pd.DataFrame(np.random.randn(int(n), 3).cumsum(axis=0), columns=["a", "b", "c"])
+st.line_chart(df)
+st.dataframe(df.head(10))
+
+st.download_button("CSV indir", df.to_csv(index=False), "veri.csv")
+if st.button("Kutla"):
+    st.balloons()`;
+  ta.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();const s=ta.selectionStart;ta.setRangeText('  ',s,ta.selectionEnd,'end');}});
+  document.getElementById('stEx').onclick=()=>{ ta.value = ta.value===MORE ? BOOK : MORE; document.getElementById('stEx').textContent = ta.value===MORE ? 'Kitaptaki örneğe dön' : 'Daha çok bileşenli örnek'; };
+  document.getElementById('stRun').onclick=()=>{
+    const V='1.9.2', CDN='https://cdn.jsdelivr.net/npm/@stlite/browser@'+V+'/build/';
+    const code=JSON.stringify(ta.value).replace(/<\//g,'<\\/');
+    const doc=`<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${CDN}stlite.css">
+<style>body{margin:0;font-family:sans-serif} #ld{padding:16px;color:#666}</style></head><body>
+<div id="ld">⏳ stlite yükleniyor (Pyodide + Streamlit)… İlk açılış bir dakika kadar sürebilir.</div><div id="root"></div>
+<script type="module">
+try{
+  const {mount} = await import("${CDN}stlite.js");
+  document.getElementById("ld").remove();
+  mount(${code}, document.getElementById("root"));
+}catch(e){ document.getElementById("ld").textContent = "stlite yüklenemedi: " + e; }
+<\/script></body></html>`;
+    box.innerHTML='';
+    const head=document.createElement('div');
+    head.style.cssText='font:12px Inter,sans-serif;background:#eee;color:#333;padding:4px 8px;border-radius:6px 6px 0 0;border:1px solid #ccc;border-bottom:0;margin-top:8px';
+    head.textContent='🔒 http://localhost:8501   ($ streamlit run wordcount.py)';
+    const fr=document.createElement('iframe');
+    fr.style.cssText='width:100%;height:560px;border:1px solid #ccc;border-radius:0 0 6px 6px;background:#fff';
+    fr.setAttribute('allow','clipboard-write');
+    fr.srcdoc=doc; box.append(head,fr);
+    m.textContent='Uygulama aşağıda çalışıyor. Kodu değiştirdikten sonra düğmeye yeniden basın.';
+  };
+})();
+
+/* ---------- 10.4 Beautiful Soup deneme alanı ---------- */
+(function(){
+  const inp=document.getElementById('soupIn'), out=document.getElementById('soupOut'), ex=document.getElementById('soupEx');
+  ['soup.title.string','soup.select("h2")[:5]','len(soup.find_all("table"))','[a.get("href") for a in soup.find_all("a", href=True)][:8]',
+   'heading.find_next("table").find_all("tr")[1]','[td.get_text(strip=True) for td in table.find_all("tr")[2].find_all("td")]',
+   'soup.find("sup", class_="reference")'].forEach(s=>{
+    const b=document.createElement('button'); b.className='btn'; b.textContent=s.length>34?s.slice(0,32)+'…':s; b.title=s;
+    b.style.fontFamily="'JetBrains Mono',monospace"; b.style.fontSize='11.5px';
+    b.onclick=()=>{inp.value=s; run();}; ex.append(b);
+  });
+  async function run(){
+    out.className='out show'; out.textContent='⏳';
+    const code=`_v = (${inp.value})
+if isinstance(_v, list):
+    for _i, _x in enumerate(_v[:25]):
+        print(f"[{_i}]", str(_x)[:400])
+    print(f"— toplam {len(_v)} öğe")
+else:
+    print(type(_v).__name__ + ":", str(_v)[:4000])`;
+    try{
+      const r=await py(code);
+      if(!r.ok && /NameError/.test(r.out)) r.out+='\n→ Önce 10.4\'teki hücreleri (en azından ilk üçünü) çalıştırın.';
+      showRes(out,r);
+    }catch(e){ out.className='out show err'; out.textContent=errMsg(e); }
+  }
+  document.getElementById('soupRun').onclick=run;
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') run(); });
+})();
+
+/* ---------- 10.5 Wikipedia otomatik tamamlama ---------- */
+(function(){
+  const inp=document.getElementById('acIn'), list=document.getElementById('acList'), out=document.getElementById('acOut'), lang=document.getElementById('acLang');
+  let t, sel=-1, items=[], seq=0;
+  function render(){
+    list.innerHTML='';
+    items.forEach(([title,link],i)=>{
+      const li=document.createElement('li'); li.textContent=title;
+      li.style.cssText='padding:6px 10px;cursor:pointer;'+(i===sel?'background:var(--accent-soft, rgba(0,0,0,.08))':'');
+      li.onmousedown=e=>{e.preventDefault(); pick(i);}; list.append(li);
+    });
+    list.style.display=items.length?'block':'none';
+  }
+  function pick(i){ const [title,link]=items[i]; out.innerHTML=`items[${i}].click() → <a href="${esc(link)}" target="_blank" rel="noopener">${esc(title)}</a>`; window.open(link,'_blank','noopener'); list.style.display='none'; }
+  async function fetchS(){
+    const q=inp.value.trim(); if(!q){ items=[]; render(); return; }
+    const my=++seq;
+    const u=`https://${lang.value}.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(q)}&limit=10&namespace=0&format=json&origin=*`;
+    try{
+      const j=await (await fetch(u)).json(); if(my!==seq) return;
+      items=j[1].map((x,i)=>[x,j[3][i]]); sel=-1; render();
+      out.innerHTML=`${items.length} öneri · istek: <code style="word-break:break-all">${esc(u)}</code>`;
+    }catch(e){ out.textContent='Öneriler alınamadı: '+e.message; }
+  }
+  inp.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(fetchS,200);});
+  inp.addEventListener('keydown',e=>{
+    if(!items.length) return;
+    if(e.key==='ArrowDown'){e.preventDefault(); sel=(sel+1)%items.length; render();}
+    else if(e.key==='ArrowUp'){e.preventDefault(); sel=(sel-1+items.length)%items.length; render();}
+    else if(e.key==='Enter'){e.preventDefault(); pick(sel<0?0:sel);}
+    else if(e.key==='Escape'){list.style.display='none';}
+  });
+  inp.addEventListener('blur',()=>setTimeout(()=>list.style.display='none',150));
+  inp.addEventListener('focus',()=>{ if(items.length) list.style.display='block'; });
+  lang.onchange=fetchS;
+})();
+
+/* ---------- 10.6 Telegram bilgileri ---------- */
+(function(){
+  const tok=document.getElementById('tgTok'), chat=document.getElementById('tgChat'), m=document.getElementById('tgMsg');
+  document.getElementById('tgSave').onclick=async()=>{
+    await loadPython();
+    pyodide.globals.set('_t', tok.value.trim()); pyodide.globals.set('_c', chat.value.trim());
+    pyodide.runPython(`import os
+for _k, _v in (("TELEGRAM_TOKEN", _t), ("TELEGRAM_CHAT_ID", _c)):
+    if _v: os.environ[_k] = _v
+    else: os.environ.pop(_k, None)
+del _t, _c`);
+    tok.value='';
+    m.textContent='✓ Kaydedildi (yalnızca bu sekmenin belleğinde, ortam değişkeni olarak).';
+  };
+})();
+
+/* ---------- İçindekiler vurgusu ---------- */
+(function(){
+  const links=[...document.querySelectorAll('nav.toc a')];
+  const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.remove('active'));links[secs.indexOf(e.target)].classList.add('active');}}),{rootMargin:'-10% 0px -80% 0px'});
+  secs.forEach(s=>io.observe(s));
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Dilinin Temelleri</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+<style>
+:root{
+  --bg:#f7f5f0; --paper:#ffffff; --ink:#1d1f24; --muted:#5d6270; --line:#e2ded4;
+  --accent:#1f5f8b; --accent-soft:#e3eef6; --warn:#9a5b00; --warn-soft:#fbf1dc;
+  --code-bg:#f2f0ea; --code-ink:#22252b; --ok:#2f7a4a; --err:#b3261e;
+  --prompt-bg:#efece4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+    --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+    --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+  --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+  --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Serif 4",Georgia,serif;font-size:18px;line-height:1.65}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1200px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:28px 18px;border-right:1px solid var(--line);font-family:Inter,sans-serif;font-size:14px}
+nav.toc .brand{font-weight:600;color:var(--accent);font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;padding:6px 8px;border-radius:6px}
+nav.toc a:hover,nav.toc a.active{background:var(--accent-soft);color:var(--ink)}
+.status{margin-top:22px;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;color:var(--muted);background:var(--paper)}
+.status b{color:var(--ink)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#999;margin-right:6px;vertical-align:middle}
+.dot.loading{background:var(--warn);animation:pulse 1s infinite}
+.dot.ready{background:var(--ok)}
+@keyframes pulse{50%{opacity:.3}}
+.toc button,.btn{font-family:Inter,sans-serif;font-size:13px;font-weight:500;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:6px 12px;border-radius:6px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.5;cursor:wait}
+main{padding:40px 48px 120px;min-width:0}
+article{max-width:780px}
+h1{font-size:2.4rem;line-height:1.15;margin:0 0 .3em;color:var(--accent)}
+h2{font-size:1.55rem;margin:2.6em 0 .6em;padding-top:.4em;border-top:1px solid var(--line);color:var(--accent)}
+h3{font-size:1.2rem;margin:2em 0 .5em;color:var(--ink);font-family:Inter,sans-serif;font-weight:600}
+h2 .num{font-family:Inter,sans-serif;font-weight:600;font-size:.8em;color:var(--muted);margin-right:.4em}
+.lead{font-style:italic;color:var(--muted);font-size:1.08rem;border-left:3px solid var(--accent);padding-left:16px;margin:1.2em 0 2em}
+code{font-family:"JetBrains Mono",monospace;font-size:.82em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.terms{display:grid;gap:12px;margin:1.2em 0}
+.term{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+.term b{font-family:Inter,sans-serif;color:var(--accent)}
+.note{background:var(--warn-soft);border-left:3px solid var(--warn);padding:12px 16px;border-radius:0 8px 8px 0;font-size:.95rem;margin:1.2em 0}
+.formula{font-family:"JetBrains Mono",monospace;background:var(--paper);border:1px dashed var(--line);padding:12px 16px;border-radius:8px;text-align:center;font-size:.95rem;margin:1em 0;overflow-x:auto}
+.prompt{background:var(--prompt-bg);border-radius:10px;padding:14px 18px;margin:1.2em 0;font-size:.95rem}
+.prompt .lbl{font-family:Inter,sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.prompt em{display:block;margin-top:6px}
+/* Kod hücresi */
+.cell{margin:1.3em 0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--paper)}
+.cell-head{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--code-bg);border-bottom:1px solid var(--line);font-family:Inter,sans-serif;font-size:12px;color:var(--muted)}
+.cell-head .title{flex:1}
+.cell textarea{display:block;width:100%;border:0;resize:vertical;padding:14px 16px;background:var(--code-bg);color:var(--code-ink);font-family:"JetBrains Mono",monospace;font-size:13.5px;line-height:1.55;tab-size:4;outline:none;min-height:80px;white-space:pre;overflow:auto}
+.out{display:none;border-top:1px solid var(--line);padding:12px 16px;font-family:"JetBrains Mono",monospace;font-size:13px;white-space:pre-wrap;overflow-x:auto}
+.out.show{display:block}
+.out.err{color:var(--err)}
+.out img{max-width:100%;background:#fff;border-radius:6px;margin-top:8px;display:block}
+.out table{border-collapse:collapse;font-size:12.5px;margin:6px 0;white-space:nowrap}
+.out th,.out td{border:1px solid var(--line);padding:3px 8px;text-align:right}
+.out th{background:var(--code-bg)}
+/* Tablo */
+table.data{border-collapse:collapse;font-family:Inter,sans-serif;font-size:14px;margin:1em 0}
+table.data th,table.data td{border:1px solid var(--line);padding:6px 10px}
+table.data th{background:var(--code-bg)}
+.caption{font-family:Inter,sans-serif;font-size:13px;color:var(--muted);margin-top:-4px}
+/* Widget */
+.widget{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px;margin:1.5em 0}
+.widget h4{margin:0 0 6px;font-family:Inter,sans-serif;font-size:14px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.widget .ctrl{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-family:Inter,sans-serif;font-size:14px;margin:10px 0}
+.widget svg{width:100%;height:auto;display:block}
+.widget .readout{font-family:Inter,sans-serif;font-size:15px}
+.widget .readout b{color:var(--accent)}
+input[type=range]{accent-color:var(--accent)}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  main{padding:24px 16px 80px}
+  h1{font-size:1.9rem}
+}
+h3{font-size:1.15rem;margin:2em 0 .5em;color:var(--ink);font-family:Inter,sans-serif;font-weight:600}
+kbd{font-family:"JetBrains Mono",monospace;font-size:.8em;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--paper)}
+input[type=number]{padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:"JetBrains Mono",monospace}
+@media (max-width:700px){.wh-grid{grid-template-columns:1fr !important}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" id="toc">
+  <div class="brand">Bölüm 3</div>
+  <a href="#giris">Giriş: ilk program</a>
+  <a href="#s31">3.1 Değişkenler ve türler</a>
+  <a href="#s32">3.2 Yorumlar</a>
+  <a href="#s33">3.3 İşlevler</a>
+  <a href="#s34">3.4 if / elif / else</a>
+  <a href="#s35">3.5 Karşılaştırma operatörleri</a>
+  <a href="#s36">3.6 Sayılar</a>
+  <a href="#s37">3.7 while döngüsü</a>
+  <a href="#s38">3.8 for döngüsü</a>
+  <a href="#s39">3.9 print hakkında</a>
+  <a href="#s310">3.10 Liste, küme, demet, sözlük</a>
+  <a href="#s311">3.11 Listelerde for</a>
+  <a href="#s312">3.12 Sözcük sayma</a>
+  <a href="#s313">3.13 Kendi işlevleriniz</a>
+  <a href="#s314">3.14 Pythonic kod</a>
+  <a href="#s315">3.15 Modüller ve pip</a>
+  <a href="#s316">3.16 Sanal ortamlar</a>
+  <div class="status">
+    <div><span class="dot" id="pyDot"></span><b id="pyState">Python yüklenmedi</b></div>
+    <div id="pyMsg" style="margin:6px 0 8px">Kodlar tarayıcıda Pyodide ile çalışır. Bu bölüm ek paket gerektirmez; yalnızca Python çekirdeği (~10 MB) bir kez indirilir.</div>
+    <button class="btn" id="preload">Python'u şimdi yükle</button>
+    <div style="margin-top:8px"><button class="btn" id="themeBtn">Tema değiştir</button></div>
+  </div>
+</nav>
+
+<main><article>
+<h1 id="giris">3 · Python Dilinin Temelleri</h1>
+<p class="lead">Değişkenler, veri türleri, if ifadeleri, döngüler, yorumlar ve daha fazlası olmadan programlama düpedüz işlemezdi. Bu yüzden bu bölümde bu dil yapılarına kısaca göz atacağız.</p>
+
+<p>ChatGPT'ye küçük bir program ürettirelim, ardından her kod satırının ne anlama geldiğine bakalım:</p>
+
+<div class="prompt"><div class="lbl">İstem</div><em>Bir e-posta için hitap üreten bir Python programı oluştur. Program bir ad, bir soyad, bir unvan ("Mr." ya da "Ms.") ve hitabın resmî ("Dear") mi yoksa samimi ("Hello") mi olacağını içermeli.</em></div>
+
+<div class="cell" data-title="İlk program: e-posta hitabı"><textarea>salutation = "Ms."
+first_name = "Anna"
+last_name = "Miller"
+formal = True
+if formal:
+    print("Dear", salutation, last_name)
+else:
+    print("Hello", first_name)</textarea></div>
+
+<p>Bu program dört <em>değişken</em> içerir: <code>salutation</code>, <code>first_name</code>, <code>last_name</code> ve <code>formal</code>. Ayrıca bir <em>if-else denetimi</em> yapar, <code>print</code> <em>işlevini</em> iki kez çağırır ve bazı <em>metinler</em> (<code>"Ms."</code>, <code>"Anna"</code>, <code>"Miller"</code>) ile bir Boolean değer (<code>True</code>) içerir. Bunların hepsinin ne anlama geldiğine daha sonra bakacağız. Ama programın ne yazdıracağı hakkında muhtemelen zaten iyi bir fikriniz vardır: "Dear Ms. Miller". <code>formal</code> <code>False</code> olsaydı konsol çıktısı olarak "Hello Anna" görürdük.</p>
+
+<p>İlk dört kod satırında dört değişkene bir değer atanır. Ardından bir <code>if</code> ifadesi <code>formal</code>'ın <code>True</code> olup olmadığını denetler. Öyleyse "Dear …" yazdırılır; değilse "Hello …" yazdırılır. Programı denerken değişkenlerin değerlerini değiştirip çıktının nasıl değiştiğini görebilirsiniz. <b>Deneyin:</b> Yukarıdaki hücrede <code>True</code>'yu <code>False</code> yapıp yeniden çalıştırın.</p>
+
+<p><code>print</code> işlevini istediğiniz sayıda <em>parametreyle</em> çağırabilirsiniz. Parametreler parantez içinde olan ve virgülle ayrılan şeylerdir. <code>print("Hello", first_name)</code>'de <code>print</code> işlevine iki parametre veririz: <code>"Hello"</code> metni ve <code>first_name</code> değişkeninde saklanan değer. Bu durumda <code>print</code> ikisini art arda, varsayılan olarak bir boşlukla ayırarak yazdırır; örneğin <code>Hello Anna</code>.</p>
+
+<p>Programa yeniden bakarsanız iki print satırının her birinin başta dört boşlukla girintilendiğini fark edersiniz. Bu <em>kod girintisi</em> yalnızca görsel nedenlerle yapılmaz. Python'da bunu gerçekten <em>yapmak zorundasınız</em>! Bir satır iki nokta üst üsteyle bittiğinde —bizim durumumuzda <code>if:</code> ve <code>else:</code>— ardından gelen kod satırı girintilenmelidir. <code>if</code> ile bir eğer-ise koşulu kurarsınız: <em>Eğer</em> durum buysa <em>o zaman</em> şunu yap. "O zaman" kısmının gerekli adımları girintili kodumuzda belirtilir. Python, kod bloğunun orada bittiğini ancak kod daha sonra artık girintilenmediğinde anlar.</p>
+
+<div class="cell" data-title="Deneyin: girinti hatası"><textarea>formal = True
+if formal:
+print("Dear Ms. Miller")    # girinti yok → IndentationError</textarea></div>
+
+<!-- ====================== 3.1 ====================== -->
+<h2 id="s31"><span class="num">3.1</span>Değişkenler ve Veri Türleri</h2>
+
+<p>Değişkenler adlarını durumlarının değişken olmasından alır. Bir adları ve bir değerleri vardır. Değişken adı <code>x</code> ya da <code>y</code> gibi bir şey olabilir; ama genellikle onlara örneğimizdeki <code>first_name</code> gibi daha anlamlı adlar vermek daha mantıklıdır. Python'da herhangi bir değişken herhangi bir değeri alabilir. Bizim durumumuzda <code>first_name</code> bir <em>karakter dizisidir</em>, kısaca <em>metin</em> (string) de denir. Metinleri program kodunda her zaman tırnak işaretlerinden tanıyabilirsiniz, örneğin <code>"Anna"</code>. Ancak Python'da <code>'Anna'</code>, hatta <code>"""Anna"""</code> ya da <code>'''Anna'''</code> da yazabilirsiniz. Üç <code>"</code> ya da <code>'</code> işaretli son iki yazımda metnin içinde satır sonlarına bile izin verilir. Ancak tırnak işaretlerini tümüyle atlasaydınız farklı bir anlamı olurdu: <code>Anna</code>, <code>"Anna"</code> içerikli bir metin değil, <code>Anna</code> adlı başka bir değişken olurdu. Teknik olarak bir değişkeni böyle adlandırabilseniz de değişkenleri her zaman <code>x</code>, <code>first_name</code> ya da <code>license_plate</code> gibi küçük harfle başlatma alışkanlığı edinelim. Ayrıca değişken adlarında ü, ş, ğ gibi harfler ya da özel karakterler kullanmayın. Alt çizgi (<code>_</code>) ise sorun değildir.</p>
+
+<div class="cell" data-title="Metin yazmanın yolları"><textarea>a = "Anna"
+b = 'Anna'
+c = """Anna
+Miller"""           # üç tırnakla satır sonu mümkün
+print(a == b, len(c))
+print(c)
+
+Anna = "bu bir değişken"
+print(Anna)         # tırnaksız Anna → değişkenin değeri</textarea></div>
+
+<p>Tablo 3.1 Python'daki beş önemli veri türüne kısa bir genel bakış sunuyor (daha fazlasına sonra bakacağız). Bu türlerden ikisi programımızda zaten göründü; sayılara da önceki bölümde kısaca değinmiştim.</p>
+
+<table class="data">
+<tr><th>Veri türü</th><th>Açıklama</th><th>Örnek</th></tr>
+<tr><td><code>int</code></td><td>Tamsayı</td><td><code>5</code> ya da <code>-77</code></td></tr>
+<tr><td><code>float</code></td><td>Kayan noktalı sayı</td><td><code>8.3</code> ya da <code>-22.5</code></td></tr>
+<tr><td><code>str</code></td><td>Metin</td><td><code>"Hello"</code></td></tr>
+<tr><td><code>bool</code></td><td>Boolean (mantıksal)</td><td><code>True</code> ya da <code>False</code></td></tr>
+<tr><td><code>None</code></td><td>Var olmayan değer</td><td><code>None</code></td></tr>
+</table>
+<div class="caption">Tablo 3.1 — Python'da beş önemli veri türü</div>
+
+<div class="widget" id="typeWidget">
+  <h4>Etkileşimli: Python bu değeri hangi tür olarak görür?</h4>
+  <div class="ctrl" style="gap:6px" id="typeEx"></div>
+  <div class="ctrl"><input type="text" id="typeIn" value="8.3" style="flex:1;min-width:200px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:'JetBrains Mono',monospace"> <button class="btn primary" id="typeRun">type() ?</button></div>
+  <div class="readout" id="typeOut" style="font-family:'JetBrains Mono',monospace;font-size:14px"></div>
+</div>
+
+<p>Başka programlama dillerinde değişkenleri her zaman önce bildirmeniz —yani oluşturmanız— ve değişkenin tutabileceği veri türünü belirtmeniz gerekir. Python'da yeni bir değişkene herhangi bir değer atamanız yeterlidir; değişken oluşturulur. Değerini istediğiniz zaman değiştirebilirsiniz; hatta daha sonra bir değişkene tümüyle farklı veri türünde bir değer bile atayabilirsiniz. Python bu konuda çok esnektir:</p>
+
+<div class="cell" data-title="Değişkenin türü değişebilir"><textarea>first_name = None      # Ad bilinmiyor.
+print(first_name, type(first_name))
+first_name = 5
+print(first_name, type(first_name))
+first_name = "Anna"
+print(first_name, type(first_name))</textarea></div>
+
+<!-- ====================== 3.2 ====================== -->
+<h2 id="s32"><span class="num">3.2</span>Yorumlar</h2>
+
+<p>Önceki örnekteki <code>#</code> bir <em>yorumu</em> işaretler. Bir kod satırında diyez işaretinden sonra gelen her şey Python yorumlayıcısı tarafından, sanki program kodunda hiç yokmuş gibi yok sayılır. Yorumları kodu daha anlaşılır kılmak ya da kod satırlarının tamamını geçici olarak devre dışı bırakmak (yorum satırına almak) için kullanabilirsiniz:</p>
+
+<div class="cell" data-title="Yorumlar"><textarea># Program hiçbir şey yapmaz, çünkü print ifadesi yorum satırına alınmış.
+first_name = None    # Ad bilinmiyor.
+salutation = "Ms."
+# print(salutation)</textarea></div>
+
+<p>Hücreyi çalıştırdığınızda hiçbir çıktı görmezsiniz. Son satırın başındaki <code>#</code>'yi silip yeniden deneyin.</p>
+
+<!-- ====================== 3.3 ====================== -->
+<h2 id="s33"><span class="num">3.3</span>İşlevler</h2>
+
+<p>Bir işlevi her zaman parantezlerinden tanıyabilirsiniz; örneğin <code>print("Hello")</code>, <code>print(first_name)</code>, <code>print("Hello", first_name)</code> ya da yalnızca <code>print()</code>. Sonuncusu konsolda yalnızca yeni bir boş satır oluşturur ve başka bir şey yazdırmaz.</p>
+
+<p>Daha sonra 3.13'te kendi işlevlerimizi nasıl oluşturacağımıza bakacağız. Ama şimdilik Python'un zaten sağladığı işlevlerden yararlanalım.</p>
+
+<p>Üç tür işlev vardır: bir şey <em>yapan</em> işlevler, bir çıktı değeri <em>döndüren</em> işlevler ve ikisini birleştiren işlevler. <code>print</code> işlevi bir şey yapar: Kendisine verdiğiniz şeyi konsola yazdırır. Ona virgülle ayrılmış birden çok parametre verirseniz önce ilk parametrenin değerini yazdırır, sonra bir boşluk ekler, sonra ikinci parametrenin değerini, sonra yine bir boşluk vb. Dolayısıyla <code>print("This", "is", "a", "test")</code>, <code>print("This is a test")</code> ile aynı şeyi yazdırır. <code>print</code> çıktıyı ürettikten sonra, her print çağrısının çıktısını ayrı bir satırda görmeniz için bir satır sonu gelir.</p>
+
+<p><code>len</code> (length, uzunluk) işlevi çağrıldığında hiçbir şey yapmaz. Bunun yerine bir değer döndürür. İşleve bir metin veririz ve bir sayı döndürür; daha doğrusu metnin uzunluğunu. Bu sayıyı örneğin bir değişkende saklayabilir ya da doğrudan konsola yazdırabiliriz:</p>
+
+<div class="cell" data-title="print ve len"><textarea>print("This", "is", "a", "test")
+print("This is a test")
+print()                         # yalnızca boş satır
+
+x = len("Hello")
+print(len("Hello"))
+print("x =", x)</textarea></div>
+
+<p>Yeni <code>x</code> değişkenimizin değeri artık <code>5</code>'tir ve <code>"Hello"</code> beş karakterden oluştuğu için konsola da <code>5</code> yazdırılır.</p>
+
+<p>Başka yararlı bir işlevin adı <code>input</code>'tur. Tıpkı <code>print</code> gibi bir eylem gerçekleştirir ve tıpkı <code>len</code> gibi bir değer de döndürür. <code>input</code> işlevi, kendisine parametre olarak verdiğimiz soruyu kullanıcıya sorar. Kullanıcı bir şey girip <kbd>Enter</kbd>'a basabilir. Soru işaretinden sonraki boşluk, girdinin soru işaretinden hemen sonra değil, bir karakter sonra başlamasını sağlar. Sonunda <code>input</code> işlevi kullanıcının girdiği metni döndürür. Bunu <code>name</code> adlı bir değişkende saklarız.</p>
+
+<div class="note"><b>Tarayıcıda <code>input()</code>:</b> Bu sayfada <code>input()</code> çağrıldığında tarayıcı bir giriş kutusu açar. Kutuda yazdığınız değer, kodun girdisi olur. <b>İptal</b>'e basarsanız Python <code>EOFError</code> verir; bu, "girdi bitti" demektir.</div>
+
+<div class="cell" data-title="input ile ad sorma"><textarea>name = input("What is your name? ")
+print("Hello", name)
+print("Your name consists of", len(name), "characters")</textarea></div>
+
+<p>Hiçbir şey girmeseydiniz <code>name</code> değişkeni boş metni, yani 0 karakter uzunluğundaki <code>""</code>'yi içerirdi.</p>
+
+<p>İşte üç kullanışlı işlevimize genel bir bakış:</p>
+<div class="terms">
+<div class="term"><b>print(x)</b> — <code>x</code>'in değerini konsola yazdırır ve sonra yeni bir satır başlatır.</div>
+<div class="term"><b>len(s)</b> — Verilen <code>s</code> metninin uzunluğunu döndürür.</div>
+<div class="term"><b>input(s)</b> — <code>s</code>'yi konsolda gösterir ve kullanıcı girdisini bekler; bu girdi daha sonra döndürülür.</div>
+</div>
+<p><code>len</code> ve <code>input</code> için parametreye burada <code>s</code> denir; çünkü genellikle ona bir metin (string) verilir. <code>print</code> ile hemen her şeyi yazdırabilirsiniz: metinler, sayılar, Boolean değerler ve çok daha fazlası.</p>
+
+<!-- ====================== 3.4 ====================== -->
+<h2 id="s34"><span class="num">3.4</span>"if", "elif" ve "else" ile Koşullar</h2>
+
+<p><code>if</code> ile bir şeyin yalnızca bir koşul sağlanırsa yapılacağını belirtirsiniz. Bu <code>if formal:</code> gibi bir şey (<code>formal</code> bir Boolean değişkendir ve bu yüzden ya <code>True</code> ya <code>False</code>'tur) ya da bir <em>karşılaştırma operatörü</em> içeren bir şey olabilir. Aşağıdaki örnek, iki değerin eşit olup olmadığını denetleyen <code>==</code> karşılaştırma operatörünü kullanıyor:</p>
+
+<div class="cell" data-title="if ile koşul"><textarea>gender = input("Gender: ")
+last_name = input("Last name: ")
+if gender == "female":
+    print("Dear Ms.", last_name)</textarea></div>
+
+<p>Burada kullanıcıya cinsiyetini ve soyadını soruyoruz. "female" dışında bir şey girerseniz hiçbir şey olmaz. <code>if</code> koşulu sağlanmaz. <code>if</code> ifadesinden sonra gelen, <code>print</code> ifadesini içeren girintili program kodu bu yüzden çalıştırılmaz. Şimdi programımızı bir <code>else</code> bölümüyle genişletelim. Bir <code>else:</code>'den sonra gelen girintili program kodu <code>if</code> koşulu sağlanmadığında çalıştırılır:</p>
+
+<div class="cell" data-title="if / else"><textarea>if gender == "female":
+    print("Dear Ms.", last_name)
+else:
+    print("Dear Mr.", last_name)</textarea></div>
+
+<p>Program artık cinsiyet olarak "female" ya da "male" girildiği sürece anlamlı çıktı üretir. Tümüyle farklı bir şey, örneğin "non-binary" girerseniz <code>else</code> kısmı yine de çalıştırılır ve şunu görürüz: "Dear Mr. …". Sorunu "aksi hâlde … eğer" anlamına gelen bir <code>elif</code> ile çözebiliriz. Yani önceki <code>if</code> ve <code>elif</code> denetimlerinin hepsi yanlışsa (false) başka bir şeyi denetler. <code>else</code> kısmı ancak koşulların hiçbiri sağlanmazsa çalıştırılır:</p>
+
+<div class="cell" data-title="if / elif / else"><textarea>if gender == "female":
+    print("Dear Ms.", last_name)
+elif gender == "male":
+    print("Dear Mr.", last_name)
+else:
+    print("Hi!")</textarea></div>
+
+<div class="note"><b>Kitaptaki yazım hatası:</b> Kitapta bu örnekte ve bir sonrakinde ilk <code>print</code> satırı <code>last_Name</code> (büyük N) diye yazılmış. Python büyük/küçük harfe duyarlı olduğu için bu, <code>NameError: name 'last_Name' is not defined</code> hatası verir; çünkü değişkenin adı <code>last_name</code>. Burada düzeltilmiş hâli kullanıldı. Hatayı görmek için <code>last_name</code>'i <code>last_Name</code> yapıp "female" girin.</div>
+
+<p>Birden çok koşulun sağlanıp sağlanmadığını denetlemek istiyorsanız onları bir <code>if</code> ya da <code>elif</code> ifadesinde <code>and</code> ile birleştirebilirsiniz:</p>
+
+<div class="cell" data-title="and ile birleşik koşul"><textarea>formal = True
+first_name = "Anna"
+gender = "female"
+last_name = "Miller"
+
+if formal and gender == "female":
+    print("Dear Ms.", last_name)
+elif formal and gender == "male":
+    print("Dear Mr.", last_name)
+else:
+    print("Hello", first_name)</textarea></div>
+
+<p><code>and</code>'e ek olarak <code>or</code> ve <code>not</code> da vardır. <code>or</code> ile iki koşuldan yalnızca birinin sağlanması yeterlidir; <code>not</code> ise bir koşulu tersine çevirir. Koşul <code>False</code> olduğunda <code>True</code> olur ve tersi:</p>
+
+<div class="cell" data-title="not ve or"><textarea>gender = "non-binary"
+if not (gender == "female" or gender == "male"):
+    print("Hi!")</textarea></div>
+
+<div class="widget" id="ifWidget">
+  <h4>Etkileşimli: hangi dal çalışır?</h4>
+  <div class="ctrl">
+    <label>gender: <select id="ifGender" style="padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink)"><option>female</option><option>male</option><option>non-binary</option></select></label>
+    <label><input type="checkbox" id="ifFormal" checked> formal = True</label>
+  </div>
+  <pre id="ifCode" style="font-family:'JetBrains Mono',monospace;font-size:13.5px;line-height:1.7;background:var(--code-bg);padding:10px 14px;border-radius:8px;margin:0;overflow-x:auto"></pre>
+  <div class="readout" id="ifOut" style="margin-top:8px;font-family:'JetBrains Mono',monospace"></div>
+</div>
+
+<!-- ====================== 3.5 ====================== -->
+<h2 id="s35"><span class="num">3.5</span>Karşılaştırma Operatörleri</h2>
+
+<p>Önceki örneklerde bir değişkenin belirli bir değeri içerip içermediğini denetlemek için hep <code>==</code> kullandık: <code>if gender == "female"</code>. İki eşittir işareti kullanmak önemlidir. Tek bir eşittir işaretinin Python'da farklı bir anlamı vardır ve bir değişkene değer atamak için kullanılır: <code>gender = "female"</code>, <code>"female"</code> metin değerini <code>gender</code> değişkenine yazar. <code>gender == "female"</code> ile Python, <code>gender</code> değişkeninin <code>"female"</code> metin değerini içerip içermediğini denetler. Öyleyse <code>True</code>, değilse <code>False</code> döndürür.</p>
+
+<p>Tablo 3.2 karşılaştırma operatörlerine kısa bir genel bakış sunuyor. İlk ikisi dışındakiler özellikle sayılarla uğraşırken yararlıdır. Kaydırıcıyla yaşı değiştirip her ifadenin sonucunu canlı görün:</p>
+
+<div class="widget" id="cmpWidget">
+  <h4>Tablo 3.2 — Karşılaştırma operatörleri (etkileşimli)</h4>
+  <div class="ctrl">
+    <label>age = <input type="range" id="cmpAge" min="0" max="40" value="17" style="width:180px"> <b id="cmpAgeV">17</b></label>
+    <label>gender = <select id="cmpGender" style="padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink)"><option>female</option><option>male</option></select></label>
+  </div>
+  <table class="data" id="cmpTable" style="margin:0"></table>
+</div>
+
+<!-- ====================== 3.6 ====================== -->
+<h2 id="s36"><span class="num">3.6</span>Sayılar</h2>
+
+<p>Python'da <code>int</code> denen <em>tamsayılarla</em> ve <code>float</code> denen <em>kayan noktalı sayılarla</em> hesap yapabiliriz. İşte bir örnek:</p>
+
+<div class="cell" data-title="Fahrenhayt → Celsius"><textarea>fahrenheit = 100                      # 100 °F
+celsius = (fahrenheit - 32) * 5/9     # yaklaşık 37,8 °C
+print(celsius, "°C")
+if celsius >= 20:
+    print("It’s warm")
+else:
+    print("It’s cold")
+
+print(round(celsius, 1), "°C  ← round ile bir basamağa yuvarlandı")</textarea></div>
+
+<p>Kullanıcıdan bir sayı girmesini istemek için <code>input</code> kullandığımızda Python programı başta hiç sayı değil, bir metin alır; yani <code>100</code> değil, <code>1</code>, <code>0</code> ve <code>0</code> karakterlerinden oluşan bir metin olan <code>"100"</code>. Python elbette metinler üzerinde aritmetik işlem yapamaz. Bu yüzden önce metni sayıya dönüştürmemiz gerekir. Bunu <code>int</code> ya da <code>float</code> işlevleriyle yapabiliriz:</p>
+
+<div class="cell" data-title="int() ile dönüştürme"><textarea>age = input("Age: ")
+print(repr(age), "→ türü:", type(age).__name__)
+if int(age) < 18:
+    print("Hello there!")
+else:
+    print("Hello, you!")</textarea></div>
+
+<p>Örneğin 55 girilirse <code>age</code> değişkeni <code>"55"</code> metnini içerir. <code>int(age)</code> çağrısı <code>"55"</code>'i 55 tamsayısına dönüştürür. Artık <code>+</code>, <code>-</code> vb. ile hesap yapabilir ve denetimler gerçekleştirebiliriz:</p>
+
+<div class="cell" data-title="float() ile dönüştürme"><textarea>fahrenheit = input("Temperature in °F: ")
+celsius = (float(fahrenheit) - 32) * 5/9
+print(fahrenheit, "°F is", celsius, "°C")</textarea></div>
+
+<p><code>int(age)</code> işlevi kullanıcının girdiği <code>age</code> sayısını bir tamsayıya dönüştürür. Ancak bu yalnızca girdi gerçekten bir tamsayıysa, örneğin <code>33</code>, <code>0</code> ya da <code>-5</code> ise çalışır. Öte yandan <code>float(fahrenheit)</code> ondalık nokta içeren kayan noktalı sayıların, örneğin <code>7.5</code> ya da <code>-22.125</code>'in girilmesine izin verir. <code>int</code>'e ondalık nokta içeren bir sayı verirseniz ya da <code>int</code> veya <code>float</code> işlevlerine sayıdan tümüyle farklı bir şey (ör. <code>"Hello"</code>) verirseniz bir hata oluşur.</p>
+
+<div class="cell" data-title="Deneyin: hangi dönüşümler hata verir?"><textarea>for s in ["33", "-5", "7.5", "-22.125", "Hello", "7,5"]:
+    for f in (int, float):
+        try:
+            print(f"{f.__name__}({s!r:10}) = {f(s)!r}")
+        except ValueError as e:
+            print(f"{f.__name__}({s!r:10}) → HATA: {e}")</textarea></div>
+
+<div class="note">Türkçede ondalık ayırıcı virgüldür; ama Python yalnızca noktayı kabul eder. <code>float("7,5")</code> hata verir; gerekirse önce <code>s.replace(",", ".")</code> kullanın.</div>
+
+<!-- ====================== 3.7 ====================== -->
+<h2 id="s37"><span class="num">3.7</span>"while" Döngüsü</h2>
+
+<div class="prompt"><div class="lbl">İstem</div><em>Bir doğum günü partisi için 20 masa kartına ihtiyacım var. "Table 1", "Table 2" vb. yazdıran bir Python programı yaz.</em></div>
+
+<div class="cell" data-title="while ile masa kartları"><textarea>number_of_tables = 20
+
+# Başlangıç değeri
+table_number = 1
+
+while table_number <= number_of_tables:
+    print("Table", table_number)
+    table_number += 1</textarea></div>
+
+<p>Programımız <code>while</code> döngüsü yerine bir <code>if</code> ifadesi kullansaydı <code>if table_number &lt;= number_of_tables</code> koşulu doğru olurdu; çünkü 1, 20'den küçüktür. <code>"Table 1"</code> yazdırılır ve <code>table_number</code> değişkeni 1 artırılırdı; böylece artık <code>2</code> değerine sahip olurdu. <code>+= 1</code> operatörü bir değişkenin değerini <code>1</code> artırır. <code>table_number = table_number + 1</code> ile aynı şeyi yapar.</p>
+
+<p>Ancak <code>while</code> koşulun tekrar tekrar denetlenmesini sağlar. Doğru olduğu sürece <code>print</code> ifadesi ve masa numarasının artırılması sürer. Ancak <code>table_number</code> sonunda <code>21</code> değerine ulaştığında koşul artık doğru değildir. O zaman while döngüsünden çıkılır ve döngü biter.</p>
+
+<div class="widget" id="whileWidget">
+  <h4>Etkileşimli: while döngüsünü adım adım izleyin</h4>
+  <div class="ctrl">
+    <label>number_of_tables = <input type="number" id="whN" value="5" min="0" max="30" style="width:60px"></label>
+    <button class="btn primary" id="whStep">Bir adım</button> <button class="btn" id="whRun">Sonuna kadar</button> <button class="btn" id="whReset">Baştan</button>
+  </div>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px" class="wh-grid">
+    <pre id="whCode" style="font-family:'JetBrains Mono',monospace;font-size:13.5px;line-height:1.7;background:var(--code-bg);padding:10px 14px;border-radius:8px;margin:0"></pre>
+    <div><div class="readout" id="whVars" style="font-family:'JetBrains Mono',monospace;font-size:13.5px"></div><pre id="whOut" style="font-family:'JetBrains Mono',monospace;font-size:13px;max-height:180px;overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0 0"></pre></div>
+  </div>
+</div>
+
+<div class="note"><b>Dikkat!</b> <code>while</code> döngülerinde dikkatli olmazsanız her zaman doğru olan bir koşulla karşılaşabilir ve programın sonsuza kadar çalışmasına yol açabilirsiniz. Ama döngüden ortada istediğiniz zaman çıkmanızı sağlayan <code>break</code> komutu da vardır. <b>Bu sayfada:</b> Python tarayıcının ana iş parçacığında çalıştığı için sonsuz bir döngü sekmeyi dondurur; böyle olursa sayfayı yenileyin.</div>
+
+<div class="prompt"><div class="lbl">İstem</div><em>En az beş karakter uzunluğunda bir kullanıcı adı girilene kadar kullanıcıdan kullanıcı adı isteyen bir Python programı.</em></div>
+
+<div class="cell" data-title="while True ve break"><textarea>while True:
+    username = input("Your username: ")
+    if len(username) >= 5:
+        break
+    else:
+        print("The username is too short!")
+print("Hello", username)</textarea></div>
+
+<p>Bir <code>while True</code> döngüsü her zaman doğrudur; bu yüzden döngü tekrar tekrar çalışır. Her kullanıcı adı girildiğinde sistem onun beş ya da daha fazla karakterden oluşup oluşmadığını denetler. Öyleyse döngüden çıkmak ve kullanıcıyı selamlamak için <code>break</code> kullanırız. Değilse bir ileti gösterilir ve sonraki döngü yinelemesinde kullanıcı adı yeniden istenir. (Giriş kutusunda önce kısa bir ad, sonra uzun bir ad deneyin.)</p>
+
+<p>Kesin söylemek gerekirse burada <code>else</code>'e hiç gerek yoktu. Kullanıcı adının çok kısa olduğu iletisini her durumda gösterebilirdik. Sonuçta kullanıcı adı yeterince uzun olsaydı <code>break</code> ile döngüden zaten çıkmış olurduk. Ama <code>else</code>'in zararı da yok.</p>
+
+<!-- ====================== 3.8 ====================== -->
+<h2 id="s38"><span class="num">3.8</span>"for" Döngüsü</h2>
+
+<p><code>while</code> döngüsüne ek olarak Python'da bir <code>for</code> döngüsü de vardır. Bu bir <em>dizi</em> (sequence) üzerinde dolaşır ve her döngü yinelemesinde bize bir değişken aracılığıyla bu dizideki bir elemana erişim sağlar. Diziler listeler —ama bunları 3.10'da ele alacağız— ya da bir sayı aralığı olabilir. Bununla masa kartlarımızı yeniden üretebiliriz:</p>
+
+<div class="cell" data-title="for ve range"><textarea>for i in range(1, 21):
+    print("Table", i)</textarea></div>
+
+<p><code>range(1, 21)</code> ile 1'den 20'ye bir sayı dizisi oluştururuz. Evet, 21 yazmasına rağmen yalnızca 20'ye kadar gider; çünkü Python'da başlangıç değeri (<code>1</code>) dâhildir, bitiş değeri (<code>21</code>) hariçtir. <code>i</code> değişkeni artık her döngü yinelemesinde farklı bir sayı tutar —önce <code>1</code>, sonra <code>2</code> vb.— ta ki son yinelemede <code>i</code> nihayet <code>20</code> olana kadar.</p>
+
+<div class="widget" id="rangeWidget">
+  <h4>Etkileşimli: range(start, stop, step)</h4>
+  <div class="ctrl">
+    <label>start <input type="number" id="rgA" value="1" style="width:64px"></label>
+    <label>stop <input type="number" id="rgB" value="21" style="width:64px"></label>
+    <label>step <input type="number" id="rgC" value="1" style="width:64px"></label>
+  </div>
+  <div class="readout" id="rgOut" style="font-family:'JetBrains Mono',monospace;font-size:13.5px;line-height:1.9"></div>
+</div>
+
+<!-- ====================== 3.9 ====================== -->
+<h2 id="s39"><span class="num">3.9</span>"print" Hakkında Daha Fazlası</h2>
+
+<p><code>print</code> işlevi aslında oldukça basittir: <code>print("Hello")</code> dersiniz ve "Hello" yazdırılır. Ya da <code>print(first_name)</code> dersiniz ve değişkende saklanan ad yazdırılır. Ama <code>print</code>'in yapabildikleri bundan ibaret değil:</p>
+<div class="terms">
+<div class="term"><b>Parametresiz <code>print()</code></b> — Yalnızca <code>print()</code> çağırırsanız yeni bir satır başlar.</div>
+<div class="term"><b>Birden çok parametreyle <code>print</code></b> — <code>print(a, b)</code>, <code>a</code>'nın değerini, ardından bir boşluk ve <code>b</code>'nin değerini yazdırır. Bu herhangi sayıda parametreyle çalışır. En sonda bir satır sonu gelir.</div>
+<div class="term"><b><code>"\n"</code> ile satır sonunu kendiniz eklemek</b> — Bir metne <code>\n</code> yazarsanız o noktada bir satır sonu oluşturursunuz; örneğin <code>print("Best regards\nJohn")</code>.</div>
+<div class="term"><b>Boşluk dışında bir ayırıcı kullanmak</b> — <code>print("Hello", "World", sep="")</code>, sözcükler arasında boşluk olmadan <code>HelloWorld</code> yazdırır. <code>sep</code> parametresiyle değerleri ayıran ayırıcıyı kendiniz belirtebilirsiniz (varsayılan: <code>sep=" "</code>).</div>
+<div class="term"><b>Farklı bir çıktı sonu kullanmak</b> — <code>print("Hello", end="")</code> ile çıktının sonunda satır sonu oluşmasını önlersiniz. <code>end=""</code> sonda hiçbir şey yapılmayacağı anlamına gelir (varsayılan: <code>end="\n"</code>).</div>
+<div class="term"><b>Biçimlendirilmiş metin yazdırmak</b> — İlk tırnaktan önce bir <code>f</code> yazarsanız, örneğin <code>print(f"Table {i}")</code>, süslü parantez içine değişken adları koyabilirsiniz. Değerleri o noktaya yerleştirilir.</div>
+</div>
+
+<div class="cell" data-title="print'in seçenekleri"><textarea>first_name = "Anna"
+i = 7
+print("Best regards\nJohn")
+print("Hello", "World", sep="")
+print("Hello", "World", sep=" | ")
+print("Hello", end="")
+print(" ← aynı satırda devam")
+print(f"Table {i}")
+print(f"x is {i * 6}")</textarea></div>
+
+<div class="widget" id="printWidget">
+  <h4>Etkileşimli: print(…, sep=…, end=…)</h4>
+  <div class="ctrl">
+    <label>değerler: <input type="text" id="prVals" value='"Mon", "Tue", "Wed"' style="width:220px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:'JetBrains Mono',monospace"></label>
+    <label>sep = <input type="text" id="prSep" value='", "' style="width:80px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:'JetBrains Mono',monospace"></label>
+    <label>end = <input type="text" id="prEnd" value='"!\n"' style="width:80px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:'JetBrains Mono',monospace"></label>
+    <button class="btn primary" id="prRun">Çalıştır</button>
+  </div>
+  <div class="readout" id="prCode" style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted)"></div>
+  <pre id="prOut" style="font-family:'JetBrains Mono',monospace;font-size:14px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0 0;white-space:pre-wrap"></pre>
+  <div style="font-family:Inter,sans-serif;font-size:12px;color:var(--muted)">Görünmeyen karakterler: boşluk <code>·</code>, satır sonu <code>↵</code> olarak gösterilir. Kod gerçek Python'da çalışır.</div>
+</div>
+
+<p>Özellikle son nokta —metinleri biçimlendirmek— çok yararlıdır. İnsanlar tırnak işaretlerini koymayı sıkça unuttuğu için hataları önler ve kodun okunmasını kolaylaştırır. Bu kitapta ileride sıklıkla <code>print(f"x is {x}")</code> sözdizimini kullanacağız. ChatGPT de sıklıkla biçimlendirilmiş metinler içeren kod üretir.</p>
+
+<p>Metinlerden bu kadar söz etmişken <code>+</code> operatörü de anılmaya değer; çünkü yalnızca sayıları toplamanızı değil, iki metni birleştirmenizi de sağlar:</p>
+
+<div class="cell" data-title="Metinleri birleştirmek"><textarea>first_name = "Anna"
+last_name = "Smith"
+name = first_name + " " + last_name
+print(name)
+print("Hello " + first_name + " " + last_name)
+print("Hello", first_name, last_name)
+print(f"Hello {first_name} {last_name}")   # en havalı seçenek 😎</textarea></div>
+
+<p><code>first_name</code>'de <code>"Anna"</code>, <code>last_name</code>'de <code>"Smith"</code> metni saklanıyorsa <code>name</code> değişkeninin değeri artık <code>"Anna Smith"</code>'tir. Elbette bunu doğrudan <code>print</code> ifadesinde de kullanabilirsiniz; yukarıdaki diğer iki yol da işe yarardı.</p>
+
+<!-- ====================== 3.10 ====================== -->
+<h2 id="s310"><span class="num">3.10</span>Listeler, Kümeler, Demetler ve Sözlükler</h2>
+
+<p>Sayılar ve metinler için kullanılan veri türleri <em>bir</em> sayı ya da <em>bir</em> metin saklamaya yarar. Ancak er ya da geç <em>karmaşık veri türlerine</em> de ihtiyacınız olacak. Bunlar tek bir değişken içinde çok sayıda değer saklamanızı sağlayan veri türleridir. İşte dört örnek:</p>
+
+<div class="cell" data-title="Dört karmaşık veri türü"><textarea>days = ["Mon", "Tue", "Wed", "Thu", "Fri"]          # Liste
+print(type(days).__name__, days)
+days = ("Mon", "Tue", "Wed", "Thu", "Fri")          # Demet (tuple)
+print(type(days).__name__, days)
+days = {"Mon", "Tue", "Wed", "Thu", "Fri"}          # Küme (set)
+print(type(days).__name__, days, " ← sıra garanti değil")
+days = {"Mon": "Monday", "Tue": "Tuesday"}          # Sözlük
+print(type(days).__name__, days)</textarea></div>
+
+<p>İlk bakışta bunların hepsi birbirine çok benzese ve esas olarak parantez türünde farklılaşsa da Tablo 3.3 farkları gösteriyor.</p>
+
+<table class="data">
+<tr><th>Veri türü</th><th>Örnek</th><th>Erişim</th><th>Sıra</th><th>Yinelenen</th><th>Değiştirilebilir</th></tr>
+<tr><td>Liste</td><td><code>x=[1,2]</code></td><td><code>x[0]</code></td><td>Sabit</td><td>Evet</td><td>Evet</td></tr>
+<tr><td>Demet</td><td><code>x=(1,2)</code></td><td><code>x[0]</code></td><td>Sabit</td><td>Evet</td><td>Hayır</td></tr>
+<tr><td>Küme</td><td><code>x={1,2}</code></td><td>–</td><td>Yok</td><td>Hayır</td><td>Evet</td></tr>
+<tr><td>Sözlük</td><td><code>x={"a":1, "b":5}</code></td><td><code>x["a"]</code></td><td>Sabit (anahtarlar)</td><td>Anahtar: hayır</td><td>Evet</td></tr>
+</table>
+<div class="caption">Tablo 3.3 — Karmaşık veri türleri</div>
+
+<p>Bu dört türün en önemlisi muhtemelen <em>listedir</em>. Bir liste oluşturmak için listede saklanacak değerleri virgülle ayırarak yazarız; örneğin <code>days = ["Mon", "Tue", "Wed"]</code>. Bu üç girdili bir listedir. <code>len(days)</code> bize girdi sayısını, yani <code>3</code>'ü verir. <code>days[0]</code> ile ilk elemanı, bizim durumumuzda <code>"Mon"</code> metnini alırız. Python'da saymaya her zaman 0'dan başlarız; dolayısıyla <code>"Wed"</code>, <code>days[2]</code>'dedir. <code>days[len(days)-1]</code> ya da kısaca <code>days[-1]</code> da yazabilirdik; çünkü bu bize listedeki son elemanı verir. Listedeki mevcut girdileri değiştirmek için üzerlerine yazarız: <code>days[2] = "Wednesday"</code>. <code>days.append("Thu")</code> ile yeni bir eleman da ekleyebiliriz.</p>
+
+<div class="widget" id="idxWidget">
+  <h4>Etkileşimli: liste indeksleri (pozitif ve negatif)</h4>
+  <div id="idxView" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0"></div>
+  <div class="ctrl" style="gap:6px">
+    <button class="btn" data-op="append">days.append("…")</button>
+    <button class="btn" data-op="set">days[2] = "Wednesday"</button>
+    <button class="btn" data-op="pop">days.pop()</button>
+    <button class="btn" data-op="reset">Sıfırla</button>
+  </div>
+  <div class="readout" id="idxOut" style="font-family:'JetBrains Mono',monospace;font-size:13.5px"></div>
+</div>
+
+<p>Şimdi listenin tamamını yazdırmak istiyorsak <code>print(days)</code> kullanabilir ya da listeyi virgülle ayrılmış bir liste biçiminde bir metne dönüştürüp onu yazdırabiliriz:</p>
+
+<div class="cell" data-title="Listeyle çalışmak"><textarea>days = ["Mon", "Tue", "Wed"]
+print(len(days), days[0], days[2], days[len(days)-1], days[-1])
+days[2] = "Wednesday"
+days.append("Thu")
+print(days)               # yazdırır: ['Mon', 'Tue', 'Wednesday', 'Thu']
+print(", ".join(days))    # yazdırır: Mon, Tue, Wednesday, Thu</textarea></div>
+
+<p><code>", ".join(days)</code> yöntem çağrısı listeden ilk girdiyi, ardından <code>.join</code>'den önceki ayırıcıyı (yani bir virgül ve bir boşluk), sonra ikinci girdiyi alır ve böyle devam eder.</p>
+
+<p><em>Demetler</em> diğer türler kadar popüler değildir; bu yüzden burada pek ayrıntıya girmeyeceğim. Bir demet oluşturulduktan sonra içindeki değerleri artık değiştiremezsiniz. Bunun dışında demetler neredeyse tam olarak listeler gibi davranır. Demetlere 3.14'te kısaca yeniden değineceğiz.</p>
+
+<p><em>Kümeler</em> süslü parantezle yazılır; örneğin <code>x = {8, 2, 5}</code> üç sayı içeren bir kümedir. Burada girdileri hangi sırayla listelediğiniz önemli değildir; çünkü listelerin ve demetlerin aksine birinci ya da ikinci eleman yoktur, yalnızca kümenin içerdiği elemanlar vardır. Ayrıca hiçbir eleman birden fazla geçmez. <code>x = {8, 2, 8}</code> için eleman sayısı <code>len(x)</code> yalnızca 2'dir; çünkü yinelenenler sayılmaz. <code>x.add(4)</code> ile kümeye yeni elemanlar ekleyebilir, <code>x.remove(2)</code> ile kaldırabilirsiniz. Bir elemanın kümede olup olmadığını denetlemek için <code>in</code> kullanabilirsiniz: <code>if 4 in x:</code>.</p>
+
+<p><em>Sözlükler</em> çok özel bir küme türüdür; daha doğrusu buradaki her girdinin bir anahtarı ve bir değeri vardır ve her anahtar yalnızca bir kez geçer. Bir sözlüğü —adından da anlaşılacağı gibi— bir sözlük gibi düşünebilirsiniz: "Monday", "Montag" (Almanca Pazartesi) demektir, "Tuesday", "Dienstag" demektir vb. Python'da bunu şöyle yazarsınız: <code>days = {"Monday": "Montag", "Tuesday": "Dienstag"}</code>.</p>
+
+<p>"Monday"in Almancada ne dendiğini bilmek istiyorsanız değeri şöyle alabilirsiniz: <code>days["Monday"]</code>. Bu <code>"Montag"</code> değerini döndürür. Tersi işe yaramaz. Sözlüklerde değere her zaman anahtar üzerinden erişmeniz gerekir. Burada da mevcut girdileri değiştirmek, örneğin <code>days["Monday"] = "Mo"</code>, ya da yeni girdiler eklemek mümkündür: <code>days["Wednesday"] = "Mittwoch"</code>.</p>
+
+<div class="cell" data-title="Küme, demet ve sözlük"><textarea>x = {8, 2, 8}
+print(x, len(x))            # yinelenen sayılmaz
+x.add(4); x.remove(2)
+print(x, 4 in x)
+
+t = (1, 2)
+try:
+    t[0] = 99
+except TypeError as e:
+    print("Demet değiştirilemez:", e)
+
+days = {"Monday": "Montag", "Tuesday": "Dienstag"}
+print(days["Monday"])
+days["Monday"] = "Mo"
+days["Wednesday"] = "Mittwoch"
+print(days)
+
+print(type([]), type(()), type(set()), type({}))   # boş liste, demet, küme, sözlük
+print(type((7,)), type((7)))                        # tek elemanlı demet için virgül şart</textarea></div>
+
+<p>Boş bir listeye, boş bir kümeye, bir demete vb. ihtiyacınız olursa —örneğin daha sonra içine bir şey eklemek istediğiniz için— <code>[]</code> (liste), <code>()</code> (demet), <code>set()</code> (küme) ya da <code>{}</code> (sözlük) yazarsınız. Elbette demet değiştirilemez olduğu için ona sonradan eleman eklemek işe yaramaz. <code>(7,)</code> yazımı da ilginçtir; çünkü yalnızca tek elemanlı bir demet oluşturmak için kullanılır. Kapanış parantezinden önceki virgül olmadan Python bunun bir demet olduğunu tanımaz.</p>
+
+<p>Bu, karmaşık veri türlerine yalnızca hızlı bir genel bakış; ama bu veri türlerine ihtiyaç duyduğumuz programlarda daha sonra daha fazlasını açıklayacağım. Özellikle listeleri oldukça sık kullanacağız.</p>
+
+<!-- ====================== 3.11 ====================== -->
+<h2 id="s311"><span class="num">3.11</span>Listeler ve Daha Fazlası için "for" Döngüsü</h2>
+
+<p><code>for</code> döngüsünü zaten biliyorsunuz: <code>for i in range(1, 21): print(i)</code>. Bu "1", "2", "3" vb. "20"ye kadar yazdırır. Ancak <code>in</code> sözcüğünün sağında <code>range</code> yerine bir liste, bir demet, bir küme ya da bir sözlük de kullanabiliriz. O zaman döngü içindeki her girdi üzerinden geçer. Girdinin kendisi <code>in</code> sözcüğünden önce yazdığımız değişkende saklanır; örneğin <code>for e in my_list:</code>.</p>
+
+<p>ChatGPT'den küçük bir program isteyelim:</p>
+
+<div class="prompt"><div class="lbl">İstem</div><em>Allison, Berta, Carla, Dora, Emil, Frank ve Ginny için masa kartları üreten bir Python programı yaz. Yalnızca adı yazdırmalı.</em></div>
+
+<div class="cell" data-title="Liste üzerinde for"><textarea>names = ["Allison", "Berta", "Carla", "Dora", "Emil", "Frank", "Ginny"]
+for name in names:
+    print(name)</textarea></div>
+
+<div class="prompt"><div class="lbl">İstem</div><em>Şöyle görünsün istiyorum: "Seat No. 1: Allison" vb.</em></div>
+
+<div class="cell" data-title="range(len(…)) ile indeks"><textarea>names = ["Allison", "Berta", "Carla", "Dora", "Emil", "Frank", "Ginny"]
+for i in range(len(names)):
+    print(f"Seat No. {i + 1}: {names[i]}")</textarea></div>
+
+<p>Programın ilk sürümünde <code>name</code> değişkeni ilk döngü yinelemesinde <code>"Allison"</code>, ikincisinde <code>"Berta"</code> vb. içerir. İkinci programda yine bir <code>range</code> üzerinde dolaşan bir <code>for</code> döngümüz var. Orada döngü değişkeninin adı <code>i</code>'dir ve 0'dan 6'ya kadar gider. Neden 0'dan 6'ya? Birincisi, listemiz yedi metinden oluştuğu için <code>len(names)</code> <code>7</code> sayısını döndürür. İkincisi, <code>range( )</code>'de başlangıç ve bitiş değeri değil, yalnızca bir bitiş değeri belirttik. Böyle bir durumda Python <code>range(7)</code>'yi <code>range(0, 7)</code>'ye dönüştürür; dolayısıyla döngü 0'dan 6'ya kadar çalışır. Başlangıç değerinin (0) dâhil, bitiş değerinin (7) hariç olduğunu hatırlarsınız. <code>for i in range(len(names))</code> ile listemizin yedi elemanı üzerinde dolaşabilir ve her yinelemede liste indeksi <code>i</code>'ye erişebiliriz. <code>names[i]</code> ile o konumdaki adı alabiliriz: <code>names[0]</code> <code>"Allison"</code>'dır vb. Diğer biçim, <code>for name in names</code>, kullanması çok daha basittir; bu yüzden bu sözdizimini tercih etmelisiniz. Liste konumuna —listemizdeki indeks numarasına— ihtiyacınız olursa bir değişkeni <code>seat_number = seat_number + 1</code> ile eşdeğer olan <code>seat_number += 1</code> ile elle de artırabilirsiniz:</p>
+
+<div class="cell" data-title="Elle sayaç"><textarea>seat_number = 1
+for name in names:
+    print(f"Seat No. {seat_number}: {name}")
+    seat_number += 1</textarea></div>
+
+<p>Bu durumda <code>print</code> içindeki o garip <code>i+1</code>'e de ihtiyacımız olmaz. Önceki örnekte bu, <code>i</code>'nin ilk döngü yinelemesinde 0 olmasından, ama bizim 1 numaralı koltuğu yazdırmak istememizden kaynaklanıyordu. 3.14'te aynı şeyi <code>for seat_number, name in enumerate(names, start=1):</code> ile yapacağımız başka bir biçimi göreceksiniz.</p>
+
+<p>Bu <code>for</code> döngüsü yalnızca listeler için değil, demetler, kümeler ve sözlükler için de çalışır. Sözlüklerde döngü anahtarlar kümesi üzerinde dolaşır. Ama bu anahtarlar aracılığıyla ilgili değere de erişebiliriz:</p>
+
+<div class="prompt"><div class="lbl">İstem</div><em>Haftanın yedi günü için şunu yazdıran bir Python programı: "Montag is Monday" …</em></div>
+
+<div class="cell" data-title="Sözlük üzerinde for"><textarea>days = {
+    "Montag": "Monday",
+    "Dienstag": "Tuesday",
+    "Mittwoch": "Wednesday",
+    "Donnerstag": "Thursday",
+    "Freitag": "Friday",
+    "Samstag": "Saturday",
+    "Sonntag": "Sunday"
+}
+for day in days:  # burada yalnızca anahtarları alırız
+    print(f"{day} is {days[day]}")</textarea></div>
+
+<p><code>for</code> sözcüğünü bir sözlüğün izlediği bir <code>for</code> döngüsünde her döngü yinelemesinde geçerli girdinin anahtarını alırız. Bu daha sonra <code>day</code> değişkeninde saklanır. <code>days[day]</code> ile değere de erişebiliriz.</p>
+
+<!-- ====================== 3.12 ====================== -->
+<h2 id="s312"><span class="num">3.12</span>Örnek Program: Sözcük Sayma</h2>
+
+<p>Şimdi ChatGPT'ye ilk büyük programımızı adım adım ürettireceğiz ve bu bölümdeki bilgilerle neredeyse her şeyini anlayabileceksiniz. Elbette program yeni komutlar da içerecek; ama bu sizi yıldırmasın. Ayrıntılara daha yakından gireceğim; ama çoğu kendiliğinden anlaşılır olacak.</p>
+
+<div class="prompt"><div class="lbl">İstem</div><em>Bir metindeki sözcük sayısını sayan bir Python programı yaz.</em></div>
+
+<div class="cell" data-title="Sözcük sayma"><textarea>text = input("Please enter a text: ")
+# Metni boşluklara göre sözcüklere böl
+words = text.split()
+# Sözcük sayısını belirle
+count = len(words)
+print(f"The text contains {count} words.")
+print("words =", words)</textarea></div>
+
+<p>Bu programdaki tek yeni şey, <code>join</code> yönteminin tersini yapan <code>split()</code> yöntemidir. <code>join</code> ile bir listenin girdilerini, iki girdi arasına her zaman bir ayırıcı ekleyerek bir metinde birleştirebilirsiniz. <code>split</code> ise bir metni bir ayırıcıya göre —varsayılan olarak boşluklar, satır sonları ve benzerleri— böler ve bir sözcük listesi döndürür. Yöntemler işlevler gibidir; ama onları bir şeyin üzerinde çağırırsınız; bizim durumumuzda bir metnin üzerinde. <code>print(text.upper())</code>'da <code>upper</code> yöntemi <code>text</code> değişkeninde saklanan metin üzerinde çağrılır. Bu metin büyük harfe çevrilip yazdırılır. Yani <code>text.upper()</code> aynı metni ama büyük harflerle içeren yeni bir metin döndürür. Ancak programımızda <code>upper</code>'ı değil <code>text.split()</code>'i kullanıyoruz. Bu metni boşlukların, satır sonlarının vb. bulunduğu yerlerden birkaç parçaya böler. <code>text.split()</code> sonunda metindeki tek tek sözcükleri içeren bir liste döndürür. Kullanıcı "What is the weather like?" metnini girerse <code>words</code> değişkeni <code>["What", "is", "the", "weather", "like?"]</code> listesini içerir. Bu listenin uzunluğu 5 olduğu için program metnin beş sözcük içerdiğini yazdırır.</p>
+
+<div class="prompt"><div class="lbl">İstem</div><em>Programı "the", "an" ve "that" gibi sözcükler sayılmayacak biçimde genişlet.</em></div>
+
+<div class="cell" data-title="Durak sözcükleri saymamak"><textarea>text = input("Please enter some text: ")
+# Sayılmaması gereken sözcükler
+stop_words = ["the", "a", "an", "and", "or",
+              "from", "to", "with"]
+# Metni sözcüklere böl
+words = text.split()
+# Durak sözcük listesinde olmayan sözcükleri say
+count = 0
+for word in words:
+    # Büyük/küçük harfi yok saymak için küçük harfle karşılaştır
+    if word.lower() not in stop_words:
+        count += 1
+
+print(f"The text contains {count} words (excluding stop words).")</textarea></div>
+
+<p>Bu programda sözcükleri saymayı artık <code>len</code> işlevi değil, elle yapılan sayım üstleniyor. Metindeki tek tek sözcükler üzerinde bir <code>for</code> döngüsüyle dolaşırız ve durak sözcükler listesinde olmayan bir sözcükle her karşılaştığımızda <code>count</code> değişkenini bir artırırız. Bu programda her sözcük durak sözcükler listesiyle karşılaştırılmadan önce <code>word.lower()</code> ile küçük harfe çevrildi. Bu, yalnızca "the", "a", "an" vb.'nin değil, büyük harfle başladıklarında "The", "A", "An" vb.'nin de yok sayılmasını sağlar.</p>
+
+<div class="note">Kitaptaki istem "that" sözcüğünü örnek veriyor; ama ChatGPT'nin ürettiği listede <code>"that"</code> yok. İsterseniz hücrede listeye ekleyin.</div>
+
+<div class="prompt"><div class="lbl">İstem</div><em>Şimdi metinde en sık geçen sözcüğü yazdıran bir program istiyorum.</em></div>
+
+<div class="cell" data-title="En sık geçen sözcük"><textarea>text = input("Please enter a text: ")
+
+# Metni sözcüklere böl
+words = text.split()
+
+# Sözcükleri say
+frequency = {}
+for word in words:
+    word = word.lower()  # Büyük/küçük harfi yok say
+    if word in frequency:
+        frequency[word] += 1
+    else:
+        frequency[word] = 1
+
+# En yüksek sıklığa sahip sözcüğü bul
+max_word = max(frequency, key=frequency.get)
+max_count = frequency[max_word]
+
+print(f"Most frequent word: '{max_word}' ({max_count} times)")
+print("frequency =", frequency)</textarea></div>
+
+<p>Her bir sözcüğün sıklığını saymak için bir sözlük kullanılır. <code>frequency = {}</code> boş bir sözlük oluşturur. <code>{}</code>'nin boş bir küme olduğunu düşünebilirsiniz. Ama Python'da <code>{}</code> girdisi olmayan bir sözlüktür. Boş bir küme <code>set()</code> ile tanımlanır.</p>
+
+<p><code>frequency</code> adlı sözlük her zaman anahtar olarak bir sözcüğü, değer olarak da o sözcüğün sıklığını kullanır. <code>if word in frequency</code> ifadesi bir sözcüğün sözlükte zaten olup olmadığını denetler. Zaten varsa sözlükteki sıklığı bir artırırız; sözcük yeniyse sözlükte yeni bir girdi oluşturulur: <code>frequency[word] = 1</code>.</p>
+
+<p>İşte bir örnek: Kullanıcı şu metni giriyor: "To be or not to be". Metin, sözcük listesi altı sözcüğü içerecek biçimde bölünür: <code>["To", "be", "or", "not", "to", "be"]</code>. <code>for</code> döngüsünde bu sözcüklerin her biri incelenir ve küçük harfe çevrilir. İlk <code>"To"</code> böylece <code>"to"</code> olur. Sözlük bu noktada hâlâ boş olduğu için —yani henüz <code>"to"</code> anahtarını içermediği için— <code>frequency["to"]</code> <code>1</code>'e ayarlanır. Süreç <code>"be"</code>, <code>"or"</code> ve <code>"not"</code> sözcükleri için aynı biçimde sürer. Ancak sonraki sözcük olan <code>"to"</code> için <code>if word in frequency</code> denetimi bu kez <code>True</code>'dur; çünkü <code>"to"</code> anahtarı sözlükte zaten var. Sıklığı bu yüzden <code>1</code>'den <code>2</code>'ye çıkarılır. Aynısı <code>"be"</code> için de olur.</p>
+
+<div class="widget" id="freqWidget">
+  <h4>Etkileşimli: frequency sözlüğü adım adım dolarken</h4>
+  <div class="ctrl"><input type="text" id="frIn" value="To be or not to be" style="flex:1;min-width:220px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:Inter,sans-serif"></div>
+  <div class="ctrl"><button class="btn" id="frPrev">◀</button> <button class="btn primary" id="frNext">Sonraki sözcük ▶</button> <button class="btn" id="frEnd">Sona git</button> <span class="readout" id="frStep" style="font-size:13.5px"></span></div>
+  <div id="frWords" style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0"></div>
+  <div id="frDict" style="font-family:'JetBrains Mono',monospace;font-size:13.5px"></div>
+</div>
+
+<p>Programın son birkaç satırında olanlar, önceden bilmiyorsanız kendi başınıza çözemeyeceğiniz bir şeydir. <code>max(frequency, key=frequency.get)</code> sözlükte en yüksek değere sahip anahtarı döndürür. Yani ChatGPT tam ihtiyacımız olanı yapan bu sihirli satırı üretti. Geçmişte bir Python uzmanı olmanız ya da kapsamlı araştırma yapmış olmanız gerekirdi. Ya da deneyimsiz bir Python geliştiricisi olarak bunu çok daha fazla kod satırıyla çok daha zahmetli bir yoldan yapmanız gerekirdi. Artık bu kod satırını olduğu gibi kullanabilirsiniz.</p>
+
+<p>Burada tam olarak ne olduğunu hâlâ merak ediyorsanız işte kısa bir açıklama: <code>max</code> işlevi normalde bir listeden, kümeden ya da demetten en büyük elemanı ya da bir sözlükteki en büyük anahtarı döndürür. Örneğin <code>max([3,5,2])</code> 5 sayısını döndürür. Önceki programa <code>"To be or not to be"</code> girip ardından <code>max(frequency)</code> hesaplasaydık, tesadüfen gerçekten <code>"to"</code> sonucunu döndürürdü; ama bu sözcük en yüksek sıklığa sahip olduğu için değil. Bunun yerine <code>"to"</code> alfabede en sonda gelen sözcük olduğu için: T harfi alfabede B, N ve O'dan sonra gelir. Bu yüzden başka metinler için büyük olasılıkla yanlış sözcük döndürülürdü. Python'a en büyük anahtarı değil, <code>frequency.get(k)</code>'nin en büyük olduğu <code>k</code> anahtarını döndürmesini söylemek için <code>key=frequency.get</code> parametresini ayarlamalıyız. Bu arada <code>frequency.get(k)</code>, hep <code>frequency[k]</code> ile yaptığımız şeyi yazmanın başka bir yoludur; farkı, ikincisi <code>k</code> anahtarı sözlükte yoksa hata verirken <code>get(k)</code>'nin bu durumda <code>None</code> döndürmesidir. Umarım bunların hiçbiri kafanızı fazla karıştırmıyordur. Her şeyi hemen bilmek zorunda değilsiniz. Ne kadar çok yaparsanız her şey o kadar yavaş yavaş gelir.</p>
+
+<div class="cell" data-title="max() ile max(…, key=…) farkı"><textarea>frequency = {"apple": 3, "zebra": 1, "banana": 2}
+print("max(frequency)                    →", max(frequency), "  (alfabede en sondaki anahtar)")
+print("max(frequency, key=frequency.get) →", max(frequency, key=frequency.get), "  (en sık geçen)")
+print(frequency.get("kiwi"), "← get yoksa None döndürür")
+try:
+    frequency["kiwi"]
+except KeyError as e:
+    print("frequency['kiwi'] → KeyError:", e)
+
+from collections import Counter          # aynı işin hazır aracı
+print(Counter("to be or not to be".split()).most_common(2))</textarea></div>
+
+<!-- ====================== 3.13 ====================== -->
+<h2 id="s313"><span class="num">3.13</span>Kendi İşlevlerinizi Yazmak</h2>
+
+<p>Python'un <code>print</code>, <code>len</code> ve <code>input</code> gibi yerleşik işlevlerinden bazılarını zaten öğrendiniz. Bu işlevler, başka birinin sizin için zaten programladığı işlevsellikleri sağlar. Ama er ya da geç kendi işlevlerinizi yazmak da yararlı olacaktır. Şimdi buna bakacağız. İşlevlerin <code>len</code> gibi bir adı vardır ve parametreler işlev adından sonra parantez içinde listelenir. Parametresiz işlevler de vardır. <code>len()</code> geçersiz bir çağrı olurken <code>print()</code>'e izin verilir: Yeni bir satır oluşturulur. Ancak pek çok işlev bir ya da birkaç parametre alır. <code>len("Hello")</code> ile <code>"Hello"</code> metin değerini parametre olarak veririz, ardından <code>len</code> işlevi karakter sayısını hesaplar. Sonuç 5 sayısıdır; bunu örneğin doğrudan <code>print(len("Hello"))</code> ile yazdırabilir ya da <code>x = len("Hello")</code> ile bir değişkende saklayabiliriz.</p>
+
+<p>Şimdi önceki kısımdaki örneği genişletelim ve sözcük sayma işlevselliğini her yerden çağırabilmek için bir işleve saralım.</p>
+
+<div class="prompt"><div class="lbl">İstem</div><em>Bir metni girdi olarak alıp metindeki sözcük sayısını sayan bir Python işlevi oluştur.</em></div>
+
+<div class="cell" data-title="count_words işlevi"><textarea>def count_words(text):
+    words = text.split()
+    return len(words)
+
+# Örnek
+sentence = "This is a short example sentence."
+print(count_words(sentence))  # Çıktı: 6
+
+x = count_words("Hey you")
+print("x =", x)</textarea></div>
+
+<p>ChatGPT'den bir işlev oluşturmasını istediğinizde genellikle işlevin nasıl çağrılacağını gösteren bir örneği de hemen verir. İşlevin asıl tanımı <code>def</code> ile başlar, ardından işleve bir ad verilir (burada <code>count_words</code>) ve ardından işlevin kabul ettiği parametreler parantez içinde gelir. Bunlar esasen işlev içinde erişebildiğimiz değişkenlerdir. Yani <code>def count_words(text)</code>, <code>count_words</code> işlevini daha sonra tam olarak bir parametreyle, örneğin şöyle çağırmamız gerektiği anlamına gelir: <code>x = count_words("Hey you")</code>. İşlev içinde bu parametrenin değerine <code>text</code> değişkeni aracılığıyla erişebiliriz. Değeri <code>"Hey you"</code>'dur.</p>
+
+<p><code>def</code> ile başlayan satırdan sonra girintili kod, işlev çağrıldığında sonunda ne olacağını temsil eder. Bizim durumumuzda kendisine verilen metin <code>text.split()</code> ile sözcüklerine bölünür. Bu bize bir sözcük listesi verir. <code>len(words)</code> listedeki sözcük sayısını hesaplar ve <code>return</code> ifadesi bu değeri döndürür. Şimdi biri <code>x = count_words("Hey you")</code> çağırırsa, kendisine verilen metin iki sözcükten oluştuğu için işlevimiz 2 değerini döndürür. Yani <code>x</code> o zaman <code>2</code>'dir.</p>
+
+<p>Kitabın çok ilerisinde ara sıra <em>lambda işlevleri</em> göreceksiniz. Özellikle ChatGPT, çok derli toplu oldukları için onları üretmeyi sever. Esasen lambda işlevleri çok satırlı program mantığı içermeyen —yani döngü ve <code>if</code> ifadesi olmayan— ama bir hesaplamanın nasıl yapıldığını betimleyen tek bir ifade içeren işlevleri yazmanın bir yoludur. Önceki <code>count_words</code> işlevini bir lambda işlevi olarak şöyle yazıp her zamanki gibi <code>count_words("Hey you")</code> ile çağırabilirdik:</p>
+
+<div class="cell" data-title="lambda ile aynı işlev"><textarea>count_words = lambda text: len(text.split())
+print(count_words("Hey you"))</textarea></div>
+
+<p><code>lambda</code> sözcüğünü işlev parametreleri, sonra iki nokta üst üste ve son olarak işlevde aksi hâlde <code>return</code> ifadesinden sonra gelecek şey izler. Ama şimdilik <code>def</code> ile tanımladığımız normal işlevlere bağlı kalalım.</p>
+
+<p>İşlevler, program kodu aksi hâlde fazla karmaşık hâle gelecekse her zaman yararlıdır. Örneğin daha karmaşık hesaplamaları ve görevleri bir işleve koyabilirsiniz. Asıl program kodunuzda o zaman yalnızca işlevleri çağırırsınız. Özellikle aynı işlevi birden çok yerde çağırmanız gerekiyorsa, aynı kodu kopyala-yapıştırla birden çok kez yinelemek yerine ilgili kodu bir işleve koymak çok daha mantıklıdır. Başka programlarda zaten programladığınız işlevleri yeniden kullanmak da mantıklıdır. İşlevler kendi başlarına duran, kendi içinde bütün kod bloklarıdır. Bir işlev içinde kullandığınız değişkenler ana programınızdaki ya da başka işlevlerdeki aynı adlı değişkenlerle çakışmaz. Yalnızca işlev içinde geçerlidirler. İşlev içinde erişmek istediğiniz her şey ona parametre olarak verilir. İşlevin üretmesi gereken her şey <code>return</code> ile döndürülür:</p>
+
+<div class="cell" data-title="Yerel değişkenler ve return"><textarea>def add(x, y):
+    result = x + y
+    return result
+z = add(5, 3)
+print(z)          # Bu 8 yazdırır.
+print(result)     # Hata!</textarea></div>
+
+<p><code>result</code> değişkeni programın ana kısmında hiç yoktur, yalnızca işlevde vardır! Bu yüzden hata oluşur. Değişken işlevde oluşturuldu ve Python işlevden çıktığında artık yoktur.</p>
+
+<p><code>print</code> işlevini çağırırken <code>sep</code> ve <code>end</code> parametrelerini verebileceğinizi hatırlarsınız: <code>print(last_name, first_name, sep=", ", end="")</code> soyadı ve adı yazdırır, aralarına yalnızca bir boşluk yerine bir virgül ve bir boşluk ekler ve sonda satır sonu eklemez. Bu tür <em>adlandırılmış parametreleri</em> kendi işlevlerinizi çağırırken de kullanabilirsiniz: <code>print(add(y=3, x=5))</code>.</p>
+
+<p>Bu örnek pek yararlı değil; toplanacak sayıların sırası da bir fark yaratmıyor. Ama <code>add(5, 3)</code> yerine, parametre adlarını biliyorsanız işlevi bu şekilde de çağırabileceğinizi göstermeyi amaçlıyor. Bu, parametreleri tanımlandıkları sıradan farklı bir sırada belirtmenizi sağlar.</p>
+
+<p><em>İsteğe bağlı parametreler</em> belki daha da pratiktir: Bir işlev oluştururken parametrelere varsayılan bir değer atayabilirsiniz. O zaman bu parametreler isteğe bağlıdır ve işlevi çağırırken onları belirtmeniz gerekmez. İsteğe bağlı parametreleri atlarsanız varsayılan değerlerini alırlar:</p>
+
+<div class="cell" data-title="Adlandırılmış ve isteğe bağlı parametreler"><textarea>def add(x, y=1):        # y isteğe bağlı bir parametre.
+    return x + y
+print(add(5, 3))        # 5+3 = 8
+print(add(5))           # 5+1 = 6
+print(add(y=3, x=5))    # adlandırılmış parametreler, farklı sıra</textarea></div>
+
+<div class="prompt"><div class="lbl">İstem</div><em><code>count_words</code> işlevini, yalnızca en az bu uzunluktaki sözcüklerin sayılacağını belirten isteğe bağlı bir <code>min_len</code> parametresiyle genişlet.</em></div>
+
+<div class="cell" data-title="count_words(…, min_len=…)"><textarea>def count_words(text, min_len=1):
+    words = text.split()
+    filtered = [word for word in words if len(word) >= min_len]
+    return len(filtered)
+sentence = "This is a short sentence."
+print(count_words(sentence))              # Çıktı: 5
+print(count_words(sentence, min_len=5))   # Çıktı: 2 ("short",
+                                          #          "sentence.")</textarea></div>
+
+<p>Burada işlevi çağırırken ikinci parametrenin adı, <code>min_len=5</code>, belirtildi; çünkü <code>count_words(sentence, min_len=5)</code> <code>count_words(sentence, 5)</code>'ten düpedüz çok daha açıktır. Ancak ikincisi de işe yarar ve aynı şeyi yapardı. İkinci parametreyi atlarsanız <code>min_len</code>'in varsayılan değeri 1 olduğu için her sözcük uzunluğundan bağımsız olarak sayılır.</p>
+
+<p>Köşeli parantezli, <code>for</code> ve <code>if</code> içeren o garip satırı merak ediyor olabilirsiniz. Bu bir <em>liste kavrayışıdır</em> (list comprehension). Biraz pratikle kavranması ve okunması daha kolay olan derli toplu ifadeler yazmanızı sağlar ve böylece daha "Pythonic" koda katkıda bulunur. Bu konuda daha fazlası sonraki kısımda. Kod satırı şunu yapar: <code>words</code> listesindeki girdilere dayanarak belirli bir en az uzunluğa sahip tüm sözcükleri içeren yeni bir <code>filtered</code> listesi oluşturulur. Kod satırı böylece listedeki girdileri bir filtre ölçütüne göre süzer.</p>
+
+<!-- ====================== 3.14 ====================== -->
+<h2 id="s314"><span class="num">3.14</span>Pythonic Kod</h2>
+
+<p>Aynı şeyi programlamanın çoğu zaman farklı yolları vardır. Bazen bu çok sayıda kod satırı gerektirirken başka bir biçim daha derli topludur; Python'da, nasıl yapılacağını biliyorsanız tek bir kod satırında bile çok şey yapabilirsiniz. Buna <em>Pythonic kod</em> denir. Kodun yalnızca çalışması değil, aynı zamanda zarif, açık ve anlaşılır olması gerektiğine inanan bir zihniyeti ifade eder. Şu kod satırlarına bir bakın:</p>
+
+<div class="cell" data-title="Döngüyle süzme ve liste kavrayışı"><textarea>words = "This is a short sentence.".split()
+min_len = 5
+
+filtered = []
+for word in words:
+    if len(word) >= min_len:
+        filtered.append(word)
+print(filtered)
+
+filtered = [word for word in words if len(word) >= min_len]
+print(filtered)</textarea></div>
+
+<p>Listedeki her sözcük için kod, sözcüğün en az <code>min_len</code> karakterden oluşup oluşmadığını denetler. Öyleyse <code>filtered</code> listesine eklenir. Bu dört kod satırı, önceki kısımdan zaten bildiğiniz tek bir Python kod satırıyla aynı şeyi yapar.</p>
+
+<p>Burada bir <em>liste kavrayışı</em> kullanılır. Bu, var olan bir listeden yeni bir liste oluşturur. İfade en kolay <code>for word in words</code> kısmından okumaya başlarsak anlaşılır: <code>for word in words</code>, tıpkı bir <code>for</code> döngüsünden bildiğimiz gibi <code>words</code> listesindeki her eleman üzerinde dolaşır. Dolayısıyla <code>word</code> değişkeni bir seferde tek bir sözcük içerir. <code>if len(word) &gt;= min_len</code> ile belirtilen uzunluk ölçütünü karşılamayan sözcükleri ayıklarız. Şimdi <code>for</code>'dan önce gelen <code>word</code>: Bu, sonunda yeni listemizde saklanacak değerdir —yani o anda <code>word</code> değişkeninde tutulan değerler.</p>
+
+<div class="widget" id="lcWidget">
+  <h4>Etkileşimli: liste kavrayışı kurucusu</h4>
+  <div class="ctrl" style="font-family:'JetBrains Mono',monospace;font-size:14px;gap:4px">[
+    <input type="text" id="lcExpr" value="x * x" style="width:110px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:inherit">
+    for x in
+    <input type="text" id="lcSrc" value="range(1, 11)" style="width:150px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:inherit">
+    if
+    <input type="text" id="lcCond" value="x % 2 == 0" style="width:120px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:inherit"> ]
+    <button class="btn primary" id="lcRun">Çalıştır</button>
+  </div>
+  <div class="ctrl" style="gap:6px" id="lcEx"></div>
+  <div id="lcOut" class="out show" style="border:1px solid var(--line);border-radius:8px">Koşul boş bırakılabilir. Kod gerçek Python'da çalışır.</div>
+</div>
+
+<p>Yeni başlayanların "Pythonic" kod yazmak için tüm bu becerilerde ustalaşması şart değildir. Elbette bu harika olurdu, ama onsuz da idare edebilirsiniz. Bu yalnızca daha fazla kod satırı gerektiği ve kodun daha hantal, okunması daha zor ve muhtemelen daha yavaş olabileceği anlamına gelir. Başlarken önemli olan ise bu tür kod satırlarını gördüğünüzde, örneğin ChatGPT Python benzeri kod ürettiğinde, onları anlamanızdır. Aşağıda Python dilinin mümkün kıldığı birkaç örnek daha var. Her hücrede önce "un-pythonic", sonra "pythonic" biçim yer alıyor.</p>
+
+<h3 id="s3141">3.14.1 Bir Listeden Yeni Bir Liste Oluşturmak</h3>
+<p>Burada liste kavrayışıyla, özgün listedeki her sayının karesinin saklandığı <code>squares</code> adlı yeni bir liste oluşturulur. Yeni liste bu yüzden <code>[1, 9, 16]</code>'dır. Listedeki elemanlarla daha karmaşık şeyler yapmak istiyorsanız işlevselliği bir işleve taşıyıp ardından onu liste kavrayışı ifadesindeki her eleman için çağırabilirsiniz:</p>
+<div class="cell" data-title="Kareler ve işlevle liste kavrayışı"><textarea>numbers = [1, 3, 4]
+squares = []                       # un-pythonic
+for x in numbers:
+    squares.append(x * x)
+print(squares)
+
+squares = [x * x for x in numbers] # pythonic 😎
+print(squares)
+
+def count_words(text):
+    words = text.split()
+    return len(words)
+
+texts = ["Hey you", "How are you?", "Best regards"]
+numbers = [count_words(t) for t in texts]
+print(numbers)</textarea></div>
+<p>Sonuç, üç sayıyı içeren bir listedir: <code>[2, 3, 2]</code>; çünkü bunlar karşılık gelen metinlerdeki sözcük sayılarıdır.</p>
+
+<h3 id="s3142">3.14.2 Bir Listedeki Elemanları Süzmek</h3>
+<div class="cell" data-title="Çift sayıları süzmek"><textarea>numbers = [1, 2, 3, 4, 5, 6, 27]
+even_numbers = []                                # un-pythonic
+for n in numbers:
+    if n % 2 == 0:
+        even_numbers.append(n)
+print(even_numbers)
+
+even_numbers = [n for n in numbers if n % 2 == 0]  # pythonic 😎
+print(even_numbers)
+print("27 % 2 =", 27 % 2, "  27 // 2 =", 27 // 2)</textarea></div>
+<p>Burada da özgün bir listenin girdilerine dayanarak yeni bir liste oluşturmak için liste kavrayışı kullanıyoruz. <code>if</code> ifadesi yeni listeye yalnızca belirli bir filtre ölçütünü karşılayan değerlerin eklenmesini sağlar. Örneğimizde ölçüt <code>n % 2 == 0</code>'dır. <code>%</code> operatörüne <em>modülo</em> denir ve bize bölmeden sonra kalan kalanı verir. Örneğin 27 % 2 (okunuşu: 27 mod 2) 1 döndürür; çünkü 27 bölü 2, 13 eder ve 1 kalır. <code>n % 2 == 0</code> ile bu yüzden bir sayının çift olup olmadığını denetleyebiliriz; çünkü çift sayılarda 2'ye bölündüğünde kalan 0'dır.</p>
+
+<h3 id="s3143">3.14.3 "+" Olmadan Metin Birleştirmek</h3>
+<div class="cell" data-title="f-string ile birleştirme"><textarea>first_name, last_name = "Anna", "Smith"
+name = first_name + " " + last_name       # un-pythonic
+print(name)
+name = f"{first_name} {last_name}"        # pythonic 😎
+print(name)</textarea></div>
+<p><code>f"</code> biçimlendirilmiş metin sözdizimini print işlevinde zaten kullanmıştık. Bu hiç kod satırı kazandırmasa da hataları önlemeye yardımcı olur; çünkü <code>+</code> sözdizimini kullanırken bir tırnağı ya da bir boşluğu unutmak kolaydır.</p>
+
+<h3 id="s3144">3.14.4 Bir Listede Değer Aramak</h3>
+<div class="cell" data-title="in operatörü"><textarea>numbers = [1, 3, 4]
+found = False                  # un-pythonic
+for number in numbers:
+    if number == 3:
+        found = True
+        break
+print(found)
+
+found = 3 in numbers            # pythonic 😎
+print(found, 7 in numbers)</textarea></div>
+<p><code>in</code> operatörü bir değerin bir listede, kümede, demette ya da bir sözlükte anahtar olarak bulunup bulunmadığını denetler. Öyleyse <code>True</code>, değilse <code>False</code> döndürür. Sıklıkla bir if koşulu olarak kullanılır; örneğin <code>if x in numbers:</code> ("<code>x</code> değişkeninin değeri sayılar listesinde varsa şunu ve şunu yap").</p>
+
+<h3 id="s3145">3.14.5 Demet Ayrıştırma</h3>
+<div class="cell" data-title="Demetleri açmak"><textarea>person = ("Anna", 23)
+
+name = person[0]                  # un-pythonic
+age = person[1]
+
+name, age = person                # pythonic 😎
+print(name, age)
+
+people = [("Anna", 23), ("Peter", 37)]
+
+for person in people:                          # un-pythonic
+    print(f"{person[0]} is {person[1]} years old")
+
+for name, age in people:                       # pythonic 😎
+    print(f"{name} is {age} years old")</textarea></div>
+<p>Python demetleri otomatik olarak açabilir; böylece içerdikleri değerleri indeksleri (0, 1, …) aracılığıyla erişmek zorunda kalmadan ayrı değişkenlere atayabiliriz. Bu, demet listeleri ve kümeleri için de çalışır.</p>
+
+<h3 id="s3146">3.14.6 Döngü Sayaçları</h3>
+<div class="cell" data-title="enumerate"><textarea>names = ["Allison", "Berta", "Carla"]
+seat_number = 1                                # un-pythonic
+for name in names:
+    print(f"Seat # {seat_number}: {name}")
+    seat_number += 1
+
+for seat_number, name in enumerate(names, start=1):   # pythonic 😎
+    print(f"Seat No. {seat_number}: {name}")</textarea></div>
+<p><code>enumerate</code> işlevi ad listemizden bir <em>yinelenebilir</em> (iterable) üretir; bu bize her döngü yinelemesinde iki değere erişim verir: burada 1'den başlayan bir sıra numarası ve listedeki asıl değer.</p>
+
+<h3 id="s3147">3.14.7 Bir Sözlükteki Anahtar-Değer Çiftleri Üzerinde Dolaşmak</h3>
+<div class="cell" data-title="items()"><textarea>days = {"Monday": "Montag", "Tuesday": "Dienstag"}
+for day in days:                          # un-pythonic
+    print(f"{day} means {days[day]}")
+
+for day_en, day_de in days.items():       # pythonic 😎
+    print(f"{day_en} means {day_de}")</textarea></div>
+<p><code>items</code> yöntemi de her döngü yinelemesinde bize iki değer veren bir yinelenebilir döndürür: bir anahtar ve sözlükteki karşılık gelen değer.</p>
+
+<h3 id="s3148">3.14.8 Değişken Değerlerini Takas Etmek</h3>
+<div class="cell" data-title="Takas"><textarea>first_name, last_name = "Thomas", "Gabriel"
+
+temp = first_name                         # un-pythonic
+first_name = last_name
+last_name = temp
+print(first_name, last_name)
+
+first_name, last_name = last_name, first_name   # pythonic 😎
+print(first_name, last_name)</textarea></div>
+<p>Ad <code>"Thomas"</code> ve soyad <code>"Gabriel"</code> ise ve onları takas etmek istiyorsak geleneksel yolla iki metinden birini önce geçici bir değişkende saklamalıyız; aksi hâlde iki değer de <code>"Gabriel"</code> ya da iki değer de <code>"Thomas"</code> olurdu. Kesin söylemek gerekirse Python tarzı yazım iki demet tanımlar, <code>(first_name, last_name)</code> ve <code>(last_name, first_name)</code>; Python demetler için parantezleri atlamamıza izin verir. Yani burada iki değişkenin değerini, ikisinden birini bir yerde geçici olarak saklamak zorunda kalmadan tek seferde takas etmek için bir demet açma işlemi yapıyoruz.</p>
+
+<h3 id="s3149">3.14.9 Boolean'ı Doğrudan Atamak</h3>
+<div class="cell" data-title="Karşılaştırmanın sonucu bir Boolean'dır"><textarea>age = 20
+if age >= 18:            # un-pythonic
+    formal = True
+else:
+    formal = False
+print(formal)
+
+formal = age >= 18       # pythonic 😎
+print(formal)</textarea></div>
+<p><code>&gt;=</code> karşılaştırma operatörü bir Boolean döndürür; bu yüzden onu doğrudan değişkende saklayabiliriz. Örneğin <code>age</code> 20 ise <code>age &gt;= 18</code> <code>True</code> değerini döndürür.</p>
+
+<h3 id="s31410">3.14.10 Durum Ayrımı</h3>
+<div class="cell" data-title="Koşullu ifade (üçlü operatör)"><textarea>age = 15
+if age >= 18:                                     # un-Pythonic
+    greeting = "Dear Sir or Madam"
+else:
+    greeting = "Hello"
+print(greeting)
+
+greeting = "Dear Sir or Madam" if age >= 18 else "Hello"   # pythonic 😎
+print(greeting)</textarea></div>
+<p>Bir koşulun sağlanıp sağlanmamasına bağlı olarak bir değerin ya bir şey ya da başka bir şey olduğu tam da bu tür durumlar için <code>değer1 if koşul else değer2</code> operatörünü kullanabiliriz.</p>
+
+<h3 id="s31411">3.14.11 Bir Sözlükten Varsayılan Değer Almak</h3>
+<div class="cell" data-title="dict.get(anahtar, varsayılan)"><textarea>days = {"Monday": "Montag", "Tuesday": "Dienstag"}
+day_en = input("Enter a day: ")
+if day_en in days:                       # un-pythonic
+    day_de = days[day_en]
+else:
+    day_de = "unknown"
+print(day_de)
+
+day_de = days.get(day_en, "unknown")     # pythonic 😎
+print(day_de)</textarea></div>
+<p><code>days.get(day_en)</code> çağrısı neredeyse <code>days[day_en]</code> ile aynı şeyi yapar (3.12'ye bakın); ama burada bir varsayılan değer verilebilir. Verilen anahtar sözlükte yoksa bu varsayılan değer (burada <code>"unknown"</code> metni) döndürülür. Varsayılan değer belirtilmeden, anahtar yoksa <code>days.get(day_en)</code> <code>None</code> döndürür; böyle bir durumda <code>days[day_en]</code> bir hata verirdi. (Giriş kutusuna "Monday" ve sonra "Friday" deneyin.)</p>
+
+<h3 id="s31412">3.14.12 Mors Operatörü (Walrus)</h3>
+<div class="cell" data-title=":= operatörü"><textarea>salutation = "Mr."
+surname = "Miller"     # kitapta tanımlanmamış; örnek için eklendi
+
+if salutation.upper() == "MR.":
+    print(f"HELLO {salutation.upper()} {surname}")   # un-pythonic
+
+if (salutation2 := salutation.upper()) == "MR.":
+    print(f"HELLO {salutation2} {surname}")          # pythonic 😎</textarea></div>
+<p><code>salutation.upper()</code> yöntem çağrısı unvanı büyük harfe çevirir ve mors operatörü <code>:=</code> sonucu <code>salutation2</code> değişkeninde saklar. Aynı zamanda onun <code>"MR."</code> olup olmadığını denetleyebiliriz. Bu bizi sonraki kod satırında <code>salutation.upper()</code>'ı yeniden çağırmaktan kurtarır. Mors operatörü böylece bir değişkene bir değer atamamızı ve o değişkeni aynı anda doğrudan kullanmamızı sağlar; örneğin burada gösterildiği gibi bir <code>if</code> ifadesinde.</p>
+
+<!-- ====================== 3.15 ====================== -->
+<h2 id="s315"><span class="num">3.15</span>Modülleri İçe Aktarmak ve "pip" ile Paket Kurmak</h2>
+
+<p>Python dilinin temelleri bölümünü bitirmeden önce sonraki bölümlerde önemli olacak bir şeye daha bakmamız gerekiyor: ek Python paketlerinin kurulumu.</p>
+
+<p>Bu kitapta şimdiye kadar yalnızca ya Python dilinin zaten parçası olan ya da <code>def</code> ile kendimiz programladığımız işlevleri kullandık. Örneğin <code>len</code>, <code>print</code> ya da <code>input</code> gibi işlevleri doğrudan çağırabiliriz; çünkü Python'a yerleşiktirler. Diğer işlevler için önce ilgili modülü içe aktarmanız gerekir.</p>
+
+<p>Python'da bir <em>modül</em>, işlevler ve daha fazlasını içeren ve içe aktardıktan sonra kullanabileceğiniz bir pakettir:</p>
+
+<div class="cell" data-title="math modülü"><textarea>import math
+
+print(math.sqrt(16))    # 4 (16'nın karekökü)
+print(math.pi)          # 3.141592653589793
+print(math.floor(7.8), math.ceil(7.2), round(math.log10(1000)), math.sin(math.pi / 2))</textarea></div>
+
+<p><code>math</code> modülü Python standart kütüphanesinin parçasıdır. Bu, onu önce kurmanız gerekmediği anlamına gelir. Modülü <code>import math</code> ile içe aktardıktan sonra içerdiği işlevleri <code>math.işlev_adı(...)</code> ile çağırabilirsiniz. Matematikle ilgili epey işlev vardır; örneğin sayıları yuvarlamak, karekök almak ve logaritma, sinüs, kosinüs vb. hesaplamak için olanlar. İşlevlerin tam adlarını bir arama motoru ya da bir sohbet YZ'si ile kolayca öğrenebilirsiniz. Aşağıdaki hata iletisini görürseniz, <code>math.sqrt</code> işlevini çağırabilmeniz için önce <code>import math</code> yazmanız gerektiği anlamına gelir. Bu arada <code>sqrt</code>, <em>square root</em> (karekök) demektir; burada 16'nın karekökünü, yani 4'ü hesaplıyoruz:</p>
+
+<div class="cell" data-title="Deneyin: import olmadan (yeni bir ad alanında)"><textarea>try:
+    exec("print(math.sqrt(16))", {})      # boş ad alanı: math içe aktarılmamış
+except NameError as e:
+    print("NameError:", e)</textarea></div>
+
+<p>Sonraki bölümlerde Python ile otomatik olarak gelmeyen modüller kullanacağız. Onları içe aktarıp kullanabilmeden önce kurmamız gerekir. Neyse ki Python'da paket kurmak çok kolaydır; çünkü <em>paket yöneticisi pip</em>'imiz var.</p>
+
+<p><code>pip</code> "pip installs packages" (pip paket kurar) demektir ve konsoldan <code>pip install paket_adı</code> olarak çağrılabilir. Windows'ta <code>pip</code>'i Komut İstemi ya da PowerShell üzerinden; macOS ve Linux'ta bir terminal üzerinden çalıştırabilirsiniz. Visual Studio Code açıksa <b>Terminal • New Terminal</b> menü ögesiyle bir terminal açabilir, komutu oraya yazıp <kbd>Enter</kbd>'a basabilirsiniz:</p>
+
+<pre class="formula" style="text-align:left">pip install openpyxl
+pip install numpy
+pip install pandas</pre>
+
+<p>Bu komutlar sonraki bölümlerde ihtiyaç duyacağımız openpyxl, NumPy ve pandas paketlerini kurar. openpyxl'i Excel dosyalarını okumak ve yazmak için kullanacağız; NumPy ve pandas veri analizi için gereklidir. Bu paketleri kurmadan daha sonra örneğin <code>import numpy</code> yazdığınızda şu hatayı görürdünüz: <code>No module named 'numpy'</code>. Böyle bir hata ya modül adını yanlış yazdığınızı ya da ilgili paketin henüz kurulmadığını gösterir.</p>
+
+<p><code>pip</code> programı paketlerini <em>Python Package Index</em> (PyPI) adlı çevrimiçi kaynaktan alır. Orada her türlü amaç için —veri analizi ve YZ, görüntü ve müzik verisiyle çalışma ya da oyun geliştirme— yüz binlerce paket listelenir. PyPI böylece Python modülleri için bir tür uygulama mağazasıdır ve paketleri <code>pip</code> programıyla kurabilirsiniz.</p>
+
+<div class="note"><b>Tarayıcıda pip'in karşılığı: micropip.</b> Pyodide'de terminal yoktur; paketler Python kodunun içinden <code>micropip</code> ile kurulur. NumPy, pandas gibi derlenmiş paketler Pyodide için hazırdır; PyPI'deki saf Python paketleri (yalnızca Python kodundan oluşanlar) de kurulabilir. Aşağıdaki hücre PyPI'den küçük bir paket indirip kurar (internet bağlantısı gerekir).</div>
+
+<div class="cell" data-title="micropip ile PyPI'den paket kurmak"><textarea>import micropip
+await micropip.install("emoji")      # terminaldeki "pip install emoji"nin karşılığı
+
+import emoji
+print(emoji.emojize("Python is :snake: and :sunglasses:"))
+print([p for p in micropip.list()][:8], "…")   # "pip list"in karşılığı</textarea></div>
+
+<p>Python'u kurduğunuzda <code>pip</code> genellikle aynı anda kurulur. Ancak bazen <code>pip</code> yerine <code>pip3</code> kullanmanız gerekir; Linux'ta ise Python'u kurduktan sonra <code>pip</code>'i ayrıca kurmak bazen gerekir; örneğin Ubuntu ve benzeri dağıtımlarda <code>sudo apt install python3-pip</code> ile. Linux'ta Python paketlerini işletim sisteminin paket yöneticisiyle sistem genelinde kurma seçeneği de vardır; örneğin <code>pip</code> yerine <code>sudo apt install python3-numpy</code> ile.</p>
+
+<p>Yanlışlıkla bir paket kurduysanız ve kaldırmak istiyorsanız bunu <code>pip uninstall paket_adı</code> ile yapabilirsiniz. <code>pip list</code> komutu kurulu tüm paketleri sürüm numaralarıyla birlikte gösterir; <code>pip install --upgrade paket_adı</code> bir paketi en son sürüme günceller. <code>pip</code>'in kendisini de şu komutla güncelleyebilirsiniz: <code>pip install --upgrade pip</code>.</p>
+
+<p><code>pip</code> komutlarının Python programlama dilinin komutları olmadığına dikkat edin. Onları Python kodunuza yazmazsınız; doğrudan konsola —yani Windows Komut İstemi'ne, PowerShell'e ya da Terminal'e— girersiniz.</p>
+
+<!-- ====================== 3.16 ====================== -->
+<h2 id="s316"><span class="num">3.16</span>Sanal Ortamlar</h2>
+
+<p><code>pip install …</code> ile bir paket kurduğunuzda onu Python programlarınızda kullanabilirsiniz; elbette Python programlarınızı paket kurulumunu yapan Python yorumlayıcısıyla tam olarak aynı yorumlayıcıyla çalıştırmanız koşuluyla. Birden çok Python kurulumunuz varsa işler hızla karışabilir. Python programlarını paylaşmak istediğinizde daha da sorunlu olur. Bu durumda diğer bilgisayarın da uygun modüllere —ideal olarak aynı sürümde— ihtiyacı vardır. Başka Python programları aynı modülün farklı bir sürümünü gerektiriyorsa bu da sorunlu hâle gelebilir. Bu durumda bir <em>sanal ortam</em> (virtual environment, kısaca <code>venv</code>) oluşturmak yararlı olabilir. Sanal ortamlar her proje için, diğer projeleri etkilemeden paket kurabileceğiniz temiz, yalıtılmış bir Python ortamına sahip olmanızı sağlar.</p>
+
+<p>Geçerli klasörde —Python betiklerinizin bulunduğu klasör olmalı— yeni bir sanal ortam oluşturmak için şu komutu kullanın: <code>python3 -m venv .venv</code>.</p>
+
+<p>Bu komutu örneğin Visual Studio Code'da açabileceğiniz terminale girebilirsiniz. Yalıtılmış ortam için gereken her şeyin bundan sonra konulacağı <em>.venv</em> adlı bir klasör oluşturur. Visual Studio Code bir <em>.venv</em> klasörü algılar algılamaz orada bulunan Python kurulumunu kullanıp kullanmayacağını size sorar.</p>
+
+<p>Ancak sanal ortamı konsol için de etkinleştirmeniz önemlidir. Böylece <code>pip</code> ve ilgili araçların artık genel Python kurulumunu değil sizin <code>venv</code>'inizi kullanacağını belirtirsiniz:</p>
+
+<div class="widget" id="venvWidget">
+  <h4>Sanal ortamı etkinleştirme komutları</h4>
+  <div class="ctrl" style="gap:6px"><button class="btn primary" data-os="unix">Linux / macOS</button><button class="btn" data-os="win">Windows (PowerShell)</button></div>
+  <pre id="venvCmd" style="font-family:'JetBrains Mono',monospace;font-size:13.5px;background:var(--code-bg);padding:12px 14px;border-radius:8px;margin:0;overflow-x:auto"></pre>
+  <div class="ctrl"><button class="btn" id="venvCopy">Kopyala</button> <span class="readout" id="venvMsg" style="font-size:12.5px;color:var(--muted)"></span></div>
+</div>
+
+<p><code>Set-ExecutionPolicy</code> komutu Windows'ta gereklidir; aksi hâlde Windows PowerShell etkinleştirme betiğinin çalıştırılmasını engelleyebilir.</p>
+
+<p>Başarılı etkinleştirmeden sonra konsolun biraz değiştiğini fark edersiniz: En solda artık <code>(.venv)</code> bilgisi görünür. Şimdi örneğin <code>pip install numpy</code> ile bir paket kurarsanız bilgisayarınıza genel olarak değil, yalnızca geçerli proje için sanal ortamınıza kurulur.</p>
+
+<p>Daha önce kurulmuş tüm paketlerin listesini bir dosyaya yazmak için şu konsol komutunu kullanın: <code>pip freeze &gt; requirements.txt</code>.</p>
+
+<p>Bu <em>requirements.txt</em> dosyasının her satırı artık bir paketi kullandığınız sürümle birlikte listeler; örneğin <code>numpy==2.3.5</code>. Bu dosyayı başka bir bilgisayara aktarırsanız aynı paketleri orada tek seferde yeniden kurabilirsiniz: <code>pip install -r requirements.txt</code>.</p>
+
+<div class="cell" data-title="Bu sayfanın Python ortamı (requirements.txt benzeri)"><textarea>import sys
+print("Python", sys.version.split()[0], "| platform:", sys.platform)
+import micropip
+for name, pkg in sorted(micropip.list().items())[:15]:
+    print(f"{name}=={pkg.version}")</textarea></div>
+
+</article></main>
+</div>
+
+<script>
+/* ---------- Tema ---------- */
+(function(){
+  const root=document.documentElement;
+  let saved=null; try{saved=localStorage.getItem('ml-theme')}catch(e){}
+  if(saved) root.setAttribute('data-theme',saved);
+  document.getElementById('themeBtn').onclick=()=>{
+    const dark = root.getAttribute('data-theme')==='dark' ||
+      (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    const next = dark?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem('ml-theme',next)}catch(e){}
+  };
+})();
+
+/* ---------- Pyodide ---------- */
+let pyodide=null, pyReady=null, runFn=null;
+const dot=document.getElementById('pyDot'), st=document.getElementById('pyState'), msg=document.getElementById('pyMsg');
+function errMsg(e){ if(!e) return 'bilinmeyen hata'; if(e.message) return e.message; if(e.errno!==undefined) return 'Pyodide dosya sistemi hatası (errno '+e.errno+')'; try{ return JSON.stringify(e); }catch(_){ return String(e); } }
+function setState(s,t,m){dot.className='dot '+s; st.textContent=t; if(m!==undefined) msg.textContent=m;}
+
+const HELPER = `import sys, io, ast, base64, traceback, json, inspect
+NS = {"__name__": "__main__"}
+_FLAGS = ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
+
+async def _run_cell(code):
+    buf = io.StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    sys.stdout = sys.stderr = buf
+    html = None; ok = True
+    try:
+        tree = ast.parse(code)
+        last = None
+        if tree.body and isinstance(tree.body[-1], ast.Expr):
+            last = ast.Expression(tree.body.pop().value)
+        r = eval(compile(tree, "<hücre>", "exec", flags=_FLAGS), NS)
+        if inspect.iscoroutine(r):
+            await r
+        if last is not None:
+            val = eval(compile(last, "<hücre>", "eval", flags=_FLAGS), NS)
+            if inspect.iscoroutine(val):
+                val = await val
+            if val is not None:
+                if hasattr(val, "to_html"):
+                    html = val.to_html(max_rows=40)
+                else:
+                    print(repr(val))
+    except BaseException as e:
+        ok = False
+        frames = [f for f in traceback.extract_tb(e.__traceback__) if f.filename == "<hücre>"]
+        if frames:
+            print("Traceback (most recent call last):")
+            print("".join(traceback.format_list(frames)), end="")
+        print("".join(traceback.format_exception_only(type(e), e)), end="")
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
+    imgs = []
+    if "matplotlib.pyplot" in sys.modules:
+        plt = sys.modules["matplotlib.pyplot"]
+        for n in plt.get_fignums():
+            b = io.BytesIO()
+            plt.figure(n).savefig(b, format="png", dpi=110, bbox_inches="tight")
+            imgs.append(base64.b64encode(b.getvalue()).decode())
+        plt.close("all")
+    return json.dumps({"out": buf.getvalue(), "html": html, "imgs": imgs, "ok": ok})
+`;
+
+
+function loadPython(){
+  if(pyReady) return pyReady;
+  setState('loading','Python yükleniyor…','Pyodide çekirdeği indiriliyor.');
+  pyReady = (async()=>{
+    pyodide = await loadPyodide();
+    pyodide.setStdin({stdin: () => { const v = window.prompt('Python input() bir değer bekliyor:'); return v === null ? undefined : v; }});
+    await pyodide.runPythonAsync(HELPER);
+    runFn = pyodide.globals.get('_run_cell');
+    const ver = pyodide.runPython('import sys; "Python " + sys.version.split()[0]') + ' · Pyodide ' + pyodide.version;
+    setState('ready','Python hazır',ver);
+    document.getElementById('preload').style.display='none';
+  })().catch(e=>{ setState('','Yükleme başarısız','Sayfayı yenileyip tekrar deneyin. Ayrıntı: '+errMsg(e)); console.error(e); pyReady=null; throw e;});
+  return pyReady;
+}
+document.getElementById('preload').onclick=loadPython;
+
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+/* ---------- Kod hücreleri ---------- */
+document.querySelectorAll('.cell').forEach((cell,i)=>{
+  const ta=cell.querySelector('textarea');
+  const original=ta.value;
+  ta.spellcheck=false;
+  ta.rows=Math.min(ta.value.split('\n').length+1,40);
+  const head=document.createElement('div'); head.className='cell-head';
+  head.innerHTML=`<span class="title">In [${i+1}] · ${cell.dataset.title||'Python'}</span>`;
+  const run=document.createElement('button'); run.className='btn primary'; run.textContent='▶ Çalıştır';
+  const reset=document.createElement('button'); reset.className='btn'; reset.textContent='↺'; reset.title='Özgün koda dön';
+  head.append(run,reset); cell.prepend(head);
+  const out=document.createElement('div'); out.className='out'; cell.append(out);
+
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Tab'){e.preventDefault();const s=ta.selectionStart;ta.setRangeText('    ',s,ta.selectionEnd,'end');}
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run.click();}
+  });
+  reset.onclick=()=>{ta.value=original; out.className='out'; out.innerHTML='';};
+  run.onclick=async()=>{
+    run.disabled=true; out.className='out show'; out.textContent='⏳ Çalışıyor…';
+    try{
+      await loadPython();
+      out.textContent='⏳ Paketler denetleniyor…';
+      await pyodide.loadPackagesFromImports(ta.value);
+      out.textContent='⏳ Çalışıyor…';
+      await new Promise(r=>setTimeout(r,20));
+      const res=JSON.parse(await runFn(ta.value));
+      let h='';
+      if(res.out) h+=esc(res.out);
+      if(res.html) h+=`<div>${res.html}</div>`;
+      res.imgs.forEach(b=>h+=`<img alt="grafik" src="data:image/png;base64,${b}">`);
+      if(!h) h='<span style="color:var(--ok)">✓ Çalıştı (çıktı yok)</span>';
+      out.innerHTML=h; out.className='out show'+(res.ok?'':' err');
+    }catch(e){ out.className='out show err'; out.textContent=errMsg(e); }
+    run.disabled=false;
+  };
+});
+
+/* ---------- Python'u widget'lardan çalıştırmak ---------- */
+async function py(code){ await loadPython(); return JSON.parse(await runFn(code)); }
+const inStyle='padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:"JetBrains Mono",monospace';
+function hl(code){ // çok basit sözdizimi renklendirme
+  return esc(code).replace(/(&quot;[^&]*?&quot;|"[^"\n]*")/g,'<span style="color:#9a5b00">$1</span>')
+    .replace(/\b(if|elif|else|while|for|in|and|or|not|True|False|None|def|return|break)\b/g,'<b style="color:var(--accent)">$1</b>');
+}
+
+/* ---------- type() ---------- */
+(function(){
+  const inp=document.getElementById('typeIn'), out=document.getElementById('typeOut'), ex=document.getElementById('typeEx');
+  ['5','-77','8.3','"Hello"','True','None','"5"','5.0','[1, 2]','(1, 2)','{1, 2}','{"a": 1}','true'].forEach(v=>{const b=document.createElement('button');b.className='btn';b.style.fontFamily='JetBrains Mono,monospace';b.textContent=v;b.onclick=()=>{inp.value=v;run();};ex.append(b);});
+  async function run(){
+    out.textContent='⏳';
+    try{
+      const r=await py(`import ast, json
+_s = ${JSON.stringify(inp.value)}
+try:
+    _v = ast.literal_eval(_s)
+    print(json.dumps({"t": type(_v).__name__, "r": repr(_v)}))
+except Exception as e:
+    print(json.dumps({"err": f"{type(e).__name__}: {e}"}))`);
+      const o=JSON.parse(r.out.trim().split('\n').pop());
+      const desc={int:'tamsayı',float:'kayan noktalı sayı',str:'metin',bool:'Boolean',NoneType:'var olmayan değer',list:'liste',tuple:'demet',set:'küme',dict:'sözlük'};
+      out.innerHTML=o.err?`<span style="color:var(--err)">${esc(o.err)}</span> <span style="color:var(--muted);font-family:Inter,sans-serif;font-size:13px">— geçerli bir Python değeri değil (ör. <code>true</code> değil <code>True</code>; metin için tırnak gerekir)</span>`
+        :`type(${esc(o.r)}) → <b style="color:var(--accent)">${o.t}</b> <span style="color:var(--muted);font-family:Inter,sans-serif">(${desc[o.t]||''})</span>`;
+    }catch(e){ out.textContent=errMsg(e); }
+  }
+  document.getElementById('typeRun').onclick=run; inp.onkeydown=e=>{if(e.key==='Enter')run();};
+})();
+
+/* ---------- if/elif/else izleyici ---------- */
+(function(){
+  const g=document.getElementById('ifGender'), f=document.getElementById('ifFormal'), code=document.getElementById('ifCode'), out=document.getElementById('ifOut');
+  const lines=['if formal and gender == "female":','    print("Dear Ms.", last_name)','elif formal and gender == "male":','    print("Dear Mr.", last_name)','else:','    print("Hello", first_name)'];
+  function draw(){
+    const formal=f.checked, gender=g.value;
+    const c1=formal&&gender==='female', c2=!c1&&formal&&gender==='male';
+    const run=c1?1:c2?3:5, checked=c1?[0]:c2?[0,2]:[0,2,4];
+    code.innerHTML=lines.map((l,i)=>{
+      let st='', tag='';
+      if(i===run){st='background:var(--warn-soft);outline:2px solid var(--warn);'; tag=' ← çalışır';}
+      else if(checked.includes(i)&&i!==4){ const val=i===0?c1:c2; tag=`   # ${val?'True':'False'}`; }
+      else if(i%2===1){st='opacity:.4;';}
+      return `<div style="${st}">${hl(l)}<span style="color:var(--muted)">${tag}</span></div>`;
+    }).join('');
+    out.textContent='Çıktı: '+(c1?'Dear Ms. Miller':c2?'Dear Mr. Miller':'Hello Anna');
+  }
+  g.onchange=draw; f.onchange=draw; draw();
+})();
+
+/* ---------- karşılaştırma tablosu ---------- */
+(function(){
+  const a=document.getElementById('cmpAge'), av=document.getElementById('cmpAgeV'), g=document.getElementById('cmpGender'), t=document.getElementById('cmpTable');
+  const rows=[['==','Eşit','gender == "female"',(x,s)=>s==='female'],['!=','Eşit değil (başka bir şey)','gender != "female"',(x,s)=>s!=='female'],['>','Büyük','age > 17',x=>x>17],['<','Küçük','age < 18',x=>x<18],['>=','Büyük ya da eşit','age >= 18',x=>x>=18],['<=','Küçük ya da eşit','age <= 17',x=>x<=17]];
+  function draw(){ const x=+a.value, s=g.value; av.textContent=x;
+    t.innerHTML='<tr><th>Operatör</th><th>Anlamı</th><th>Örnek</th><th>Sonuç</th></tr>'+rows.map(([o,m,e,fn])=>{const v=fn(x,s);return `<tr><td><code>${esc(o)}</code></td><td>${m}</td><td><code>${esc(e)}</code></td><td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${v?'var(--ok)':'var(--err)'}">${v?'True':'False'}</td></tr>`;}).join('');
+  }
+  a.oninput=draw; g.onchange=draw; draw();
+})();
+
+/* ---------- while adım adım ---------- */
+(function(){
+  const N=document.getElementById('whN'), code=document.getElementById('whCode'), vars=document.getElementById('whVars'), out=document.getElementById('whOut');
+  const lines=['number_of_tables = N','table_number = 1','while table_number <= number_of_tables:','    print("Table", table_number)','    table_number += 1','# döngü bitti'];
+  let st;
+  function reset(){ st={line:0,n:+N.value,t:undefined,out:[],done:false,cond:null}; draw(); }
+  function step(){
+    if(st.done) return;
+    switch(st.line){
+      case 0: st.line=1; break;
+      case 1: st.t=1; st.line=2; break;
+      case 2: st.cond=st.t<=st.n; st.line=st.cond?3:5; if(!st.cond) st.done=true; break;
+      case 3: st.out.push('Table '+st.t); st.line=4; break;
+      case 4: st.t+=1; st.line=2; break;
+    }
+    draw();
+  }
+  function draw(){
+    code.innerHTML=lines.map((l,i)=>`<div style="${i===st.line?'background:var(--warn-soft);outline:2px solid var(--warn);':''}">${hl(l.replace('N',st.n))}${i===2&&st.cond!==null?`<span style="color:var(--muted)">   # ${st.t} <= ${st.n} → ${st.cond}</span>`:''}</div>`).join('');
+    vars.innerHTML=`number_of_tables = <b>${st.line>0?st.n:'—'}</b><br>table_number = <b>${st.t===undefined?'—':st.t}</b>`+(st.done?'<br><span style="color:var(--ok)">✓ koşul False → döngüden çıkıldı</span>':'');
+    out.textContent=st.out.join('\n')||'(çıktı yok)'; out.scrollTop=out.scrollHeight;
+  }
+  document.getElementById('whStep').onclick=step;
+  document.getElementById('whRun').onclick=()=>{let k=0;while(!st.done&&k++<500)step();};
+  document.getElementById('whReset').onclick=reset; N.onchange=reset; reset();
+})();
+
+/* ---------- range() ---------- */
+(function(){
+  const A=document.getElementById('rgA'),B=document.getElementById('rgB'),C=document.getElementById('rgC'),out=document.getElementById('rgOut');
+  function draw(){
+    const a=parseInt(A.value),b=parseInt(B.value),c=parseInt(C.value);
+    if([a,b,c].some(isNaN)){out.textContent='Tamsayı girin.';return;}
+    if(c===0){out.innerHTML='<span style="color:var(--err)">ValueError: range() arg 3 must not be zero</span>';return;}
+    const v=[]; for(let i=a; c>0?i<b:i>b; i+=c){ v.push(i); if(v.length>200) break; }
+    out.innerHTML=`list(range(${a}, ${b}, ${c})) = [${v.slice(0,200).join(', ')}${v.length>200?', …':''}]<br><span style="font-family:Inter,sans-serif;font-size:13px;color:var(--muted)">${v.length>200?'200+':v.length} eleman · başlangıç ${a} dâhil · bitiş ${b} hariç</span>`;
+  }
+  [A,B,C].forEach(x=>x.oninput=draw); draw();
+})();
+
+/* ---------- print(sep, end) ---------- */
+(function(){
+  const V=document.getElementById('prVals'),S=document.getElementById('prSep'),E=document.getElementById('prEnd'),code=document.getElementById('prCode'),out=document.getElementById('prOut');
+  async function run(){
+    const c=`print(${V.value}, sep=${S.value}, end=${E.value})\nprint(${V.value}, sep=${S.value}, end=${E.value})`;
+    code.textContent=c; out.textContent='⏳';
+    try{ const r=await py(c); out.innerHTML=r.ok?esc(r.out).replace(/ /g,'<span style="color:var(--muted)">·</span>').replace(/\n/g,'<span style="color:var(--accent)">↵</span>\n'):`<span style="color:var(--err)">${esc(r.out)}</span>`; }
+    catch(e){ out.textContent=errMsg(e); }
+  }
+  document.getElementById('prRun').onclick=run; [V,S,E].forEach(x=>x.onkeydown=e=>{if(e.key==='Enter')run();});
+})();
+
+/* ---------- liste indeksleri ---------- */
+(function(){
+  const view=document.getElementById('idxView'), out=document.getElementById('idxOut');
+  const base=["Mon","Tue","Wed"], extra=["Thu","Fri","Sat","Sun"]; let days=[...base], k=0;
+  function draw(msg){
+    const n=days.length;
+    view.innerHTML=days.map((d,i)=>`<div style="text-align:center;font-family:'JetBrains Mono',monospace;cursor:pointer" data-i="${i}"><div style="font-size:11px;color:var(--accent)">[${i}]</div><div style="border:1px solid var(--accent);border-radius:6px;padding:6px 12px;background:var(--accent-soft)">"${esc(d)}"</div><div style="font-size:11px;color:var(--warn)">[${i-n}]</div></div>`).join('');
+    view.querySelectorAll('[data-i]').forEach(el=>el.onclick=()=>{const i=+el.dataset.i;out.innerHTML=`days[${i}] → "${esc(days[i])}" &nbsp; = &nbsp; days[${i-n}] &nbsp; = &nbsp; days[len(days)${i-n}]`;});
+    out.innerHTML=msg||`days = [${days.map(d=>`"${esc(d)}"`).join(', ')}] &nbsp; len(days) = ${n} &nbsp; <span style="color:var(--muted);font-family:Inter,sans-serif;font-size:13px">(bir kutuya tıklayın)</span>`;
+  }
+  document.querySelectorAll('[data-op]').forEach(b=>b.onclick=()=>{
+    const op=b.dataset.op;
+    if(op==='append'){ const v=extra[k++%extra.length]; days.push(v); draw(`days.append("${v}") → [${days.map(d=>`"${esc(d)}"`).join(', ')}]`); }
+    else if(op==='set'){ if(days.length>2){days[2]='Wednesday'; draw(`days[2] = "Wednesday" → [${days.map(d=>`"${esc(d)}"`).join(', ')}]`);} else draw('<span style="color:var(--err)">IndexError: list assignment index out of range</span>'); }
+    else if(op==='pop'){ if(days.length){const v=days.pop(); draw(`days.pop() → "${esc(v)}" döndürdü`);} else draw('<span style="color:var(--err)">IndexError: pop from empty list</span>'); }
+    else { days=[...base]; k=0; draw(); }
+  });
+  draw();
+})();
+
+/* ---------- frequency sözlüğü adım adım ---------- */
+(function(){
+  const inp=document.getElementById('frIn'), wv=document.getElementById('frWords'), dv=document.getElementById('frDict'), st=document.getElementById('frStep');
+  let words=[], k=0;
+  function reset(){ words=inp.value.split(/\s+/).filter(Boolean); k=0; draw(); }
+  function draw(){
+    const freq={}; let note='';
+    for(let i=0;i<k;i++){ const w=words[i].toLowerCase(); if(w in freq){freq[w]+=1; if(i===k-1) note=`"${w}" sözlükte var → ${freq[w]-1} + 1 = ${freq[w]}`;} else {freq[w]=1; if(i===k-1) note=`"${w}" yeni → frequency["${w}"] = 1`;} }
+    wv.innerHTML=words.map((w,i)=>`<span style="font-family:'JetBrains Mono',monospace;padding:3px 8px;border-radius:6px;border:1px solid var(--line);${i===k-1?'background:var(--warn-soft);border-color:var(--warn)':i<k?'opacity:.5':''}">${esc(w)}</span>`).join('');
+    const entries=Object.entries(freq); let best=null;
+    if(k===words.length&&entries.length){ best=entries.reduce((a,b)=>b[1]>a[1]?b:a)[0]; }
+    dv.innerHTML='frequency = {'+entries.map(([w,c])=>`<span style="${best===w?'background:var(--accent-soft);outline:2px solid var(--accent);border-radius:4px;padding:0 3px':''}">"${esc(w)}": ${c}</span>`).join(', ')+'}'
+      +(best?`<br>max(frequency, key=frequency.get) → <b>"${esc(best)}"</b> &nbsp; <span style="color:var(--muted)">| max(frequency) → "${esc(entries.map(e=>e[0]).sort().pop())}" (alfabetik)</span>`:'');
+    st.textContent=k?`${k}/${words.length}: ${note}`:'Başlamak için "Sonraki sözcük"e basın.';
+  }
+  document.getElementById('frNext').onclick=()=>{if(k<words.length){k++;draw();}};
+  document.getElementById('frPrev').onclick=()=>{if(k>0){k--;draw();}};
+  document.getElementById('frEnd').onclick=()=>{k=words.length;draw();};
+  inp.oninput=reset; reset();
+})();
+
+/* ---------- liste kavrayışı ---------- */
+(function(){
+  const E=document.getElementById('lcExpr'),S=document.getElementById('lcSrc'),C=document.getElementById('lcCond'),out=document.getElementById('lcOut'),ex=document.getElementById('lcEx');
+  [['x * x','[1, 3, 4]',''],['x','range(1, 21)','x % 2 == 0'],['x.upper()','["Hey", "you", "Python"]','len(x) > 3'],['len(x.split())','["Hey you", "How are you?", "Best regards"]',''],['f"Seat No. {x}"','range(1, 4)','']].forEach(([e,s,c])=>{
+    const b=document.createElement('button');b.className='btn';b.style.cssText='font-family:JetBrains Mono,monospace;font-size:12px';b.textContent=`[${e} for x in ${s}${c?' if '+c:''}]`;b.onclick=()=>{E.value=e;S.value=s;C.value=c;run();};ex.append(b);});
+  async function run(){
+    const expr=`[${E.value} for x in ${S.value}${C.value.trim()?' if '+C.value:''}]`;
+    out.textContent='⏳';
+    try{ const r=await py(expr); out.innerHTML=`<span style="color:var(--muted)">&gt;&gt;&gt; ${esc(expr)}</span>\n`+(r.ok?esc(r.out):`<span style="color:var(--err)">${esc(r.out)}</span>`); out.style.whiteSpace='pre-wrap'; }
+    catch(e){ out.textContent=errMsg(e); }
+  }
+  document.getElementById('lcRun').onclick=run; [E,S,C].forEach(x=>x.onkeydown=e=>{if(e.key==='Enter')run();});
+})();
+
+/* ---------- venv komutları ---------- */
+(function(){
+  const pre=document.getElementById('venvCmd'), msg=document.getElementById('venvMsg');
+  const cmds={unix:'python3 -m venv .venv\nsource .venv/bin/activate\npip install numpy\npip freeze > requirements.txt',
+              win:'python -m venv .venv\nSet-ExecutionPolicy RemoteSigned -Scope CurrentUser\n.venv\\Scripts\\Activate.ps1\npip install numpy\npip freeze > requirements.txt'};
+  const btns=[...document.querySelectorAll('[data-os]')];
+  function show(os){ pre.textContent=cmds[os]; btns.forEach(b=>b.className='btn'+(b.dataset.os===os?' primary':'')); msg.textContent=''; }
+  btns.forEach(b=>b.onclick=()=>show(b.dataset.os));
+  document.getElementById('venvCopy').onclick=async()=>{ try{ await navigator.clipboard.writeText(pre.textContent); msg.textContent='Kopyalandı.'; }catch(e){ msg.textContent='Kopyalanamadı; metni seçip kopyalayın.'; } };
+  show('unix');
+})();
+
+/* ---------- İçindekiler vurgusu ---------- */
+(function(){
+  const links=[...document.querySelectorAll('nav.toc a')];
+  const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.remove('active'));links[secs.indexOf(e.target)].classList.add('active');}}),{rootMargin:'-10% 0px -80% 0px'});
+  secs.forEach(s=>io.observe(s));
+})();
+</script>
+</body>
+</html>

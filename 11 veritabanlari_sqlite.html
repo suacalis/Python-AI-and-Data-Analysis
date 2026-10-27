@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Veritabanları ve SQLite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+<style>
+:root{
+  --bg:#f7f5f0; --paper:#ffffff; --ink:#1d1f24; --muted:#5d6270; --line:#e2ded4;
+  --accent:#1f5f8b; --accent-soft:#e3eef6; --warn:#9a5b00; --warn-soft:#fbf1dc;
+  --code-bg:#f2f0ea; --code-ink:#22252b; --ok:#2f7a4a; --err:#b3261e;
+  --prompt-bg:#efece4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+    --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+    --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+  --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+  --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Serif 4",Georgia,serif;font-size:18px;line-height:1.65}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1200px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:28px 18px;border-right:1px solid var(--line);font-family:Inter,sans-serif;font-size:14px}
+nav.toc .brand{font-weight:600;color:var(--accent);font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;padding:6px 8px;border-radius:6px}
+nav.toc a:hover,nav.toc a.active{background:var(--accent-soft);color:var(--ink)}
+.status{margin-top:22px;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;color:var(--muted);background:var(--paper)}
+.status b{color:var(--ink)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#999;margin-right:6px;vertical-align:middle}
+.dot.loading{background:var(--warn);animation:pulse 1s infinite}
+.dot.ready{background:var(--ok)}
+@keyframes pulse{50%{opacity:.3}}
+.toc button,.btn{font-family:Inter,sans-serif;font-size:13px;font-weight:500;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:6px 12px;border-radius:6px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.5;cursor:wait}
+main{padding:40px 48px 120px;min-width:0}
+article{max-width:780px}
+h1{font-size:2.4rem;line-height:1.15;margin:0 0 .3em;color:var(--accent)}
+h2{font-size:1.55rem;margin:2.6em 0 .6em;padding-top:.4em;border-top:1px solid var(--line);color:var(--accent)}
+h3{font-size:1.2rem;margin:2em 0 .5em;color:var(--ink);font-family:Inter,sans-serif;font-weight:600}
+h2 .num{font-family:Inter,sans-serif;font-weight:600;font-size:.8em;color:var(--muted);margin-right:.4em}
+.lead{font-style:italic;color:var(--muted);font-size:1.08rem;border-left:3px solid var(--accent);padding-left:16px;margin:1.2em 0 2em}
+code{font-family:"JetBrains Mono",monospace;font-size:.82em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.terms{display:grid;gap:12px;margin:1.2em 0}
+.term{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+.term b{font-family:Inter,sans-serif;color:var(--accent)}
+.note{background:var(--warn-soft);border-left:3px solid var(--warn);padding:12px 16px;border-radius:0 8px 8px 0;font-size:.95rem;margin:1.2em 0}
+.formula{font-family:"JetBrains Mono",monospace;background:var(--paper);border:1px dashed var(--line);padding:12px 16px;border-radius:8px;text-align:center;font-size:.95rem;margin:1em 0;overflow-x:auto}
+.prompt{background:var(--prompt-bg);border-radius:10px;padding:14px 18px;margin:1.2em 0;font-size:.95rem}
+.prompt .lbl{font-family:Inter,sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.prompt em{display:block;margin-top:6px}
+/* Kod hücresi */
+.cell{margin:1.3em 0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--paper)}
+.cell-head{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--code-bg);border-bottom:1px solid var(--line);font-family:Inter,sans-serif;font-size:12px;color:var(--muted)}
+.cell-head .title{flex:1}
+.cell textarea{display:block;width:100%;border:0;resize:vertical;padding:14px 16px;background:var(--code-bg);color:var(--code-ink);font-family:"JetBrains Mono",monospace;font-size:13.5px;line-height:1.55;tab-size:4;outline:none;min-height:80px;white-space:pre;overflow:auto}
+.out{display:none;border-top:1px solid var(--line);padding:12px 16px;font-family:"JetBrains Mono",monospace;font-size:13px;white-space:pre-wrap;overflow-x:auto}
+.out.show{display:block}
+.out.err{color:var(--err)}
+.out img{max-width:100%;background:#fff;border-radius:6px;margin-top:8px;display:block}
+.out table{border-collapse:collapse;font-size:12.5px;margin:6px 0;white-space:nowrap}
+.out th,.out td{border:1px solid var(--line);padding:3px 8px;text-align:right}
+.out th{background:var(--code-bg)}
+/* Tablo */
+table.data{border-collapse:collapse;font-family:Inter,sans-serif;font-size:14px;margin:1em 0}
+table.data th,table.data td{border:1px solid var(--line);padding:6px 10px}
+table.data th{background:var(--code-bg)}
+.caption{font-family:Inter,sans-serif;font-size:13px;color:var(--muted);margin-top:-4px}
+/* Widget */
+.widget{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px;margin:1.5em 0}
+.widget h4{margin:0 0 6px;font-family:Inter,sans-serif;font-size:14px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.widget .ctrl{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-family:Inter,sans-serif;font-size:14px;margin:10px 0}
+.widget svg{width:100%;height:auto;display:block}
+.widget .readout{font-family:Inter,sans-serif;font-size:15px}
+.widget .readout b{color:var(--accent)}
+input[type=range]{accent-color:var(--accent)}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  main{padding:24px 16px 80px}
+  h1{font-size:1.9rem}
+}
+.cell.sql .cell-head{background:var(--warn-soft);color:var(--warn)}
+.cell.sql textarea{background:var(--paper)}
+.sqlout{font-family:"JetBrains Mono",monospace;font-size:13px}
+.sqlq{color:var(--muted);white-space:pre-wrap;margin:8px 0 4px;font-family:"JetBrains Mono",monospace;font-size:12.5px}
+.sqlq:first-child{margin-top:0}
+.sqlmsg{color:var(--ok);font-family:"JetBrains Mono",monospace;font-size:12.5px}
+.sqlerr{color:var(--err);font-family:"JetBrains Mono",monospace;font-size:12.5px}
+.sqlnull{color:var(--muted)}
+table.sqltable{border-collapse:collapse;margin:4px 0 6px;font-size:12.5px;white-space:nowrap}
+table.sqltable th,table.sqltable td{border:1px solid var(--line);padding:3px 9px;text-align:left}
+table.sqltable th{background:var(--code-bg)}
+kbd{font-family:"JetBrains Mono",monospace;font-size:.8em;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--paper)}
+@media (max-width:700px){.console-grid{grid-template-columns:1fr !important}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" id="toc">
+  <div class="brand">Bölüm 11</div>
+  <a href="#giris">Giriş: SQLite</a>
+  <a href="#s111">11.1 SQL ve SQLite konsolu</a>
+  <a href="#s112">11.2 CREATE TABLE</a>
+  <a href="#s113">11.3 SELECT, INSERT, UPDATE, DELETE</a>
+  <a href="#s114">11.4 Python ile SQLite</a>
+  <a href="#s115">11.5 pandas ve veritabanı</a>
+  <div class="status">
+    <div><span class="dot" id="pyDot"></span><b id="pyState">Python yüklenmedi</b></div>
+    <div id="pyMsg" style="margin:6px 0 8px">Kodlar ve SQL tarayıcıda Pyodide + SQLite ile çalışır.</div>
+    <button class="btn" id="preload">Python'u şimdi yükle</button>
+    <div style="margin-top:8px"><button class="btn" id="themeBtn">Tema değiştir</button></div>
+  </div>
+  <div class="status">
+    <b>Dosyalar</b> <span style="font-size:11.5px">(tıklayınca iner)</span>
+    <div id="fileList" style="margin:6px 0;max-height:200px;overflow:auto"><i>Python yüklenince görünür.</i></div>
+    <label class="btn" style="display:inline-block">.db yükle<input type="file" id="fileUp" accept=".db,.sqlite,.sqlite3,.csv" multiple style="display:none"></label>
+    <button class="btn" id="fileRefresh">Yenile</button>
+    <div style="margin-top:8px"><button class="btn" id="dbReset">Veritabanını sıfırla</button></div>
+  </div>
+</nav>
+
+<main><article>
+<h1 id="giris">11 · Veritabanları</h1>
+<p class="lead">Veritabanı, veri saklamak ve geri almak için kullanılır. Bu bölümde SQL dilinin temellerini öğrenecek ve Python programlarından bir SQLite veritabanıyla nasıl etkileşim kurulacağını göreceksiniz.</p>
+
+<p>Kitabın adından da anlaşılacağı gibi veri bizim için büyük rol oynuyor. Dosyalardan veri okumayı ve dosyalara veri yazmayı, veriyi pandas DataFrame'lerinde dönüştürmeyi, işlemeyi ve analiz etmeyi, Matplotlib ile görselleştirmeyi öğrendiniz. Veri YZ uygulamalarının da merkezindedir: Modelleri eğitmek için kullanılır ve tahmin yapmak için ona ihtiyacımız vardır. Son iki bölümde veriyi İnternet'ten, bir API ya da web kazıma (web scraping) yoluyla nasıl alabileceğimize baktık. Şimdi bu veriye verimli ve rahat erişebilmek için onu zarif bir biçimde nasıl saklayabileceğimize bakacağız. Elbette her şeyi her zaman dosyalara yazıp oradan geri okuyabilirdik; ama bu genellikle yalnızca dosyanın tamamıyla bir kerede çalışmak istiyorsak önerilir. Oysa çoğu zaman yalnızca belirli tek tek kayıtları almamız ya da değiştirmemiz gerekir. Bu —ve çok daha fazlası— veritabanlarıyla daha rahat ve verimlidir: Veriyi, okuma, ekleme, değiştirme ya da karmaşık analitik sorgular çalıştırma söz konusu olsun, ona pek çok yoldan hızlı ve kolay erişebileceğimiz biçimde saklarlar.</p>
+
+<p>Bir veritabanı kullanmak için bir <em>veritabanı yönetim sistemi</em> (VTYS, İng. DBMS) seçmeliyiz. En bilinenleri Oracle, MySQL, Microsoft SQL Server ve PostgreSQL'dir. Bu ürünler ilişkisel bir veritabanını yönetmenizi sağlar. Bu bağlamda bir ilişki (relation), sütunları ve satırları olan bir tablodan başka bir şey değildir; bir pandas DataFrame'ine ya da bir Excel tablosuna benzer. İlişkisel veritabanı yönetim sistemleri (İVTYS, İng. RDBMS) birazdan öğreneceğiniz <em>SQL</em> sorgu dilini kullanır. Ancak MongoDB ya da Redis gibi NoSQL kategorisinde farklı türde VTYS'ler de vardır. MongoDB veriyi JSON belgelerine benzer biçimde saklar (JSON, JavaScript Object Notation demektir); Redis ise Python sözlüklerine benzeyen anahtar-değer çiftlerini saklar. İkisinin de kendi sorgu dilleri vardır.</p>
+
+<p>Şimdi <em>SQLite</em> kullanacağız. Bu da çok iyi bilinen bir İVTYS'dir ve SQL kullanır. Ama Oracle, MySQL ve benzerlerinin aksine SQLite'ı kullanmak çok daha basittir. Bir Python uygulamasından bağlanmak için bir veritabanı sunucu sürecini kurup başlatmamız gerekmez; bunun yerine bir SQLite veritabanıyla tıpkı bir dosyayla çalışır gibi çalışabiliriz. Aslında SQLite tüm veriyi basitçe, örneğin geçerli klasörde bulunan bir dosyaya yazar:</p>
+
+<div class="note"><b>Bu sayfa nasıl kullanılır?</b> İki tür hücre var. <b>Python hücreleri</b> kodu tarayıcıda Pyodide ile çalıştırır. <b>SQL hücreleri</b> (turuncu başlıklı) kitaptaki SQLite konsolunun yerine geçer; komutları sırayla <code>weather.db</code> veritabanına gönderir ve sonuçları tablo olarak gösterir. Hepsi aynı veritabanı dosyası üzerinde çalışır; bu yüzden hücreleri yukarıdan aşağıya sırayla çalıştırın. Veritabanını sol paneldeki <b>Veritabanını sıfırla</b> ile temizleyebilir, <b>Dosyalar</b> listesinden <code>weather.db</code>'yi indirip gerçek SQLite konsolunda ya da DB Browser for SQLite gibi bir programda açabilirsiniz.</div>
+
+<div class="cell" data-title="Veritabanına bağlanma"><textarea>import sqlite3
+import os
+
+with sqlite3.connect("weather.db") as conn:
+    # ... (burada veritabanıyla çalışabiliriz)
+    print("SQLite sürümü:", sqlite3.sqlite_version)
+
+print("weather.db var mı?", os.path.exists("weather.db"))</textarea></div>
+
+<p>Bu programı çalıştırdığımızda, <em>weather.db</em> dosyasının geçerli klasörde zaten var olup olmadığı denetlenir. Yoksa oluşturulur. <code>conn</code> değişkeni veritabanımıza olan bağlantıyı temsil eder. Bağlantı kurulduktan sonra veritabanına <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>, <code>SELECT</code> ve diğer SQL sorgularını gönderebiliriz. Kitap, bağlantıyı kurarken <code>with</code> sözdizimini kullandığımız için Python'un kod bloğunun sonunda bağlantıyı otomatik olarak kapattığını söylüyor.</p>
+
+<div class="note"><b>Düzeltme:</b> Python'un <code>sqlite3</code> modülünde <code>with conn:</code> bloğu bağlantıyı <em>kapatmaz</em>. Blok hatasız biterse değişiklikleri kaydeder (<code>commit</code>), hata olursa geri alır (<code>rollback</code>); bağlantı açık kalır. Bağlantıyı gerçekten kapatmak için <code>conn.close()</code> çağırın ya da <code>contextlib.closing</code> kullanın. Aşağıdaki hücre bunu gösteriyor.</div>
+
+<div class="cell" data-title="with bağlantıyı kapatır mı?"><textarea>with sqlite3.connect("weather.db") as conn:
+    pass
+print("with sonrası sorgu:", conn.execute("SELECT 1").fetchone(), "← bağlantı hâlâ açık")
+conn.close()
+
+from contextlib import closing
+with closing(sqlite3.connect("weather.db")) as conn:
+    print(conn.execute("SELECT 2").fetchone())
+try:
+    conn.execute("SELECT 3")
+except sqlite3.ProgrammingError as e:
+    print("closing() sonrası:", e)</textarea></div>
+
+<p>SQLite'ta bir seferde yalnızca bir sürecin veritabanına yazma kipinde erişebileceğine dikkat etmek önemlidir. Birazdan veritabanına SQLite konsolu üzerinden bağlanacağız. SQLite konsolunda SQL komutlarını yazıp <kbd>Enter</kbd>'a basmamız yeterlidir; hemen çalıştırılırlar. Ancak Python programımız aynı anda çalışıyor ve aynı SQLite veritabanıyla çalışıyorsa ikisi de ondan veri okuyabilir, ama yalnızca bir süreç ona yazabilir. İlk yazan süreç özel bir yazma kilidi alır. Veritabanında böyle bir yazma kilidi varsa başka birinin bir şey eklemesi, güncellemesi ya da silmesi imkânsızdır. Dolayısıyla <code>"database is locked"</code> hatasıyla karşılaşırsanız artık nedenini biliyorsunuz. Sorunu veritabanını engelleyen uygulamayı —SQL konsolunu ya da Python programını— sonlandırarak çözebilirsiniz. Bu, sonunda veritabanı bağlantısını kapatmanın ve böylece yazma kilitlerini serbest bırakmanın ne kadar önemli olduğunu da gösterir. Bunu <code>conn.close()</code> ile yapabilirsiniz.</p>
+
+<div class="cell" data-title="'database is locked' hatasını üretmek"><textarea>a = sqlite3.connect("kilit_deneme.db")
+b = sqlite3.connect("kilit_deneme.db", timeout=0)    # beklemeden hata versin
+a.execute("CREATE TABLE IF NOT EXISTS t (x INT)")
+a.commit()
+
+a.execute("BEGIN IMMEDIATE")                        # a yazma kilidini alır
+a.execute("INSERT INTO t VALUES (1)")
+try:
+    b.execute("INSERT INTO t VALUES (2)")           # b de yazmak istiyor
+except sqlite3.OperationalError as e:
+    print("b:", e)
+    b.rollback()                                    # b'nin yarım kalan işlemini bitir
+
+print("b okuyabilir mi?", b.execute("SELECT COUNT(*) FROM t").fetchone(),
+      "← a henüz commit etmediği için a'nın satırı görünmüyor")
+a.commit()                                          # kilit serbest
+b.execute("INSERT INTO t VALUES (2)"); b.commit()
+print("şimdi:", b.execute("SELECT * FROM t").fetchall())
+a.close(); b.close(); os.remove("kilit_deneme.db")</textarea></div>
+
+<p>Bu bölümdeki örneklerimizde <em>weather.db</em> veritabanı dosyasıyla çalışacağız. Ancak SQLite bellekteki geçici bir veritabanına bağlanmanıza da izin verir. Bu bellek içi veritabanıyla sabit diskte saklanan bir veritabanı dosyasıyla çalışır gibi çalışabiliriz: tablolar oluşturabilir, veri ekleyebilir ve sorgu çalıştırabiliriz. Ancak Python programı sonlandığında veritabanı tümüyle yok olur. Bu özellik test ve deney yapmak için ya da veritabanının yalnızca veri için geçici bir depolama alanı olarak hizmet etmesi amaçlandığında yararlı olabilir.</p>
+
+<div class="cell" data-title="Bellek içi veritabanı"><textarea>with sqlite3.connect(":memory:") as mem:
+    mem.execute("CREATE TABLE notes (text VARCHAR(100))")
+    mem.execute("INSERT INTO notes VALUES ('yalnızca bellekte')")
+    print(mem.execute("SELECT * FROM notes").fetchall())
+mem.close()
+print("Diskte dosya oluştu mu?", os.path.exists(":memory:"))</textarea></div>
+
+<!-- ====================== 11.1 ====================== -->
+<h2 id="s111"><span class="num">11.1</span>SQL Dili ve SQLite Konsolu</h2>
+
+<p>SQL, ilişkisel veritabanları için standartlaştırılmış bir sorgu dilidir. Şimdi en önemli komutları öğreneceksiniz. Oracle, PostgreSQL, MySQL, MariaDB, SQLite ve diğer pek çoğu bu komutları anlar. Bu sistemlerin SQL lehçeleri ayrıntıda biraz farklı olsa da bu kitapta SQL ile yaptıklarımız esasen her yerde aynı çalışır. En önemli komutlar şunlardır:</p>
+<div class="terms">
+<div class="term"><b>CREATE TABLE</b> — Bir tablo oluşturur. Burada tablonun hangi sütunlara ve hangi veri türlerine sahip olacağını belirtiriz.</div>
+<div class="term"><b>DROP TABLE</b> — Bundan sonra tablo yok olur.</div>
+<div class="term"><b>ALTER TABLE</b> — Tabloları oluşturulduktan sonra değiştirir; örneğin sütun ekler.</div>
+<div class="term"><b>INSERT</b> — Bir tabloya satır ekler.</div>
+<div class="term"><b>UPDATE</b> — Satırların sütun değerlerini değiştirerek onları günceller.</div>
+<div class="term"><b>DELETE</b> — Satırları siler.</div>
+<div class="term"><b>SELECT</b> — Satırları sorgular.</div>
+</div>
+
+<p>Bu komutları denemek için onları henüz Python programımızda değil, doğrudan SQLite konsolunda çalıştıracağız. Bu program komutları etkileşimli olarak girmemize izin verir ve <kbd>Enter</kbd>'a bastığımızda hemen çalıştırılırlar. Ardından konsolda işe yarayıp yaramadığını ve örneğin bir <code>SELECT</code> komutunun hangi sonuçları döndürdüğünü hemen görebiliriz. Konsol, veritabanında hızla bir şeye bakmak için de kullanışlıdır.</p>
+
+<p>SQL konsolunu kullanmak için Windows kullanıyorsanız önce <em>https://sqlite.org</em> web sitesinden SQLite Tools'u indirmeniz gerekir. Onları <b>Download</b> menü ögesinin altında <em>sqlite-tools-win-x64-xxxxx.zip</em> dosyası olarak bulursunuz. ZIP dosyasını açtıktan sonra içindeki <em>sqlite3.exe</em>'yi komut isteminden, PowerShell'den ya da Visual Studio Code'a entegre terminalden çalıştırabilirsiniz. Mac kullanıcıları için daha kolaydır; SQLite konsolu macOS'ta önceden yüklü gelir.</p>
+
+<p>Aşağıdaki komut SQLite konsolunu başlatır ve <em>weather.db</em> veritabanı dosyasını açar. Bu dosya yoksa oluşturulur: Windows'ta <code>C:\path\to\file\sqlite3.exe weather.db</code>, Mac'te yalnızca <code>sqlite3 weather.db</code>.</p>
+
+<p>Bu sayfada konsolun yerine aşağıdaki <b>SQL konsolu</b> geçiyor. Komutları yazıp <b>Çalıştır</b>'a ya da <kbd>Ctrl/⌘ + Enter</kbd>'a basın. Birden çok komutu noktalı virgülle ayırarak tek seferde gönderebilirsiniz. Sağdaki şema paneli veritabanındaki tabloları ve sütunları gösterir:</p>
+
+<div class="widget" id="consoleWidget">
+  <h4>SQL konsolu — weather.db (Şekil 11.1 eşdeğeri)</h4>
+  <div class="ctrl" style="gap:6px" id="consoleEx"></div>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:12px" class="console-grid">
+    <div>
+      <textarea id="consoleIn" spellcheck="false" style="width:100%;min-height:110px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--code-bg);color:var(--code-ink);font-family:'JetBrains Mono',monospace;font-size:13.5px">SELECT * FROM weather_stations;</textarea>
+      <div class="ctrl"><button class="btn primary" id="consoleRun">▶ Çalıştır</button> <span style="font-size:12px;color:var(--muted)">Ctrl/⌘ + Enter</span></div>
+      <div id="consoleOut" class="out show sqlout" style="border:1px solid var(--line);border-radius:8px;min-height:48px">sqlite&gt; _</div>
+    </div>
+    <div id="schemaView" style="border:1px solid var(--line);border-radius:8px;padding:10px;font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--code-bg);overflow:auto;max-height:360px"><b>Şema</b><br><i style="font-family:Inter,sans-serif">Python yüklenince görünür.</i></div>
+  </div>
+</div>
+
+<!-- ====================== 11.2 ====================== -->
+<h2 id="s112"><span class="num">11.2</span>CREATE TABLE ile Tablo Oluşturma</h2>
+
+<p>Veritabanına veri eklemek istiyorsak önce bir ya da daha fazla tablo oluşturmalıyız. Her tablonun sabit bir yapısı vardır. Tabloyu oluştururken sütunları ve veri türlerini belirtmeliyiz:</p>
+
+<div class="cell sql" data-title="İki tablo oluştur"><textarea>CREATE TABLE weather_stations (station_id CHAR(5) PRIMARY KEY,
+                               location VARCHAR(500));
+
+CREATE TABLE weather (station_id CHAR(5)
+                      REFERENCES weather_stations(station_id),
+                      time TIMESTAMP,
+                      humidity INT, temperature DECIMAL(5,1),
+                      PRIMARY KEY(station_id, time));</textarea></div>
+
+<p>SQLite3 konsolunda her SQL komutunu mutlaka noktalı virgülle bitirmeliyiz; aksi hâlde konsol komutun devam ettiğini varsayar. (Hücreyi ikinci kez çalıştırırsanız <code>table … already exists</code> hatası alırsınız; bu beklenen davranıştır.)</p>
+
+<p>Tablolarda veri olduğunda şöyle görünebilirler:</p>
+
+<div style="display:flex;flex-wrap:wrap;gap:24px">
+<div><table class="data"><tr><th>station_id</th><th>location</th></tr><tr><td>00001</td><td>Chicago, US</td></tr></table><div class="caption">Tablo 11.1 — Meteoroloji istasyonları</div></div>
+<div><table class="data"><tr><th>station_id</th><th>time</th><th>humidity</th><th>temperature</th></tr><tr><td>00001</td><td>2026-02-28 17:30</td><td>100</td><td>41.9</td></tr><tr><td>00001</td><td>2026-02-28 18:00</td><td>92</td><td>43.1</td></tr></table><div class="caption">Tablo 11.2 — Hava durumu</div></div>
+</div>
+
+<div class="widget">
+  <h4>İki tablo arasındaki ilişki</h4>
+  <svg viewBox="0 0 640 190" role="img" aria-label="weather_stations ve weather tabloları, birincil ve yabancı anahtar">
+    <g font-family="JetBrains Mono,monospace" font-size="13" fill="var(--ink)">
+      <rect x="20" y="30" width="230" height="96" rx="8" fill="var(--paper)" stroke="var(--accent)" stroke-width="1.5"/>
+      <rect x="20" y="30" width="230" height="28" rx="8" fill="var(--accent-soft)"/>
+      <text x="34" y="49" font-weight="600">weather_stations</text>
+      <text x="34" y="80">🔑 station_id  CHAR(5)</text>
+      <text x="34" y="108">   location    VARCHAR(500)</text>
+      <rect x="380" y="20" width="240" height="150" rx="8" fill="var(--paper)" stroke="var(--accent)" stroke-width="1.5"/>
+      <rect x="380" y="20" width="240" height="28" rx="8" fill="var(--accent-soft)"/>
+      <text x="394" y="39" font-weight="600">weather</text>
+      <text x="394" y="70">🔑🔗 station_id  CHAR(5)</text>
+      <text x="394" y="98">🔑  time        TIMESTAMP</text>
+      <text x="394" y="126">    humidity    INT</text>
+      <text x="394" y="154">    temperature DECIMAL(5,1)</text>
+      <path d="M380 66 C 320 66, 310 76, 250 76" fill="none" stroke="var(--warn)" stroke-width="2" marker-end="url(#ah)"/>
+      <defs><marker id="ah" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 z" fill="var(--warn)"/></marker></defs>
+      <text x="262" y="60" font-family="Inter,sans-serif" font-size="11.5" fill="var(--warn)">REFERENCES</text>
+      <text x="20" y="160" font-family="Inter,sans-serif" font-size="12" fill="var(--muted)">🔑 birincil anahtar · 🔗 yabancı anahtar</text>
+    </g>
+  </svg>
+</div>
+
+<p>Her tablonun bir adı vardır (burada <code>weather_stations</code> ve <code>weather</code>). <code>CREATE TABLE</code> komutunda tablo adından sonraki parantez içinde tablonun sahip olması gereken sütunları belirtiriz. Her sütun için veri türünü belirtiriz. Bu, o sütunda daha sonra ne tür değerler saklayabileceğimizi belirler. Örnekte kullanılan veri türleri bilmeniz gereken en önemli veri türleridir:</p>
+<div class="terms">
+<div class="term"><b>CHAR(n)</b> — Sabit <i>n</i> uzunluğunda bir metin. İçine daha kısa metinler saklanırsa yer boşlukla doldurulur, örneğin <code>'Hi '</code>.</div>
+<div class="term"><b>VARCHAR(n)</b> — En fazla <i>n</i> karakterli değişken uzunlukta bir metin; tıpkı <code>CHAR</code> gibi her zaman tek tırnak içine alınır, örneğin <code>'Hi'</code>.</div>
+<div class="term"><b>TIMESTAMP</b> — Yıl, ay, gün ve saatten oluşan bir zaman damgası, örneğin <code>'2026-02-28 17:30:00'</code>.</div>
+<div class="term"><b>INT</b> — Pozitif ya da negatif bir tamsayı, örneğin <code>5000</code>.</div>
+<div class="term"><b>DECIMAL(n,p)</b> — Toplam <i>n</i> basamaklı, bunların <i>p</i> tanesi ondalık noktadan sonra olan bir ondalık sayı, örneğin <code>999.99</code> (bu aynı zamanda <code>DECIMAL(5,2)</code>'ye sığan en büyük değerdir).</div>
+</div>
+
+<p><code>DATE</code> (bir tarih, ör. <code>'2026-02-28'</code>) ve <code>DOUBLE</code> veri türleri de önemlidir. İkincisi sabit ondalık basamak sayısı olmayan bir kayan noktalı sayıdır. Ancak <code>DOUBLE</code> dikkatli kullanılmalıdır. Bu veri türü kayan noktalı sayıları içeride ikili biçimde sakladığı için pek çok ondalık sayı tam olarak temsil edilemez. Bu yuvarlama hatalarına yol açabilir; örneğin <code>0.1 + 0.2</code> tam olarak <code>0.3</code>'e eşit olmayabilir. Bu yüzden <code>DOUBLE</code> parasal tutarlar ya da diğer kesin değerler için uygun değildir; bunlar için <code>DECIMAL</code> kullanmalısınız.</p>
+
+<div class="note"><b>SQLite'a özgü uyarı:</b> SQLite <em>tür yakınlığı</em> (type affinity) kullanır: <code>CHAR(5)</code> ve <code>VARCHAR(500)</code> aynı <code>TEXT</code> türüne dönüşür; uzunluk sınırı ve boşlukla doldurma <em>uygulanmaz</em>. <code>DECIMAL(5,1)</code> de kesin bir ondalık tür değildir; değerler çoğunlukla kayan noktalı sayı (<code>REAL</code>) olarak saklanır. Yani kitaptaki <code>DOUBLE</code> uyarısı SQLite'ta <code>DECIMAL</code> için de geçerlidir. Kesin tutarlar için SQLite'ta genellikle kuruş/sent cinsinden <code>INT</code> saklanır. Aşağıdaki SQL hücresi bunu gösteriyor.</div>
+
+<div class="cell sql" data-title="SQLite'ta tür yakınlığı"><textarea>CREATE TEMP TABLE tur_deneme (c CHAR(5), v VARCHAR(2), d DECIMAL(5,1), dbl DOUBLE);
+INSERT INTO tur_deneme VALUES ('Hi', 'çok uzun bir metin', 999.99, 0.1 + 0.2);
+SELECT c, length(c) AS c_uzunluk, v, d, typeof(d) AS d_turu,
+       printf('%.20f', dbl) AS dbl_tam, dbl = 0.3 AS esit_mi
+FROM tur_deneme;
+DROP TABLE tur_deneme;</textarea></div>
+
+<p>Ayrıca iki <code>CREATE TABLE</code> ifademizde birincil anahtarlar ve yabancı anahtarlar tanımlandı. Bir <em>birincil anahtar</em>, bir satırı benzersiz biçimde tanımlaması amaçlanan bir ya da daha fazla sütundan oluşur. <code>weather_stations</code> tablomuzda birincil anahtar <code>station_id</code> sütunudur. Meteoroloji istasyonunun kimliğini içerir. Bu sütunun birincil anahtar olması, hiçbir iki satırın aynı <code>station_id</code>'ye sahip olamayacağı anlamına gelir. Bu kimlik bir meteoroloji istasyonunu benzersiz biçimde tanımlar. Birincil anahtarlar için, özellikle ardışık numaralarla uğraşırken, sıklıkla <code>INT</code> veri türü kullanılır. <code>station_id</code> bir sayı olsa da 0 ile de başlayabildiği için <code>CHAR(5)</code> kullanıyoruz. <code>weather</code> tablosunda birincil anahtar <code>station_id</code> ve <code>time</code>'dan oluşur. Dolayısıyla burada iki satır, <code>time</code> farklı olduğu sürece aynı <code>station_id</code>'yi içerebilir.</p>
+
+<p><code>weather</code> tablosunda bir <em>yabancı anahtar</em> tanımladık. Bu, genellikle başka bir tablodaki satırlara başvurmak için kullanılır. <code>station_id CHAR(5) REFERENCES weather_stations(station_id)</code> ifadesi, <code>station_id</code> sütununun yalnızca <code>weather_stations</code> tablosunun <code>station_id</code> birincil anahtar sütununda da var olan değerleri içerebileceğini belirtir. Çoğu İVTYS bu kuralın sıkı biçimde uygulanmasını sağlar. Ancak SQLite, <code>weather</code> tablosundaki bir satırı, içinde belirtilen <code>station_id</code> <code>weather_stations</code> tablosunda olmasa bile kabul ederdi.</p>
+
+<div class="cell" data-title="Ek: SQLite'ta yabancı anahtarı zorlamak (PRAGMA foreign_keys)"><textarea>with sqlite3.connect(":memory:") as m:
+    m.executescript("""
+        CREATE TABLE weather_stations (station_id CHAR(5) PRIMARY KEY, location VARCHAR(500));
+        CREATE TABLE weather (station_id CHAR(5) REFERENCES weather_stations(station_id),
+                              time TIMESTAMP, humidity INT, temperature DECIMAL(5,1),
+                              PRIMARY KEY(station_id, time));""")
+    m.execute("INSERT INTO weather VALUES ('99999', '2026-01-01 12:00', 50, 40.0)")
+    print("Varsayılan: olmayan istasyon kabul edildi →", m.execute("SELECT * FROM weather").fetchall())
+
+    m.commit()                                 # PRAGMA açık bir işlemin içinde etkisizdir!
+    m.execute("PRAGMA foreign_keys = ON")      # bağlantı başına açılmalı
+    try:
+        m.execute("INSERT INTO weather VALUES ('88888', '2026-01-01 12:00', 50, 40.0)")
+    except sqlite3.IntegrityError as e:
+        print("PRAGMA foreign_keys = ON ile:", e)
+m.close()</textarea></div>
+
+<p>Kullandığımız sütun seçeneklerine ek olarak veri türlerinden sonra <code>NOT NULL</code> gibi ek seçenekler de belirtebilirsiniz. Bu, sütunları zorunlu kılar. Diğer tüm sütunlarda —birincil anahtar sütunları hariç— <code>NULL</code> değerini saklamanıza izin verilir. Bu, Python'dan bildiğimiz <code>None</code> değerine karşılık gelir ve eksik bir değeri temsil eder.</p>
+
+<p>Sonraki kod örneklerinde <code>CREATE TABLE IF NOT EXISTS</code> ek seçeneğini göreceğiz. Bu, normal bir <code>CREATE TABLE</code> komutuyla aynı şeyi yapar; ama tablo zaten varsa hata mesajı döndürmez.</p>
+
+<!-- ====================== 11.3 ====================== -->
+<h2 id="s113"><span class="num">11.3</span>SELECT, INSERT, UPDATE ve DELETE ile Sorgulama, Ekleme, Güncelleme ve Silme</h2>
+
+<p>Tablolarımızı oluşturduğumuza göre onları sorgulayabiliriz:</p>
+
+<div class="cell sql" data-title="Temel komutlar"><textarea>SELECT * FROM weather_stations;
+SELECT * FROM weather_stations WHERE station_id = '00001';
+
+INSERT INTO weather_stations (station_id, location)
+                     VALUES ('00001', 'Chicago, US');
+
+SELECT * FROM weather_stations;
+
+INSERT INTO weather (station_id, time, humidity,
+temperature) VALUES ('00001', '2026-02-28 17:30', 100, 41.9);
+
+UPDATE weather SET temperature = 43.1
+WHERE station_id = '00001' AND time = '2026-02-28 17:30';
+
+SELECT * FROM weather;
+
+DELETE FROM weather
+WHERE station_id = '00001' AND time = '2026-02-28 17:30';
+
+SELECT * FROM weather;</textarea></div>
+
+<div class="note">Kitapta <code>INSERT</code> komutu <code>'Chicago'</code> değeriyle yazılmış; ama sonraki tüm sorgular (ve Şekil 11.1) <code>'Chicago, US'</code> bekliyor. Sorguların sonuç döndürmesi için burada <code>'Chicago, US'</code> kullanıldı. Ara <code>SELECT</code>'ler, her adımın etkisini görmeniz için eklendi.</div>
+
+<p>SQL'de <code>SELECT</code> gibi anahtar sözcükler ile tablo ve sütun adları büyük/küçük harfe duyarlı değildir. Büyük/küçük harf duyarlılığı yalnızca tek tırnak içine alınmış metin değerleri için geçerlidir, örneğin <code>'Chicago, US'</code>.</p>
+
+<p>İki <code>SELECT</code> komutu başta doğal olarak boş sonuç döndürür; çünkü tablolar henüz boştur. Ancak <code>INSERT</code> komutu çalıştırıldıktan sonra <code>SELECT</code> sorgusu bu satırın artık tabloda olduğunu gösterir. Son üç komut <code>weather</code> tablosuna yeni bir satır ekler, o satırın sıcaklık değerini 41,9 °F'den 43,1 °F'ye değiştirir ve sonunda o satırı yeniden siler. Bu yalnızca en önemli komutlara genel bir bakış sağlamak içindir. SQLite'taki <code>INSERT</code> komutunda, ilgili birincil anahtar sütunlarındaki değerlere sahip bir satır tabloda zaten varsa hata oluşmasını önlemek için <code>INSERT OR IGNORE INTO …</code> seçeneğini de kullanabilirsiniz.</p>
+
+<div class="cell sql" data-title="INSERT ile INSERT OR IGNORE farkı"><textarea>INSERT INTO weather_stations VALUES ('00001', 'Chicago, US');
+INSERT OR IGNORE INTO weather_stations VALUES ('00001', 'Chicago, US');
+SELECT COUNT(*) AS istasyon_sayisi FROM weather_stations;</textarea></div>
+
+<p><code>SELECT</code> ifadesinde, tıpkı <code>UPDATE</code> ve <code>DELETE</code>'te olduğu gibi, yalnızca bu koşulu sağlayan satırları almak için bir <code>WHERE</code> yan tümcesi kullanabiliriz. Ancak belirli bir değerle karşılaştırırken SQL, Python'dan farklı olarak <code>==</code> yerine basit bir <code>=</code> kullanır. Ayrıca <code>SELECT *</code>'daki yıldız yerine, hepsine ihtiyacınız yoksa sütunların virgülle ayrılmış bir listesini belirtebilirsiniz. Sonuç görmek için önce birkaç örnek satır ekleyelim:</p>
+
+<div class="cell sql" data-title="Örnek veri ekle (sonraki sorgular için)"><textarea>INSERT OR IGNORE INTO weather_stations VALUES ('00002', 'Seattle, US');
+INSERT OR IGNORE INTO weather VALUES ('00001', '2026-02-28 17:30', 100, 49.1);
+INSERT OR IGNORE INTO weather VALUES ('00002', '2026-02-28 17:30', 88, 42.9);
+INSERT OR IGNORE INTO weather VALUES ('00002', '2026-02-28 18:00', 91, 36.9);
+SELECT * FROM weather;</textarea></div>
+
+<div class="cell sql" data-title="WHERE, sütun seçimi ve JOIN"><textarea>SELECT * FROM weather_stations WHERE location = 'Chicago, US';
+SELECT station_id FROM weather_stations WHERE location = 'Chicago, US';
+SELECT station_id, time, temperature FROM weather;
+SELECT W.time, W.temperature FROM weather W JOIN weather_stations S
+ON W.station_id = S.station_id WHERE S.location = 'Chicago, US';</textarea></div>
+
+<p>Son sorgu iki tabloyu birbirine bağlayan bir <em>birleştirme</em> (join) yapar. Bunu önce bir tabloya (<code>weather</code>) bakarak gözümüzde canlandırabiliriz. Bu tablonun satırlarına <code>W</code> diyeceğiz. Sonra böyle bir <code>W</code> satırının <code>station_id</code> sütunundaki değere (ör. <code>'00001'</code>) bakarız ve diğer tabloda (<code>weather_stations</code>) <code>station_id</code> sütununda tam olarak bu değere sahip tüm satırları ararız. Bizim durumumuzda bu tam olarak bir <code>S</code> satırı bulur; yani ölçümün yapıldığı ilgili meteoroloji istasyonunun konumunu da içeren satırı. <code>S.location</code>'a göre de filtrelediğimiz için son sorgu böylece Chicago'da bulunan meteoroloji istasyonlarındaki tüm saatleri ve sıcaklıkları bulur.</p>
+
+<div class="widget" id="joinWidget">
+  <h4>Etkileşimli: JOIN adım adım</h4>
+  <div class="ctrl"><button class="btn" id="joinPrev">◀</button> <button class="btn primary" id="joinNext">Sonraki adım ▶</button> <span class="readout" id="joinStep" style="font-size:13.5px"></span></div>
+  <div id="joinView" style="display:flex;flex-wrap:wrap;gap:18px;overflow-x:auto"></div>
+</div>
+
+<p><code>CREATE TABLE IF NOT EXISTS</code> ya da <code>INSERT OR IGNORE</code> gibi bazı dil yapılarının yalnızca SQLite ile çalıştığına dikkat edin. (Kitapta burada yanlışlıkla "IF EXISTS" yazıyor.) Diğer VTYS'ler biraz farklı lehçeler kullanır; dolayısıyla komutlar orada farklı adlandırılır. Ancak genel olarak bu bölümdeki sorgular MySQL, PostgreSQL ve benzeri sistemlerde büyük ölçüde değişmeden çalışır.</p>
+
+<p>SQL ile çok daha karmaşık sorgular, örneğin veri analizi için sorgular yapabilirsiniz. Önemli bir operatör <code>GROUP BY</code>'dır. Her biri <code>GROUP BY</code> sütunlarında aynı değere sahip satırları içeren gruplar oluşturur. Bu satırların diğer sütunları üzerinde de <em>toplama işlevleri</em> (aggregate functions) kullanılarak analitik hesaplamalar yapılabilir: <code>SUM</code>, <code>AVG</code>, <code>MIN</code>, <code>MAX</code> ve <code>COUNT</code>, sırasıyla bir sütunun toplamını, ortalamasını, en küçük ve en büyük değerlerini ve değer sayısını hesaplayan toplama işlevleridir:</p>
+
+<div class="cell sql" data-title="GROUP BY ve toplama işlevleri"><textarea>SELECT station_id, COUNT(*), AVG(temperature), MAX(temperature)
+FROM weather
+GROUP BY station_id;</textarea></div>
+
+<p>Sorgunun sonucu istasyon başına ölçüm sayısını ve o istasyondaki ortalama ve en yüksek sıcaklıkları içerir. Yukarıdaki örnek verilerle sonuç kitaptaki tabloyla aynıdır: <code>00001 | 1 | 49.1 | 49.1</code> ve <code>00002 | 2 | 39.9 | 42.9</code>.</p>
+
+<p>SQLite veritabanımıza Python ile erişmeden önce başka önemli bir konuya bakalım: <em>dizinler</em> (indexes). Bunlar SQL sorgularının başarımını belirgin biçimde hızlandırabilir. Önce şu <code>SELECT</code> sorgusuna bakalım: <code>SELECT * FROM weather WHERE time BETWEEN '2026-01-01' AND '2027-01-01';</code></p>
+
+<p><code>BETWEEN</code> operatörü bizim durumumuzda <code>WHERE time &gt;= '2026-01-01' AND time &lt;= '2027-01-01'</code> için kısa bir yazımdır. Böylece belirtilen zaman dilimine düşen tüm hava verisini buluruz. Sorguyu şimdi çalıştırsaydık SQLite veritabanı tablodaki her bir satırı inceleyip koşulun sağlanıp sağlanmadığını denetlerdi. Büyük veri miktarlarında bu, yalnızca birkaç satır bulunsa bile uzun sürebilir. Dizin, tıpkı bu kitabın sonundaki alfabetik sıralı dizin gibi, belirli satırlara hızla erişmeyi sağlayan bir veri yapısıdır. Her satırı denetlemek yerine veritabanı ilgili satırlara doğrudan atlamak için dizini kullanabilir.</p>
+
+<p>SQLite'ta bir dizin şöyle oluşturulur: <code>CREATE INDEX idx_time ON weather(time);</code>. Farkı görmek için SQLite'a sorguyu <em>nasıl</em> çalıştıracağını soran <code>EXPLAIN QUERY PLAN</code>'ı kullanabiliriz:</p>
+
+<div class="cell sql" data-title="Dizin öncesi ve sonrası sorgu planı"><textarea>EXPLAIN QUERY PLAN
+SELECT * FROM weather WHERE time BETWEEN '2026-01-01' AND '2027-01-01';
+
+CREATE INDEX IF NOT EXISTS idx_time ON weather(time);
+
+EXPLAIN QUERY PLAN
+SELECT * FROM weather WHERE time BETWEEN '2026-01-01' AND '2027-01-01';</textarea></div>
+
+<p>İlk planda <code>SCAN weather</code> (tüm tabloyu tara), ikincisinde <code>SEARCH weather USING INDEX idx_time</code> (dizinle ara) görürsünüz. Gerçek zaman farkını görmek için büyük bir tablo gerekir; aşağıdaki Python hücresi ayrı bir deneme veritabanında 200.000 satırla ölçer:</p>
+
+<div class="cell" data-title="Ek: dizinin hıza etkisi (200.000 satır)"><textarea>import time, random
+with sqlite3.connect(":memory:") as m:
+    m.execute("CREATE TABLE weather (station_id CHAR(5), time TIMESTAMP, temperature DECIMAL(5,1))")
+    rows = [(f"{random.randint(1, 50):05d}",
+             f"20{random.randint(10, 29)}-{random.randint(1, 12):02d}-{random.randint(1, 28):02d} 12:00",
+             round(random.uniform(-10, 100), 1)) for _ in range(200_000)]
+    m.executemany("INSERT INTO weather VALUES (?, ?, ?)", rows)
+    q = "SELECT COUNT(*) FROM weather WHERE time BETWEEN '2026-03-01' AND '2026-03-03'"
+
+    def measure(n=30):
+        t = time.perf_counter()
+        for _ in range(n): r = m.execute(q).fetchone()
+        return (time.perf_counter() - t) / n * 1000, r[0]
+
+    ms, n = measure();  print(f"dizinsiz: {ms:8.3f} ms  ({n} satır bulundu)")
+    m.execute("CREATE INDEX idx_time ON weather(time)")
+    ms, n = measure();  print(f"dizinli : {ms:8.3f} ms  ({n} satır bulundu)")
+m.close()</textarea></div>
+
+<p>Dizinleri, filtreleme ya da sıralama için sık kullanılan sütunlarda oluşturmalısınız. SQLite ve diğer İVTYS'ler, birincil anahtar değerlerinin benzersizliğini hızla doğrulamak için, ama aynı zamanda birincil anahtar sütunları <code>WHERE</code> yan tümcelerinde sık geçtiği ve böyle bir dizin iki tablo arasındaki birleştirmeleri hızlandırdığı için, birincil anahtar sütunlarında otomatik olarak bir dizin oluşturur.</p>
+
+<!-- ====================== 11.4 ====================== -->
+<h2 id="s114"><span class="num">11.4</span>Python ile SQLite Veritabanına Erişim</h2>
+
+<p>SQL konsolu veritabanı tablolarına hızla bakmak, veriyi elle değiştirmek ya da silmek ve komutları Python programlarımıza yazmadan önce sınamak için idealdir. Önceki kısımlardaki komutları beğendiysek veritabanına bağlanıp onları çalıştıran bir Python programı oluşturabiliriz:</p>
+
+<div class="cell" data-title="Python'dan tablo oluşturma ve ekleme"><textarea>import sqlite3
+
+with sqlite3.connect("weather.db") as conn:
+    cur = conn.cursor()
+
+    cur.execute("""CREATE TABLE IF NOT EXISTS weather_stations (
+      station_id CHAR(5) PRIMARY KEY, location VARCHAR(500))""")
+
+    cur.execute("""CREATE TABLE IF NOT EXISTS weather (
+      station_id CHAR(5) REFERENCES weather_stations(station_id),
+      time TIMESTAMP, humidity INT, temperature DECIMAL(5,1),
+      PRIMARY KEY (station_id, time))""")
+
+    cur.execute("""INSERT OR IGNORE INTO weather_stations
+      (station_id, location) VALUES ('00001', 'Chicago, US')""")
+
+    conn.commit()
+conn.close()
+print("Tamam.")</textarea></div>
+
+<div class="note"><b>Düzeltme:</b> Kitaptaki kodda birincil anahtar <code>PRIMARY KEY (station_id, timestamp)</code> olarak yazılmış; ama tabloda <code>timestamp</code> adlı bir sütun yok, sütunun adı <code>time</code>. Tablo zaten varsa (11.2'de oluşturduğumuz gibi) <code>IF NOT EXISTS</code> yüzünden komut atlanır ve hata fark edilmez. Tablo yoksa SQLite <code>no such column: timestamp</code> hatası verir. Yukarıda düzeltilmiş hâli kullanıldı. Hatayı görmek isterseniz hücrede <code>time))</code>'ı <code>timestamp))</code> yapın, sol paneldeki <b>Veritabanını sıfırla</b>'ya basın ve hücreyi yeniden çalıştırın.</div>
+
+<p><code>execute</code> yöntemine burada metin olarak verilen SQL komutları çok uzun olduğu için tek tırnak yerine <code>"""</code> kullanırız. Bu sözdizimi metinlerin içinde satır sonlarına izin verir. Python kodumuzda SQL sorgularının sonundaki noktalı virgülleri atlayabiliriz; çünkü her <code>execute</code>'a yalnızca tek bir komut verilir. Bu arada <code>execute</code>'u bir imleç (cursor) nesnesi olan <code>cur</code> üzerinde çağırıyoruz. Bu, SQL komutlarını veritabanına göndermek için kullanılır.</p>
+
+<p>Programı çalıştırdıktan sonra SQLite konsolunu denetleyebiliriz. İki tablo artık orada. <code>SELECT * FROM weather_stations;</code> az önce eklediğimiz satırı getirir.</p>
+
+<p><code>conn.commit()</code> komutu değişikliklerin <em>işlenmesini</em> (commit) sağlar; yani artık kalıcı olarak veritabanına yazılırlar. Yalnızca <code>SELECT</code> sorguları çalıştırdığınız programlarda <code>commit</code> gerekmez; ama <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code> ve <code>CREATE TABLE</code> gibi tüm yazma komutları için gereklidir. Ancak programlarımızda bağlantıyı bir <code>with</code> ifadesinde kurduğumuz için <code>conn.commit()</code> çağırmayı unutmak büyük bir sorun olmazdı; çünkü <code>with</code> bloğundan çıkıldıktan sonra otomatik olarak yapılır. Ama uygulamanızda henüz commit etmediğiniz sürece son <code>commit</code>'ten beri yapılan tüm değişiklikleri geri almak için her zaman <code>conn.rollback()</code> kullanabilirsiniz.</p>
+
+<div class="cell" data-title="commit ve rollback"><textarea>conn = sqlite3.connect("weather.db")
+cur = conn.cursor()
+cur.execute("INSERT OR IGNORE INTO weather_stations VALUES ('00003', 'Houston, US')")
+print("commit öncesi:", cur.execute("SELECT station_id FROM weather_stations").fetchall())
+conn.rollback()                       # son commit'ten beri yapılanları geri al
+print("rollback sonrası:", cur.execute("SELECT station_id FROM weather_stations").fetchall())
+conn.close()</textarea></div>
+
+<div class="prompt"><div class="lbl">İstem</div><em>Şu SQLite3 tablolarım var:</em><code>weather_stations(station_id, location)<br>weather(station_id, time, humidity, temperature)</code><em>Tüm istasyon kimliklerini ve konumlarını yazdıran bir Python programı oluştur.</em></div>
+
+<div class="cell" data-title="Tüm istasyonları yazdır"><textarea>import sqlite3
+
+with sqlite3.connect("weather.db") as conn:
+    cur = conn.cursor()
+    cur.execute("SELECT station_id, location FROM weather_stations")
+    for station_id, location in cur:
+        print(f"{station_id}: {location}")
+conn.close()</textarea></div>
+
+<p><code>SELECT</code> sorgusunu çalıştırmak için burada yine <code>cur.execute</code> kullanıyoruz. Sorgu sonuçlarını <code>for … in cur:</code> ile alırız; böylece sonuç satırları üzerinde bir döngüyle dolaşabiliriz. Kitaptaki programın çıktısı <code>00001: Chicago, US</code>'dir. (Yukarıda örnek veri eklediyseniz <code>00002: Seattle, US</code> da görünür.)</p>
+
+<p>Şimdi yalnızca belirli bir şehirde bulunan meteoroloji istasyonlarının kimliklerini bulmak için bir <code>WHERE</code> yan tümcesi ekleyelim. Uygulama kullanıcısı konsola bir şehir girmeli:</p>
+
+<div class="cell" data-title="Parametreli sorgu ve input()"><textarea>import sqlite3
+
+with sqlite3.connect("weather.db") as conn:
+    cur = conn.cursor()
+
+    location = input("Konum girin: ")       # tarayıcıda bir giriş kutusu açılır
+    cur.execute("""SELECT station_id, location FROM weather_stations
+                   WHERE location = ?""", (location, ))
+
+    for station_id, location in cur:
+        print(station_id, location)
+conn.close()</textarea></div>
+
+<p>Bir SQL sorgusunun parçaları program kodunun parçası değil de çalışma zamanında belirleniyorsa —bu durumda konum gibi— sorgu içinde <code>?</code> yer tutucuları kullanmanız önerilir. Program çalıştığında ilgili değerler bu yer tutuculara yerleştirilir; değerleri <code>execute</code> yöntemine ikinci parametre olarak bir Python demeti (tuple) hâlinde verirsiniz. Bizim durumumuzda demet yalnızca tek bir girdiden oluşur: <code>(location, )</code>. Bu alışılmadık <code>, )</code> sözdizimini kullanmalısınız; aksi hâlde Python onu bir demet olarak tanımaz. <code>(location)</code>, tıpkı <code>(5+3)*7</code>'deki gibi parantez içindeki bir ifade de olabilirdi. Özellikle kullanıcı girdisi SQL sorgularına eklendiğinde bu parametreli sorguları —yani <code>?</code> yer tutucuları içeren sorguları— her zaman kullanmanız önemlidir. Aksi hâlde bir yandan özel karakterler (ör. tek tırnak) içeren girdilerde hatalar oluşabilir; öte yandan kötü niyetli kullanıcılar SQL kodu enjekte ederek sorguları manipüle edip <em>SQL enjeksiyonları</em> yoluyla veritabanı verisine erişim elde edebilir.</p>
+
+<div class="widget" id="injWidget">
+  <h4>Etkileşimli: SQL enjeksiyonu — güvensiz ve parametreli sorgu</h4>
+  <div style="font-family:Inter,sans-serif;font-size:13px;color:var(--muted);margin-bottom:6px">Bir konum girin. Hazır örnekleri deneyin: normal bir şehir, tek tırnaklı bir ad ve bir saldırı girdisi.</div>
+  <div class="ctrl" style="gap:6px">
+    <button class="btn" data-inj="Chicago, US">Chicago, US</button>
+    <button class="btn" data-inj="O'Hare, US">O'Hare, US</button>
+    <button class="btn" data-inj="x' OR '1'='1">x' OR '1'='1</button>
+  </div>
+  <div class="ctrl"><input type="text" id="injIn" value="x' OR '1'='1" style="flex:1;min-width:220px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink);font-family:'JetBrains Mono',monospace"> <button class="btn primary" id="injRun">Sorgula</button></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+    <div><b style="font-family:Inter,sans-serif;color:var(--err)">✗ Güvensiz (f-string)</b><div id="injBad" class="out show sqlout" style="border:1px solid var(--line);border-radius:8px"></div></div>
+    <div><b style="font-family:Inter,sans-serif;color:var(--ok)">✓ Parametreli (?)</b><div id="injGood" class="out show sqlout" style="border:1px solid var(--line);border-radius:8px"></div></div>
+  </div>
+</div>
+
+<!-- ====================== 11.5 ====================== -->
+<h2 id="s115"><span class="num">11.5</span>Pandas DataFrame: Veritabanlarından Veri Okuma ve Yazma</h2>
+
+<p>Bu kitapta pandas DataFrame'lerinin avantajlarını defalarca gördük. DataFrame'leri dosyalardan, JSON belgelerinden ve veritabanlarından gelen veriyle doldurabiliriz —şimdi sonuncusunu yapacağız— ve ardından onları verinin sonraki işlenmesi, analizi ve görselleştirilmesi için kullanabiliriz.</p>
+
+<p>Bir <code>df</code> DataFrame'imiz varsa içerdiği veriyi <code>df.to_sql</code> kullanarak bir veritabanına yazabiliriz:</p>
+
+<div class="cell" data-title="df.to_sql (kitaptaki hâli)"><textarea>import sqlite3
+import pandas as pd
+with sqlite3.connect("weather.db") as conn:
+    df = pd.DataFrame({
+        "station_id": ["00001", "00002"],
+        "location": ["Chicago, US", "Seattle, US"]
+    })
+    df.to_sql("weather_stations", conn, if_exists="append", index=False)
+conn.close()</textarea></div>
+
+<div class="note"><b>Bu hücre hata verir — neden?</b> <code>weather_stations</code> tablosunda <code>00001</code> (ve örnek verileri eklediyseniz <code>00002</code>) zaten var. <code>if_exists="append"</code> satırları düz <code>INSERT</code> ile eklediği için birincil anahtar çakışması olur: <code>UNIQUE constraint failed</code>. Kitaptaki örnek ancak tablo boşken ya da yalnızca yeni istasyonlar eklenirken çalışır. Aşağıdaki hücre iki çözüm gösteriyor.</div>
+
+<div class="cell" data-title="Çözüm: yalnızca yeni satırları ekle / INSERT OR IGNORE"><textarea>import sqlite3
+import pandas as pd
+
+df = pd.DataFrame({"station_id": ["00001", "00002", "00004"],
+                   "location": ["Chicago, US", "Seattle, US", "Denver, US"]})
+
+with sqlite3.connect("weather.db") as conn:
+    # Çözüm 1: veritabanında zaten olanları ayıkla, kalanları ekle
+    existing = pd.read_sql_query("SELECT station_id FROM weather_stations", conn)
+    new_rows = df[~df["station_id"].isin(existing["station_id"])]
+    new_rows.to_sql("weather_stations", conn, if_exists="append", index=False)
+    print("eklenen:", list(new_rows["station_id"]))
+
+    # Çözüm 2: executemany + INSERT OR IGNORE
+    conn.executemany("INSERT OR IGNORE INTO weather_stations VALUES (?, ?)",
+                     df.itertuples(index=False, name=None))
+conn.close()</textarea></div>
+
+<p><code>to_sql</code> yöntemine tablonun adını, veritabanı bağlantısını temsil eden <code>conn</code> nesnesini ve iki seçenek veririz. İkinci seçenek <code>index=False</code>, DataFrame'in dizininin —genellikle satır numaralandırmasının (0, 1, 2, 3, 4 …)— ayrı bir sütunda saklanmamasını sağlar. <code>if_exists</code> seçeneği çok önemlidir. Varsayılan olarak <code>to_sql</code> tablo zaten varsa hata döndürürdü. <code>if_exists="append"</code>'i atlarsak tablo oluşturulur ve DataFrame'deki veriyle doldurulur; tablo zaten varsa komut tümüyle başarısız olur. Oysa biz tablonun henüz yoksa oluşturulup doldurulmasını, zaten varsa verinin basitçe eklenmesini istiyoruz. <code>if_exists="append"</code> tam olarak bunu yapar. Üçüncü bir seçenek, <code>if_exists="replace"</code> de vardır; tablo zaten varsa onu tümüyle kaldırır (<code>DROP TABLE weather_stations;</code>) ve her durumda yeniden oluşturup doldurur.</p>
+
+<div class="widget" id="ifexWidget">
+  <h4>Etkileşimli: if_exists seçenekleri (geçici bir tabloda)</h4>
+  <div class="ctrl" style="gap:6px">
+    <button class="btn" data-ifex="fail">if_exists="fail" (varsayılan)</button>
+    <button class="btn" data-ifex="append">if_exists="append"</button>
+    <button class="btn" data-ifex="replace">if_exists="replace"</button>
+    <button class="btn" data-ifex="drop">tabloyu sil (DROP)</button>
+  </div>
+  <div id="ifexOut" class="out show sqlout" style="border:1px solid var(--line);border-radius:8px">Bir düğmeye basın. Her basışta aynı iki satırlık DataFrame <code>demo_stations</code> tablosuna yazılır.</div>
+</div>
+
+<p>Veriyi bir veritabanından <code>SELECT</code> sorgusuyla, doğrudan bir pandas DataFrame'inde kullanılabilir olacak biçimde okumak için pandas <code>pd.read_sql_query</code> işlevini sağlar:</p>
+
+<div class="cell" data-title="pd.read_sql_query"><textarea>import sqlite3
+import pandas as pd
+
+with sqlite3.connect("weather.db") as conn:
+    df = pd.read_sql_query("SELECT * FROM weather_stations", conn)
+conn.close()
+df</textarea></div>
+
+<p><code>df</code> DataFrame'indeki sütunlar SQLite tablosu oluşturulurken belirtilenlerle aynı sütun adlarına sahiptir; bizim durumumuzda bunlar <code>station_id</code> ve <code>location</code>'dır.</p>
+
+<p>Artık <code>CREATE TABLE</code> ile tablo oluşturmayı ve <code>INSERT</code>, <code>UPDATE</code> ve <code>DELETE</code> ile veri eklemeyi, güncellemeyi ve silmeyi öğrendiniz. Kesin söylemek gerekirse yalnızca bir DataFrame'deki veriyi bir veritabanına kaydetmek istiyorsanız bu dört komuta hiç ihtiyacınız yoktur; çünkü <code>df.to_sql</code>'i çağırdığınızda pandas hem tabloyu oluşturmayı hem de satırları eklemeyi sizin için halleder. Yine de SQL bilgisi perde arkasında neler olduğunu anlamak ve örneğin SQLite konsolunda elle değişiklik yapmak için yararlıdır.</p>
+
+<p>Ama <code>SELECT</code> komutuna kesinlikle ihtiyacınız olacak. Onu <code>pd.read_sql_query</code> işlevine verirsiniz. Bu arada bu, aşağıdaki gibi parametreli bir sorgu da olabilir:</p>
+
+<div class="cell" data-title="Parametreli read_sql_query + grafik"><textarea>with sqlite3.connect("weather.db") as conn:
+    df = pd.read_sql_query("""
+        SELECT W.station_id, W.time, W.temperature, S.location
+        FROM weather W JOIN weather_stations S
+            ON W.station_id = S.station_id
+        WHERE W.time BETWEEN ? AND ? AND S.location = ?""",
+        conn, params=("2026-01-01", "2026-12-31", "Chicago, US")
+    )
+conn.close()
+df</textarea></div>
+
+<p>Bu, 2026 yılından Chicago'daki meteoroloji istasyonları için <code>weather</code> tablosundaki tüm satırları getirir. Bu veriyi daha sonra örneğin Matplotlib kullanarak bir çizgi grafiği biçiminde görselleştirebilirsiniz.</p>
+
+<p>Kitaptaki örnek veritabanında <code>weather_stations</code> tablosuna bir <code>INSERT</code> komutuyla bir istasyon eklemiştik, ama <code>weather</code> tablosu şu anda boş. Bu yüzden son örnek boş bir DataFrame ile sonuçlanırdı (bu sayfada 11.3'te örnek veri eklediyseniz bir satır görürsünüz). Kitabın bir sonraki bölümünde bu örneğe geri dönüp tabloyu bir hava durumu API'sinden gelen veriyle dolduran bir otomasyon oluşturulacak. Burada bu adımı yapay ölçümlerle canlandırıyoruz:</p>
+
+<div class="cell" data-title="Ek: yapay ölçümlerle doldur, SQL'den oku, çiz"><textarea>import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(11)
+times = pd.date_range("2026-01-01", "2026-12-31", freq="7D")
+rows = []
+for sid, base in [("00001", 50), ("00002", 52)]:
+    temps = base + 22 * np.sin((times.dayofyear - 110) / 365 * 2 * np.pi) + rng.normal(0, 3, len(times))
+    rows += [(sid, t.strftime("%Y-%m-%d %H:%M"), int(rng.integers(40, 100)), round(float(x), 1))
+             for t, x in zip(times, temps)]
+
+with sqlite3.connect("weather.db") as conn:
+    conn.executemany("INSERT OR IGNORE INTO weather VALUES (?, ?, ?, ?)", rows)
+    df = pd.read_sql_query("""
+        SELECT W.time, W.temperature, S.location
+        FROM weather W JOIN weather_stations S ON W.station_id = S.station_id
+        WHERE W.time BETWEEN ? AND ?""", conn, params=("2026-01-01", "2026-12-31"))
+conn.close()
+
+df["time"] = pd.to_datetime(df["time"])
+fig, ax = plt.subplots(figsize=(9, 4))
+for loc, g in df.groupby("location"):
+    ax.plot(g["time"], g["temperature"], marker=".", label=loc)
+ax.set_ylabel("Temperature (°F)"); ax.set_title("weather.db — 2026 (yapay veri)"); ax.legend()
+plt.show()
+print(len(df), "satır okundu")</textarea></div>
+
+</article></main>
+</div>
+
+<script>
+/* ---------- Tema ---------- */
+(function(){
+  const root=document.documentElement;
+  let saved=null; try{saved=localStorage.getItem('ml-theme')}catch(e){}
+  if(saved) root.setAttribute('data-theme',saved);
+  document.getElementById('themeBtn').onclick=()=>{
+    const dark = root.getAttribute('data-theme')==='dark' ||
+      (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    const next = dark?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem('ml-theme',next)}catch(e){}
+  };
+})();
+
+/* ---------- Pyodide ---------- */
+let pyodide=null, pyReady=null, runFn=null;
+const dot=document.getElementById('pyDot'), st=document.getElementById('pyState'), msg=document.getElementById('pyMsg');
+function errMsg(e){ if(!e) return 'bilinmeyen hata'; if(e.message) return e.message; if(e.errno!==undefined) return 'Pyodide dosya sistemi hatası (errno '+e.errno+')'; try{ return JSON.stringify(e); }catch(_){ return String(e); } }
+function setState(s,t,m){dot.className='dot '+s; st.textContent=t; if(m!==undefined) msg.textContent=m;}
+
+const HELPER = `
+import sys, io, ast, base64, traceback, json
+import matplotlib
+matplotlib.use("AGG")
+import matplotlib.pyplot as plt
+plt.show = lambda *a, **k: None
+import pandas as _pd
+_pd.set_option("display.width", 140)
+_pd.set_option("display.max_columns", 30)
+NS = {"__name__": "__main__"}
+
+def _run_cell(code):
+    buf = io.StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    sys.stdout = sys.stderr = buf
+    html = None; ok = True
+    try:
+        tree = ast.parse(code)
+        last = None
+        if tree.body and isinstance(tree.body[-1], ast.Expr):
+            last = ast.Expression(tree.body.pop().value)
+        exec(compile(tree, "<hücre>", "exec"), NS)
+        if last is not None:
+            val = eval(compile(last, "<hücre>", "eval"), NS)
+            if val is not None:
+                if hasattr(val, "to_html"):
+                    html = val.to_html(max_rows=40)
+                else:
+                    print(repr(val))
+    except Exception:
+        ok = False
+        traceback.print_exc()
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
+    imgs = []
+    for n in plt.get_fignums():
+        fig = plt.figure(n)
+        b = io.BytesIO()
+        fig.savefig(b, format="png", dpi=110, bbox_inches="tight")
+        imgs.append(base64.b64encode(b.getvalue()).decode())
+    plt.close("all")
+    return json.dumps({"out": buf.getvalue(), "html": html, "imgs": imgs, "ok": ok})
+`;
+
+const SETUP = "import sqlite3, html as _h, json as _json\n\nclass _SQLResult:\n    def __init__(self, s): self.s = s\n    def to_html(self, max_rows=None): return self.s\n\ndef _split_sql(script):\n    out, buf = [], \"\"\n    for line in script.splitlines(keepends=True):\n        buf += line\n        if sqlite3.complete_statement(buf):\n            if buf.strip(): out.append(buf.strip())\n            buf = \"\"\n    if buf.strip(): out.append(buf.strip())\n    return out\n\ndef _fmt(v):\n    return \"<i class='sqlnull'>NULL</i>\" if v is None else _h.escape(str(v))\n\ndef _table(cols, rows, limit=200):\n    head = \"\".join(f\"<th>{_h.escape(str(c))}</th>\" for c in cols)\n    body = \"\".join(\"<tr>\" + \"\".join(f\"<td>{_fmt(v)}</td>\" for v in r) + \"</tr>\" for r in rows[:limit])\n    more = f\"<div class='sqlmsg'>\u2026 {len(rows) - limit} sat\u0131r daha</div>\" if len(rows) > limit else \"\"\n    return f\"<table class='sqltable'><tr>{head}</tr>{body}</table>{more}\"\n\ndef _sql_html(script, db=\"weather.db\"):\n    conn = sqlite3.connect(db)\n    parts = []\n    try:\n        for s in _split_sql(script):\n            parts.append(f\"<div class='sqlq'>sqlite&gt; {_h.escape(s)}</div>\")\n            try:\n                cur = conn.execute(s)\n                if cur.description:\n                    rows = cur.fetchall()\n                    cols = [d[0] for d in cur.description]\n                    parts.append(_table(cols, rows) if rows else \"<div class='sqlmsg'>(bo\u015f sonu\u00e7 \u2014 0 sat\u0131r)</div>\")\n                else:\n                    n = cur.rowcount\n                    parts.append(f\"<div class='sqlmsg'>\u2713 {'tamam' if n < 0 else str(n) + ' sat\u0131r etkilendi'}</div>\")\n                conn.commit()\n            except sqlite3.Error as e:\n                conn.rollback()\n                parts.append(f\"<div class='sqlerr'>Hata: {_h.escape(str(e))}</div>\")\n    finally:\n        conn.close()\n    return \"\".join(parts) or \"<div class='sqlmsg'>(komut yok)</div>\"\n\ndef _sql_show(script, db=\"weather.db\"):\n    return _SQLResult(_sql_html(script, db))\n\ndef _schema(db=\"weather.db\"):\n    import os\n    if not os.path.exists(db): return _json.dumps({\"tables\": [], \"exists\": False})\n    conn = sqlite3.connect(db)\n    try:\n        out = []\n        for name, typ in conn.execute(\"SELECT name, type FROM sqlite_master WHERE type IN ('table','index') AND name NOT LIKE 'sqlite_%' ORDER BY type DESC, name\"):\n            if typ == \"table\":\n                cols = [(r[1], r[2], r[5]) for r in conn.execute(f\"PRAGMA table_info('{name}')\")]\n                n = conn.execute(f\"SELECT COUNT(*) FROM '{name}'\").fetchone()[0]\n                out.append({\"name\": name, \"type\": typ, \"cols\": cols, \"rows\": n})\n            else:\n                out.append({\"name\": name, \"type\": typ})\n        return _json.dumps({\"tables\": out, \"exists\": True})\n    finally:\n        conn.close()\n";
+
+function loadPython(){
+  if(pyReady) return pyReady;
+  setState('loading','Python yükleniyor…','Pyodide çekirdeği indiriliyor.');
+  pyReady = (async()=>{
+    pyodide = await loadPyodide();
+    setState('loading','Paketler yükleniyor…','pandas, matplotlib ve sqlite3 indiriliyor (ilk sefer birkaç dakika sürebilir).');
+    await pyodide.loadPackage(['pandas','matplotlib','sqlite3']);
+    pyodide.setStdin({stdin: () => { const v = window.prompt('Python input() bir değer bekliyor:'); return v === null ? '' : v; }});
+    await pyodide.runPythonAsync(HELPER);
+    await pyodide.runPythonAsync('exec(' + JSON.stringify(SETUP) + ', NS)');
+    await pyodide.runPythonAsync(SETUP);
+    runFn = pyodide.globals.get('_run_cell');
+    const ver = pyodide.runPython('import sqlite3, pandas; f"SQLite {sqlite3.sqlite_version} · pandas {pandas.__version__}"');
+    refreshSchema();
+    if(window.refreshFiles) refreshFiles();
+    setState('ready','Python hazır',ver);
+    document.getElementById('preload').style.display='none';
+  })().catch(e=>{ setState('','Yükleme başarısız','Sayfayı yenileyip tekrar deneyin. Ayrıntı: '+errMsg(e)); console.error(e); pyReady=null; throw e;});
+  return pyReady;
+}
+document.getElementById('preload').onclick=loadPython;
+
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+/* ---------- Kod hücreleri ---------- */
+document.querySelectorAll('.cell').forEach((cell,i)=>{
+  const ta=cell.querySelector('textarea');
+  const original=ta.value;
+  ta.spellcheck=false;
+  ta.rows=Math.min(ta.value.split('\n').length+1,40);
+  const head=document.createElement('div'); head.className='cell-head';
+  head.innerHTML=`<span class="title">${cell.classList.contains('sql')?'SQL':'In ['+(i+1)+']'} · ${cell.dataset.title||'Python'}</span>`;
+  const run=document.createElement('button'); run.className='btn primary'; run.textContent='▶ Çalıştır';
+  const reset=document.createElement('button'); reset.className='btn'; reset.textContent='↺'; reset.title='Özgün koda dön';
+  head.append(run,reset); cell.prepend(head);
+  const out=document.createElement('div'); out.className='out'; cell.append(out);
+
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Tab'){e.preventDefault();const s=ta.selectionStart;ta.setRangeText('    ',s,ta.selectionEnd,'end');}
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run.click();}
+  });
+  reset.onclick=()=>{ta.value=original; out.className='out'; out.innerHTML='';};
+  run.onclick=async()=>{
+    run.disabled=true; out.className='out show'; out.textContent='⏳ Çalışıyor…';
+    try{
+      await loadPython();
+      const isSql=cell.classList.contains('sql');
+      if(!isSql) await pyodide.loadPackagesFromImports(ta.value);
+      out.textContent='⏳ Çalışıyor…';
+      await new Promise(r=>setTimeout(r,20));
+      const res=JSON.parse(runFn(isSql?`_sql_show(${JSON.stringify(ta.value)})`:ta.value));
+      let h='';
+      if(res.out) h+=esc(res.out);
+      if(res.html) h+=`<div>${res.html}</div>`;
+      res.imgs.forEach(b=>h+=`<img alt="grafik" src="data:image/png;base64,${b}">`);
+      if(!h) h='<span style="color:var(--ok)">✓ Çalıştı (çıktı yok)</span>';
+      out.innerHTML=h; if(window.refreshFiles) refreshFiles(); refreshSchema(); out.className='out show'+(res.ok?'':' err');
+    }catch(e){ out.className='out show err'; out.textContent=errMsg(e); }
+    run.disabled=false;
+  };
+});
+
+/* ---------- Dosya paneli + veritabanını sıfırla ---------- */
+(function(){
+  const up=document.getElementById('fileUp'), list=document.getElementById('fileList'), ref=document.getElementById('fileRefresh');
+  async function refresh(){
+    if(!pyodide){ list.innerHTML='<i>Python yüklenince görünür.</i>'; return; }
+    const files=JSON.parse(pyodide.runPython(`import os, json
+json.dumps(sorted([f, os.path.getsize(f)] for f in os.listdir('.') if os.path.isfile(f)))`));
+    list.innerHTML=files.length?'':'<i>(boş)</i>';
+    files.forEach(([p,sz])=>{
+      const a=document.createElement('a'); a.href='#'; a.textContent=`${p} (${sz<1024?sz+' B':(sz/1024).toFixed(1)+' KB'})`;
+      a.style.cssText='display:block;padding:2px 0;font-size:12px;color:var(--accent);word-break:break-all';
+      a.onclick=e=>{e.preventDefault();const data=pyodide.FS.readFile(pyodide.FS.cwd()+'/'+p);const u=URL.createObjectURL(new Blob([data]));const l=document.createElement('a');l.href=u;l.download=p;l.click();setTimeout(()=>URL.revokeObjectURL(u),2000);};
+      list.append(a);
+    });
+  }
+  window.refreshFiles=refresh;
+  ref.onclick=async()=>{await loadPython();refresh();refreshSchema();};
+  up.onchange=async()=>{
+    await loadPython(); const HOME=pyodide.FS.cwd();
+    for(const f of up.files){ pyodide.FS.writeFile(HOME+'/'+f.name,new Uint8Array(await f.arrayBuffer())); }
+    up.value=''; refresh(); refreshSchema();
+  };
+  document.getElementById('dbReset').onclick=async()=>{
+    await loadPython();
+    if(!confirmReset()) return;
+    pyodide.runPython(`import os
+for _f in ("weather.db", "weather.db-journal"):
+    if os.path.exists(_f): os.remove(_f)`);
+    refresh(); refreshSchema();
+  };
+  function confirmReset(){ const b=document.getElementById('dbReset'); if(b.dataset.armed){ delete b.dataset.armed; b.textContent='Veritabanını sıfırla'; return true; } b.dataset.armed='1'; b.textContent='Emin misiniz? Tekrar basın'; setTimeout(()=>{delete b.dataset.armed;b.textContent='Veritabanını sıfırla';},3000); return false; }
+})();
+
+/* ---------- Şema paneli ---------- */
+function refreshSchema(){
+  const el=document.getElementById('schemaView'); if(!el||!pyodide||!runFn) return;
+  try{
+    const s=JSON.parse(pyodide.runPython('_schema()'));
+    if(!s.exists){ el.innerHTML='<b>Şema</b><br><i style="font-family:Inter,sans-serif">weather.db henüz yok.</i>'; return; }
+    let h='<b>Şema — weather.db</b>';
+    if(!s.tables.length) h+='<br><i style="font-family:Inter,sans-serif">(tablo yok)</i>';
+    s.tables.forEach(t=>{
+      if(t.type==='table'){ h+=`<div style="margin-top:8px"><b style="color:var(--accent)">${esc(t.name)}</b> <span style="color:var(--muted)">(${t.rows} satır)</span>`+t.cols.map(([n,ty,pk])=>`<div style="padding-left:8px">${pk?'🔑':'&nbsp;&nbsp;'} ${esc(n)} <span style="color:var(--muted)">${esc(ty)}</span></div>`).join('')+'</div>'; }
+      else h+=`<div style="margin-top:6px;color:var(--muted)">⚡ dizin: ${esc(t.name)}</div>`;
+    });
+    el.innerHTML=h;
+  }catch(e){ el.textContent=errMsg(e); }
+}
+
+/* ---------- SQL konsolu ---------- */
+(function(){
+  const inp=document.getElementById('consoleIn'), out=document.getElementById('consoleOut'), ex=document.getElementById('consoleEx');
+  const examples=[
+    ['Tablolar','SELECT name, type FROM sqlite_master;'],
+    ['İstasyonlar','SELECT * FROM weather_stations;'],
+    ['Ölçümler','SELECT * FROM weather ORDER BY time LIMIT 20;'],
+    ['JOIN',"SELECT W.time, W.temperature, S.location\nFROM weather W JOIN weather_stations S ON W.station_id = S.station_id\nWHERE S.location = 'Chicago, US';"],
+    ['GROUP BY','SELECT station_id, COUNT(*), AVG(temperature), MAX(temperature)\nFROM weather GROUP BY station_id;'],
+    ['ALTER TABLE','ALTER TABLE weather_stations ADD COLUMN elevation INT;\nSELECT * FROM weather_stations;'],
+    ['NOT NULL',"CREATE TABLE IF NOT EXISTS notes (id INT PRIMARY KEY, text VARCHAR(100) NOT NULL);\nINSERT INTO notes VALUES (1, NULL);"]
+  ];
+  examples.forEach(([l,q])=>{const b=document.createElement('button');b.className='btn';b.textContent=l;b.onclick=()=>{inp.value=q;run();};ex.append(b);});
+  async function run(){
+    out.textContent='⏳';
+    try{ await loadPython(); const r=JSON.parse(runFn(`_sql_show(${JSON.stringify(inp.value)})`)); out.innerHTML=(r.html||'')+(r.out?`<pre>${esc(r.out)}</pre>`:''); refreshSchema(); if(window.refreshFiles) refreshFiles(); }
+    catch(e){ out.textContent=errMsg(e); }
+  }
+  document.getElementById('consoleRun').onclick=run;
+  inp.onkeydown=e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run();} };
+})();
+
+/* ---------- JOIN adım adım ---------- */
+(function(){
+  const W=[['00001','2026-02-28 17:30',49.1],['00002','2026-02-28 17:30',42.9],['00002','2026-02-28 18:00',36.9]];
+  const S=[['00001','Chicago, US'],['00002','Seattle, US']];
+  const steps=[
+    {t:'1. Sol tablo: weather (W). Her satıra sırayla bakacağız.', w:[], s:[], res:false},
+    {t:"2. W satırı 1 → station_id '00001'. S'de aynı station_id'ye sahip satır aranır → Chicago, US.", w:[0], s:[0], res:false},
+    {t:"3. W satırı 2 → '00002' → Seattle, US eşleşir.", w:[1], s:[1], res:false},
+    {t:"4. W satırı 3 → '00002' → yine Seattle, US eşleşir. (Bir S satırı birden çok W satırıyla birleşebilir.)", w:[2], s:[1], res:false},
+    {t:"5. Birleşmiş satırlara WHERE S.location = 'Chicago, US' uygulanır; SELECT W.time, W.temperature yalnızca iki sütunu döndürür.", w:[0], s:[0], res:true}
+  ];
+  let k=0; const view=document.getElementById('joinView'), lab=document.getElementById('joinStep');
+  const tbl=(title,h,rows,hl,dim)=>`<div><div style="font-family:Inter,sans-serif;font-size:12px;color:var(--muted);margin-bottom:4px">${title}</div><table class="data" style="font-size:13px;margin:0"><tr>${h.map(c=>`<th>${c}</th>`).join('')}</tr>${rows.map((r,i)=>`<tr style="${hl.includes(i)?'background:var(--warn-soft);outline:2px solid var(--warn)':dim?'opacity:.45':''}">${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</table></div>`;
+  function draw(){
+    const st=steps[k]; lab.textContent=st.t;
+    let h=tbl('weather W',['station_id','time','temperature'],W,st.w,false)+tbl('weather_stations S',['station_id','location'],S,st.s,false);
+    if(k>=1&&k<4){ const done=W.slice(0,k).map((w)=>[...w,S.find(s=>s[0]===w[0])[1]]); h+=tbl('birleşmiş satırlar (şimdiye kadar)',['W.station_id','W.time','W.temperature','S.location'],done,[k-1],false); }
+    if(st.res) h+=tbl('sonuç',['W.time','W.temperature'],[[W[0][1],W[0][2]]],[0],false);
+    view.innerHTML=h;
+  }
+  document.getElementById('joinNext').onclick=()=>{k=Math.min(k+1,steps.length-1);draw();};
+  document.getElementById('joinPrev').onclick=()=>{k=Math.max(k-1,0);draw();};
+  draw();
+})();
+
+/* ---------- SQL enjeksiyonu ---------- */
+(function(){
+  const inp=document.getElementById('injIn'), bad=document.getElementById('injBad'), good=document.getElementById('injGood');
+  document.querySelectorAll('[data-inj]').forEach(b=>b.onclick=()=>{inp.value=b.dataset.inj;run();});
+  async function run(){
+    bad.textContent=good.textContent='⏳';
+    try{
+      await loadPython();
+      const r=JSON.parse(runFn(`import json, sqlite3, html
+_loc = ${JSON.stringify(inp.value)}
+def _show(q, params=None):
+    c = sqlite3.connect("weather.db")
+    try:
+        cur = c.execute(q, params) if params is not None else c.execute(q)
+        rows = cur.fetchall()
+        res = _table([d[0] for d in cur.description], rows) if rows else "<div class='sqlmsg'>(0 satır)</div>"
+        if params is None and len(rows) > 1:
+            res += "<div class='sqlerr'>⚠ Girdi sorgunun mantığını değiştirdi: tüm satırlar döndü!</div>"
+    except sqlite3.Error as e:
+        res = f"<div class='sqlerr'>Hata: {html.escape(str(e))}</div>"
+    finally:
+        c.close()
+    return res
+_q_bad = f"SELECT station_id, location FROM weather_stations WHERE location = '{_loc}'"
+_q_good = "SELECT station_id, location FROM weather_stations WHERE location = ?"
+print(json.dumps({
+  "bad": f"<div class='sqlq'>{html.escape(_q_bad)}</div>" + _show(_q_bad),
+  "good": f"<div class='sqlq'>{html.escape(_q_good)}<br>params = ({html.escape(repr(_loc))},)</div>" + _show(_q_good, (_loc,))
+}))`));
+      if(!r.ok){ bad.textContent=r.out; return; }
+      const o=JSON.parse(r.out.trim().split('\n').pop()); bad.innerHTML=o.bad; good.innerHTML=o.good;
+    }catch(e){ bad.textContent=errMsg(e); }
+  }
+  document.getElementById('injRun').onclick=run; inp.onkeydown=e=>{if(e.key==='Enter')run();};
+})();
+
+/* ---------- to_sql if_exists ---------- */
+(function(){
+  const out=document.getElementById('ifexOut');
+  document.querySelectorAll('[data-ifex]').forEach(b=>b.onclick=async()=>{
+    out.textContent='⏳';
+    try{
+      await loadPython();
+      const m=b.dataset.ifex;
+      const code = m==='drop'
+        ? `_SQLResult(_sql_html("DROP TABLE IF EXISTS demo_stations;"))`
+        : `import pandas as pd, sqlite3
+_df = pd.DataFrame({"station_id": ["00001", "00002"], "location": ["Chicago, US", "Seattle, US"]})
+_c = sqlite3.connect("weather.db")
+try:
+    _df.to_sql("demo_stations", _c, if_exists="${m}", index=False)
+    _msg = "<div class='sqlmsg'>✓ to_sql(if_exists=\\"${m}\\") çalıştı</div>"
+except ValueError as e:
+    _msg = "<div class='sqlerr'>ValueError: " + str(e) + "</div>"
+finally:
+    _c.close()
+_SQLResult(_msg + _sql_html("SELECT COUNT(*) AS satir_sayisi FROM demo_stations;"))`;
+      const r=JSON.parse(runFn(code)); out.innerHTML=(r.html||'')+(r.ok?'':`<pre>${esc(r.out)}</pre>`); refreshSchema(); if(window.refreshFiles) refreshFiles();
+    }catch(e){ out.textContent=errMsg(e); }
+  });
+})();
+
+/* ---------- İçindekiler vurgusu ---------- */
+(function(){
+  const links=[...document.querySelectorAll('nav.toc a')];
+  const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.remove('active'));links[secs.indexOf(e.target)].classList.add('active');}}),{rootMargin:'-10% 0px -80% 0px'});
+  secs.forEach(s=>io.observe(s));
+})();
+</script>
+</body>
+</html>

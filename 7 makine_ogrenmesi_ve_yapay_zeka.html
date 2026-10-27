@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Makine Öğrenmesi ve Yapay Zekâ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+<style>
+:root{
+  --bg:#f7f5f0; --paper:#ffffff; --ink:#1d1f24; --muted:#5d6270; --line:#e2ded4;
+  --accent:#1f5f8b; --accent-soft:#e3eef6; --warn:#9a5b00; --warn-soft:#fbf1dc;
+  --code-bg:#f2f0ea; --code-ink:#22252b; --ok:#2f7a4a; --err:#b3261e;
+  --prompt-bg:#efece4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+    --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+    --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+  --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+  --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Serif 4",Georgia,serif;font-size:18px;line-height:1.65}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1200px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:28px 18px;border-right:1px solid var(--line);font-family:Inter,sans-serif;font-size:14px}
+nav.toc .brand{font-weight:600;color:var(--accent);font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;padding:6px 8px;border-radius:6px}
+nav.toc a:hover,nav.toc a.active{background:var(--accent-soft);color:var(--ink)}
+.status{margin-top:22px;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;color:var(--muted);background:var(--paper)}
+.status b{color:var(--ink)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#999;margin-right:6px;vertical-align:middle}
+.dot.loading{background:var(--warn);animation:pulse 1s infinite}
+.dot.ready{background:var(--ok)}
+@keyframes pulse{50%{opacity:.3}}
+.toc button,.btn{font-family:Inter,sans-serif;font-size:13px;font-weight:500;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:6px 12px;border-radius:6px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.5;cursor:wait}
+main{padding:40px 48px 120px;min-width:0}
+article{max-width:780px}
+h1{font-size:2.4rem;line-height:1.15;margin:0 0 .3em;color:var(--accent)}
+h2{font-size:1.55rem;margin:2.6em 0 .6em;padding-top:.4em;border-top:1px solid var(--line);color:var(--accent)}
+h2 .num{font-family:Inter,sans-serif;font-weight:600;font-size:.8em;color:var(--muted);margin-right:.4em}
+.lead{font-style:italic;color:var(--muted);font-size:1.08rem;border-left:3px solid var(--accent);padding-left:16px;margin:1.2em 0 2em}
+code{font-family:"JetBrains Mono",monospace;font-size:.82em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.terms{display:grid;gap:12px;margin:1.2em 0}
+.term{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+.term b{font-family:Inter,sans-serif;color:var(--accent)}
+.note{background:var(--warn-soft);border-left:3px solid var(--warn);padding:12px 16px;border-radius:0 8px 8px 0;font-size:.95rem;margin:1.2em 0}
+.formula{font-family:"JetBrains Mono",monospace;background:var(--paper);border:1px dashed var(--line);padding:12px 16px;border-radius:8px;text-align:center;font-size:.95rem;margin:1em 0;overflow-x:auto}
+.prompt{background:var(--prompt-bg);border-radius:10px;padding:14px 18px;margin:1.2em 0;font-size:.95rem}
+.prompt .lbl{font-family:Inter,sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.prompt em{display:block;margin-top:6px}
+/* Kod hücresi */
+.cell{margin:1.3em 0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--paper)}
+.cell-head{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--code-bg);border-bottom:1px solid var(--line);font-family:Inter,sans-serif;font-size:12px;color:var(--muted)}
+.cell-head .title{flex:1}
+.cell textarea{display:block;width:100%;border:0;resize:vertical;padding:14px 16px;background:var(--code-bg);color:var(--code-ink);font-family:"JetBrains Mono",monospace;font-size:13.5px;line-height:1.55;tab-size:4;outline:none;min-height:80px;white-space:pre;overflow:auto}
+.out{display:none;border-top:1px solid var(--line);padding:12px 16px;font-family:"JetBrains Mono",monospace;font-size:13px;white-space:pre-wrap;overflow-x:auto}
+.out.show{display:block}
+.out.err{color:var(--err)}
+.out img{max-width:100%;background:#fff;border-radius:6px;margin-top:8px;display:block}
+.out table{border-collapse:collapse;font-size:12.5px;margin:6px 0;white-space:nowrap}
+.out th,.out td{border:1px solid var(--line);padding:3px 8px;text-align:right}
+.out th{background:var(--code-bg)}
+/* Tablo */
+table.data{border-collapse:collapse;font-family:Inter,sans-serif;font-size:14px;margin:1em 0}
+table.data th,table.data td{border:1px solid var(--line);padding:6px 10px}
+table.data th{background:var(--code-bg)}
+.caption{font-family:Inter,sans-serif;font-size:13px;color:var(--muted);margin-top:-4px}
+/* Widget */
+.widget{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px;margin:1.5em 0}
+.widget h4{margin:0 0 6px;font-family:Inter,sans-serif;font-size:14px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.widget .ctrl{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-family:Inter,sans-serif;font-size:14px;margin:10px 0}
+.widget svg{width:100%;height:auto;display:block}
+.widget .readout{font-family:Inter,sans-serif;font-size:15px}
+.widget .readout b{color:var(--accent)}
+input[type=range]{accent-color:var(--accent)}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  main{padding:24px 16px 80px}
+  h1{font-size:1.9rem}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" id="toc">
+  <div class="brand">Bölüm 7</div>
+  <a href="#giris">Giriş ve temel kavramlar</a>
+  <a href="#s71">7.1 Doğrusal regresyon</a>
+  <a href="#s72">7.2 Çok değişkenli regresyon</a>
+  <a href="#s73">7.3 Lojistik regresyon</a>
+  <a href="#s74">7.4 Karar ağaçları ve rastgele orman</a>
+  <a href="#s75">7.5 K-en yakın komşu</a>
+  <a href="#s76">7.6 Destek vektör makineleri</a>
+  <a href="#s77">7.7 Eğitim/test verisi ve değerlendirme</a>
+  <a href="#s78">7.8 Kümeleme</a>
+  <div class="status">
+    <div><span class="dot" id="pyDot"></span><b id="pyState">Python yüklenmedi</b></div>
+    <div id="pyMsg" style="margin:6px 0 8px">Kodlar tarayıcıda Pyodide ile çalışır. İlk çalıştırmada pandas, scikit-learn ve matplotlib indirilir (~30 MB, bir kez).</div>
+    <button class="btn" id="preload">Python'u şimdi yükle</button>
+    <div style="margin-top:8px"><button class="btn" id="themeBtn">Tema değiştir</button></div>
+  </div>
+</nav>
+
+<main><article>
+
+<h1 id="giris">7 · Makine Öğrenmesi ve Yapay Zekâ</h1>
+<p class="lead">Python'da scikit-learn modülü, regresyon ve sınıflandırma yapmak ve önceden eğitilmiş modellerle tahmin üretmek için pek çok yapay zekâ algoritmasını kolayca kullanmamızı sağlar.</p>
+
+<p>Yapay zekâ (YZ), bilgisayar biliminin bir alt alanıdır ve neredeyse bilgisayarlar kadar eskidir. Ancak birkaç yıl önce ChatGPT ya da Google Gemini gibi büyük dil modelleri (BDM/LLM) herkesin erişimine açılınca alan büyük bir patlama yaşadı. Uzun süredir YZ ile dolaylı olarak karşılaşıyorduk: bize ürün, film ya da müzik öneren algoritmalar, istenmeyen e-postaları ayıklayan filtreler, bankalarda dolandırıcılığı yakalayan sistemler. ChatGPT ve benzerleriyle ise girdimize karşılık neredeyse insan benzeri çıktı üreten bir YZ'ye doğrudan erişir olduk; bu, bir e-postanın kendiliğinden spam olarak işaretlenmesini görmekten çok daha etkileyici.</p>
+
+<p>YZ'nin son yıllarda bu denli gelişmesinin üç nedeni var: Birincisi araştırmalar ve yeni yaklaşım ile algoritmaların geliştirilmesi. İkincisi, makine öğrenmesinin temelini oluşturan veri miktarının ciddi biçimde artması. Üçüncüsü de YZ algoritmalarını çalıştıran donanımın, özellikle ekran kartlarının ve özel YZ çiplerinin giderek güçlenmesi ve ucuzlaması. Karmaşık modelleri eğitmeyi mümkün kılan da bunların birleşimidir.</p>
+
+<p>Alexa, Siri ya da Gemini gibi bir sesli asistanla konuştuğumuzda YZ; mikrofonun yakaladığı sesi metne çevirir, metindeki hataları düzeltir, soruya yanıt üretir ve bu yanıtı bilgisayardan çok insan sesine benzeyen bir tonla seslendirir.</p>
+
+<p>Başka algoritmalar ise görüntüyle çalışır. Telefonla bir fotoğraf çektiğimizde bir algoritma onu sınıflandırıp "köpek", "bisiklet", "insan", "yemek" gibi anahtar kelimeler atar; böylece görüntüler sonradan anahtar kelimeyle bulunabilir. Kitabın bir sonraki bölümünde tam olarak böyle bir görüntü sınıflandırma uygulaması geliştirilecek. Uygulamada kamera görüntüleri olaylara tepki vermek ya da kişileri tanımak için gerçek zamanlı da çözümlenir. Görüntü <em>üreten</em> algoritmaları da birkaç yıldır tanıyoruz: Sohbet YZ'leri, Bing Image Creator ya da Adobe Firefly gibi araçlar metinsel bir tariften görüntü üretebiliyor; video üreten YZ'ler de şaşırtıcı sonuçlar veriyor.</p>
+
+<p>Ama metin, ses ve görüntüye geçmeden önce basit sayılarla çalışan bir YZ geliştirelim. Bu hem çok daha basit hem de pek çok işe yarar uygulama geliştirmemize olanak tanıyarak YZ'nin temel ilkelerini kavramamızı sağlar.</p>
+
+<p>Üç temel kavramla başlayalım:</p>
+<div class="terms">
+  <div class="term"><b>Yapay zekâ (YZ)</b><br>Bu şemsiye terim, bir makinenin "akıllı" bir karar vermesi demektir. "Ateş ve öksürük varsa grip şüphesi" gibi basit eğer-ise mantığı da buna girer; olası tüm hamleleri simüle edip kazanma olasılığı en yüksek olanı oynayan bir satranç YZ'si de. 1997'de dünya satranç şampiyonu Garry Kasparov'u yenen IBM'in Deep Blue'su kabaca böyle çalışıyordu.</div>
+  <div class="term"><b>Makine öğrenmesi (MÖ)</b><br>YZ'nin bu alt alanında sistem eğitim verisi alır ve ondan örüntüler öğrenir. Eğitim aşamasının sonucu istatistiksel bir modeldir; bu model yeni ve bilinmeyen verilere yanıt üretmek, karar vermek ya da tahminde bulunmak için kullanılır. Sistemin karara nasıl vardığı programa elle yazılmaz; eğitim sırasında <em>öğrenilir</em>.</div>
+  <div class="term"><b>Derin öğrenme</b><br>Makine öğrenmesinin bu alt alanı, görüntü ya da konuşma gibi daha karmaşık verileri anlamak için çok katmanlı sinir ağları kullanır. Başta bir görüntü yalnızca renkli noktalar yığınıdır. İlk katmanda sistem bu noktalarda kenar, çizgi ve alanların yerini belirler. Sonraki katmanlarda çözümleme giderek özelleşir; örneğin göz ve kulakların konumu bulunur. Daha derin katmanlarda YZ duyguları tanıyabilir ya da görüntüdeki kişinin adını tahmin edebilir. Yeterli örnek görüntü varsa bu adımlar iyi işler.</div>
+</div>
+
+<p>YZ o kadar geniş bir terim ki kitabın başında kişinin belirtilen cinsiyetine göre "Sayın Bay…" ya da "Sayın Bayan…" hitabı üreten programımıza bile YZ diyebilirdik. Bu yüzden bundan sonra yalnızca makine öğrenmesi alt alanına odaklanacağız. Algoritmaların içeride tam olarak nasıl çalıştığıyla ya da sinir ağlarının nasıl kurulduğuyla uğraşmamız gerekmiyor; kitabın konusu YZ'yi Python programlarına entegre etmek. Algoritmaları başkaları bizim için zaten geliştirdi; ne yaptıklarını ve nasıl kullanılacaklarını kabaca anlamamız yeterli.</p>
+
+<div class="note"><b>Bu sayfa nasıl kullanılır?</b> Her kod kutusu düzenlenebilir. <b>▶ Çalıştır</b> düğmesine basınca kod tarayıcınızda gerçek Python (Pyodide) ile çalışır; çıktılar ve matplotlib grafikleri kutunun altında görünür. Değişkenler hücreler arasında paylaşılır (Jupyter defteri gibi). <b>↺</b> özgün koda döndürür. Kısayol: kod kutusundayken <code>Ctrl/⌘ + Enter</code>.</div>
+
+<!-- ====================== 7.1 ====================== -->
+<h2 id="s71"><span class="num">7.1</span>Doğrusal Regresyonla Sayı Tahmini</h2>
+
+<p>Doğrusal regresyon, geleceğe bakmamızı ve eksik sayısal değerleri hesaplamamızı sağlayan bir makine öğrenmesi algoritmasıdır. Bunun için <em>scikit-learn</em>'ün parçası olan <code>linear_model</code> modülünü kullanacağız. Bu bölümde YZ ile yapacağımız her şey, geniş bir algoritma yelpazesi sunan kapsamlı bir Python kütüphanesi olan scikit-learn'de var. Paket önce <code>pip install scikit-learn</code> ile kurulmalı (bu sayfada Pyodide bunu sizin yerinize yapar).</p>
+
+<p>Aşağıdaki örnekte bir şehirdeki dairelerin metrekare cinsinden yaşam alanı ve kira bedelleri var. Bunu, başka dairelerin kirasını YZ ile tahmin etmek için kullanmak istiyoruz.</p>
+
+<div class="cell" data-title="Veri ve model — tek değişkenli regresyon"><textarea>import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+
+data = {'sqm':  [24, 40, 55, 60, 73, 95, 148],
+        'rent': [320, 450, 950, 890, 1060, 1535, 2150]}
+df = pd.DataFrame(data)
+
+model = LinearRegression()
+model.fit(df[['sqm']], df['rent'])
+
+new = pd.DataFrame({'sqm': [80]})
+print("Tahmini kira:", model.predict(new)[0], "USD")</textarea></div>
+
+<p>Bir örüntü görülüyor: Dairenin metrekaresi arttıkça kira da artıyor. Yine de daha küçük bir dairenin daha pahalı olduğu istisnalar var. Doğrusal regresyon, veri noktalarının olabildiğince yakınından geçen bir regresyon doğrusu çizer. Bu sayede bir yandan veride x-değeri (metrekare) olmayan noktalar için doğru üzerinden y-değeri (fiyat) okuyabiliriz; örneğin 80 m²'lik bir dairenin tahmini fiyatı. Öte yandan x ekseni metrekare yerine tarih olsaydı, doğruyu uzatarak geleceğe bakabilir, ileri bir tarihteki değerleri tahmin edebilirdik.</p>
+
+<p>Yukarıdaki kod, bu bölümde çok sık göreceğiniz bir yordamı izliyor: Önce modeli eğitim verisiyle eğitiyor, sonra tahmin yapıyoruz. Model <code>fit</code> yöntemiyle eğitilir; böylece hangi metrekareye hangi kiranın karşılık geldiğini öğrenir. <code>model.predict</code>, eğitimde kullanılanla aynı sütunlara sahip bir DataFrame alır; tek fark tahmin edileceği için <code>rent</code> sütununun bulunmamasıdır. Sonuçta <code>predict</code> yeni daireler için kira değerlerini içeren bir NumPy dizisi döndürür. Örneğimizde tek bir 80 m²'lik daire var; onun için 1.191,66 USD kira tahmin ediliyor.</p>
+
+<p>Eğitim verisini regresyon doğrusuyla birlikte gösteren grafiği Matplotlib ile üretebiliriz:</p>
+
+<div class="cell" data-title="Şekil 7.1 — Regresyon doğrusu (üstteki hücreyi önce çalıştırın)"><textarea>plt.scatter(df['sqm'], df['rent'], color="blue", label="Veri noktaları")
+plt.plot(df['sqm'], model.predict(df[['sqm']]), color="red",
+         label="Regresyon doğrusu")
+plt.xlabel("Yaşam alanı (m²)")
+plt.ylabel("Kira (USD)")
+plt.legend()
+plt.show()
+
+print("a (eğim):", model.coef_[0])
+print("b (sabit):", model.intercept_)</textarea></div>
+
+<p>Doğrusal regresyonda eğitilen model, eğitim verisinin kendisini değil yalnızca regresyon doğrusuna ilişkin bilgiyi saklar. Kesin söylemek gerekirse modelimiz yalnızca iki sayıdan, <i>a</i> ve <i>b</i>'den ibarettir; <i>y = a × x + b</i> ile bir <i>x</i> (metrekare) noktasındaki <i>y</i> (kira) değerini hesaplarız. <code>model.predict</code> çağrıldığında olan tam olarak budur; döndürdüğü tüm noktalar her zaman doğrunun üzerindedir.</p>
+
+<div class="widget" id="regWidget">
+  <h4>Etkileşimli: regresyon doğrusunda gezin</h4>
+  <div class="ctrl"><label>Daire büyüklüğü: <input type="range" id="regSlider" min="15" max="170" value="80"></label> <span class="readout" id="regOut"></span></div>
+  <svg id="regSvg" viewBox="0 0 640 300" role="img" aria-label="Metrekare ve kira dağılım grafiği"></svg>
+</div>
+
+<p>Doğrusal regresyon çok basit bir algoritma olsa da makine öğrenmesinin nasıl işlediğini iyi gösterir: Algoritmanın öğrendiği eğitim verisi var; sonuç bir model; tahmin bu modele dayanarak yapılıyor. Doğrusal regresyonda tahmin her zaman bir sayıdır. Algoritma bu yüzden fiyat, sıcaklık, satış rakamı, fitness ölçümü, süre gibi değerleri tahmin etmek istediğinizde işe yarar.</p>
+
+<!-- ====================== 7.2 ====================== -->
+<h2 id="s72"><span class="num">7.2</span>Birden Çok Etkenle Doğrusal Regresyon</h2>
+
+<p>Daire fiyatlarını tahmin ettiğimiz örnek, DataFrame'de yaşam alanının yanı sıra oda sayısı, yapım yılı ve konum gibi ek sütunlar olduğunda da çalışır. YZ'nin farklı dairelerin ne kadar tuttuğunu öğrenebilmesi için yine mümkün olduğunca çok eğitim verisine ihtiyacımız var. Sonunda yeni dairelerin aynı özelliklerini —kira hariç— içeren bir DataFrame veririz ve model kirayı tahmin eder. Önce yalnızca bir sayısal değişken ekleyelim: oda sayısı. Algoritma artık <i>a₁</i>, <i>a₂</i> ağırlıklarını ve <i>b</i>'yi şu formülle kirayı tahmin edecek biçimde öğrenir:</p>
+
+<div class="formula">y = a₁ × x<sub>m²</sub> + a₂ × x<sub>oda</sub> + b</div>
+
+<div class="cell" data-title="İki değişkenli regresyon"><textarea>import pandas as pd
+from sklearn.linear_model import LinearRegression
+
+data = {'sqm':   [24, 40, 55, 60, 73, 95, 148],
+        'rooms': [1, 1, 2, 2, 3, 4, 5],
+        'rent':  [320, 450, 950, 890, 1060, 1535, 2150]}
+df = pd.DataFrame(data)
+
+X = df[['sqm', 'rooms']]
+y = df['rent']
+
+# Modeli oluştur ve eğit
+model = LinearRegression()
+model.fit(X, y)
+
+# Ağırlıkları göster
+print("Ağırlıklar:", model.coef_)        # a1, a2
+print("Sabit:", model.intercept_)        # b
+
+# Yeni daire için tahmin
+new = pd.DataFrame({'sqm': [80], 'rooms': [2]})
+prediction = model.predict(new)[0]
+print("Tahmini kira:", round(prediction, 2), "USD")</textarea></div>
+
+<p>Artık bir regresyon doğrusu değil, bir düzlem var. Örneği birazdan daha fazla girdi değişkeniyle genişleteceğiz; ancak bunu görselleştirmek giderek zorlaşır. Üç boyutlu uzayda hâlâ bir ölçüde mümkün (kitaptaki Şekil 7.2'nin benzeri):</p>
+
+<div class="cell" data-title="Şekil 7.2 — Regresyon düzlemi (3B)"><textarea>import numpy as np
+import matplotlib.pyplot as plt
+
+fig = plt.figure(figsize=(7, 5))
+ax = fig.add_subplot(projection='3d')
+ax.scatter(df['sqm'], df['rooms'], df['rent'], color='red', s=40)
+
+gx, gy = np.meshgrid(np.linspace(20, 150, 10), np.linspace(1, 5, 10))
+grid = pd.DataFrame({'sqm': gx.ravel(), 'rooms': gy.ravel()})
+gz = model.predict(grid).reshape(gx.shape)
+ax.plot_surface(gx, gy, gz, alpha=0.35, color='skyblue')
+
+ax.set_xlabel('Yaşam alanı (m²)')
+ax.set_ylabel('Oda')
+ax.set_zlabel('Kira (USD)')
+plt.show()</textarea></div>
+
+<p>Şimdiye kadar tüm girdiler sayısaldı: yaşam alanı metrekare cinsinden bir sayı, diğer değişken oda sayısı. Bu hesaplamayı kolaylaştırır: Sayılar öğrenilen ağırlıklarla çarpılıp toplanır; doğrusal regresyonun sonucu da bir sayıdır, burada USD cinsinden kira. Şimdi örneği iki sayısal olmayan sütunla genişletelim: ilanın yayımlandığı <code>date</code> (tarih) ve konumu belirten metin <code>location</code>. Doğrusal regresyon bu tür verilerle de çalışır, ama önce tarihleri ve metinleri sayıya çevirmemiz gerekir. Tarihle başlayalım:</p>
+
+<div class="cell" data-title="Tarihi sayıya çevirme"><textarea>data = {'sqm':   [24, 40, 55, 60, 73, 95, 148],
+        'rooms': [1, 1, 2, 2, 3, 4, 5],
+        'date':  ['2007-05-17', '2018-02-05', '2026-01-01',
+                  '2026-01-01', '2026-01-02', '2026-01-04', '2026-01-04'],
+        'location': ['Chicago', 'Austin', 'Chicago',
+                     'Chicago', 'Chicago', 'Austin', 'Austin'],
+        'rent':  [320, 450, 950, 890, 1060, 1535, 2150]}
+df = pd.DataFrame(data)
+df['date'] = pd.to_datetime(df['date'])
+
+df['date_num'] = df['date'].map(pd.Timestamp.toordinal)
+print(pd.Timestamp('2026-01-01').toordinal())
+df</textarea></div>
+
+<p><code>date</code> sütunundaki değerler <code>pd.to_datetime</code> ile datetime nesnelerine dönüştürülür. Bunları sayıya çevirmek için pandas <code>pd.Timestamp.toordinal</code> işlevini sunar. Örneğin 1 Ocak 2026'yı <code>739617</code> sayısına çevirir; bu, 1 Ocak 0001'den bu yana geçen gün sayısıdır.</p>
+
+<p>Konumu da sayıya çevirmek için şöyle yapabilirdik: Chicago 0, Austin 1 vb. Bu yönteme <em>etiket kodlama</em> (label encoding) denir; ileride bir örnekte kullanacağız. Burada ise tahmini bozar, çünkü konum numaralarımızın büyüklük ya da sıra açısından hiçbir anlamı yok. 2. konumdaki dairelerin 1. konumdakilerden pahalı mı ucuz mu çıkacağı, numaraların rastgele atanmasına bağlı kalır. Burada <em>one-hot kodlama</em> daha iyidir: DataFrame her konum için ayrı bir sütun alır; örneğin <code>location_Austin</code>, <code>location_Chicago</code>. Bu sütunlardan yalnızca biri <code>True</code>, diğerleri <code>False</code> içerir.</p>
+
+<div class="cell" data-title="One-hot kodlama (Tablo 7.1)"><textarea># Kategori sırasını belirt: ilk kategori (Chicago) drop_first ile atılır
+df['location'] = pd.Categorical(df['location'], categories=['Chicago', 'Austin'])
+df = pd.get_dummies(df, columns=['location'], drop_first=True)
+df</textarea></div>
+
+<p><code>drop_first</code> seçeneği ilk konumun (burada Chicago) atılmasını sağlar. Bu mantıklıdır, çünkü <code>location_Chicago</code> sütunu bize ek bir değer katmaz: Bir daire, tüm diğer konum sütunları <code>False</code> olduğunda tam olarak Chicago'dadır.</p>
+<div class="note"><b>Düzeltme notu:</b> <code>pd.get_dummies</code> kategorileri varsayılan olarak alfabetik sıralar; bu yüzden kitaptaki kod olduğu gibi çalıştırılınca <em>Austin</em> atılır ve <code>location_Chicago</code> sütunu kalır, sonraki adımdaki <code>location_Austin</code> de bulunamaz (KeyError). Burada kategori sırasını <code>pd.Categorical(..., categories=['Chicago', 'Austin'])</code> ile açıkça vererek kitaptaki sonucu elde ediyoruz.</div>
+
+<p>scikit-learn, <code>location_Austin</code> sütunundaki <code>True</code> ve <code>False</code> değerlerini sayı (1 ve 0) olarak yorumlar ve modeli eğitmek için kullanabilir. Kira tahmini dâhil tam örnek:</p>
+
+<div class="cell" data-title="Tam örnek — tarih + konum + m² + oda"><textarea>import pandas as pd
+from sklearn.linear_model import LinearRegression
+
+data = {'sqm':   [24, 40, 55, 60, 73, 95, 148],
+        'rooms': [1, 1, 2, 2, 3, 4, 5],
+        'date':  ['2007-05-17', '2018-02-05', '2026-01-01',
+                  '2026-01-01', '2026-01-02', '2026-01-04', '2026-01-04'],
+        'location': ['Chicago', 'Austin', 'Chicago',
+                     'Chicago', 'Chicago', 'Austin', 'Austin'],
+        'rent':  [320, 450, 950, 890, 1060, 1535, 2150]}
+df = pd.DataFrame(data)
+df['date'] = pd.to_datetime(df['date'])
+df['date_num'] = df['date'].map(pd.Timestamp.toordinal)
+df['location'] = pd.Categorical(df['location'], categories=['Chicago', 'Austin'])
+df = pd.get_dummies(df, columns=['location'], drop_first=True)
+
+X = df[['sqm', 'rooms', 'date_num', 'location_Austin']]
+y = df['rent']
+
+model = LinearRegression()
+model.fit(X, y)
+
+new = pd.DataFrame({'sqm': [80], 'rooms': [2],
+                    'date': pd.to_datetime(['2026-02-01']),
+                    'location_Austin': [0]})
+new['date_num'] = new['date'].map(pd.Timestamp.toordinal)
+new = new[['sqm', 'rooms', 'date_num', 'location_Austin']]
+prediction = model.predict(new)[0]
+print("Tahmini kira:", round(prediction, 2), "USD")</textarea></div>
+
+<p>Eğitim verisinde tarih değerleri sayıya çevrildi, konumlar için de <code>pd.get_dummies</code> (one-hot kodlama) ile sütunlar eklendi. Fiyatını tahmin etmek istediğimiz yeni daire için de aynısını yapmalıyız: Tarih sayıya çevrilir ve konumu <code>"Chicago"</code> olarak yazmak yerine <code>location_Austin</code> sütununa 0 koyarız. Verimiz konum adının açıkça yazıldığı bir kaynaktan gelseydi onu da <code>pd.get_dummies</code> ile ayrı sütunlara çevirmemiz gerekirdi. Ayrıca eğitim verisinde bulunup yeni veride olmayan konumlar için bir döngüyle sütun eklememiz gerekir; çünkü <code>predict</code>, kendisine verilen yeni DataFrame'in modeli eğittiğimiz DataFrame ile tam olarak aynı sütunlara ve aynı sıraya sahip olmasını ister. Örneklerimizde bu DataFrame <code>X</code> idi ve özgün <code>df</code>'nin kira dışındaki sütunlarından oluşuyordu.</p>
+
+<div class="note">İpucu: Eksik sütunları döngü yazmadan tamamlamanın kısa bir yolu <code>new = new.reindex(columns=X.columns, fill_value=0)</code> ifadesidir.</div>
+
+<p>Modele neye bakacağını söyleyen etkenlere <em>öznitelik</em> (feature) denir. Örneğimizde öznitelikler <code>sqm</code>, <code>rooms</code>, <code>date_num</code> ve <code>location_Austin</code> idi. Ham verimizin biçimi ise biraz farklıydı: Tarih hâlâ datetime değeri, konum da metin olarak tutuluyordu. Ham veriden işe yarar öznitelikler çıkarma sürecine <em>öznitelik mühendisliği</em> (feature engineering) denir. Amaç, öznitelikleri tahmin kalitesini artıracak biçimde seçmektir. Bazen ham veriden tümüyle yeni öznitelikler, örneğin <code>sqm_per_room</code> (oda başına m²) hesaplamak da yararlıdır. Değerleri örneğin 0 ile 1 arasına normalleştirmek de YZ'nin daha etkili öğrenmesine yardım edebilir.</p>
+
+<!-- ====================== 7.3 ====================== -->
+<h2 id="s73"><span class="num">7.3</span>Lojistik Regresyonla Sınıflandırma</h2>
+
+<p>Doğrusal regresyon her zaman bir sayı tahmin eder: dairenin kaç USD tutacağı, bugün kaç sandviç satılacağı ya da makinenin bozulmadan önce kaç saat çalışacağı. Şimdi bir <em>sınıflandırma</em> yapmak istiyoruz; yani yeni bir veri noktası için bir sınıf tahmin etmek. Sınıf, bir kategori ya da etiket gibi bir şeydir. Örneğin girdi olarak şarapların kimyasal analiz değerleri ve şarabın beyaz, kırmızı ya da roze olduğu bilgisi varsa, bununla bir YZ eğitebiliriz; YZ yeni şarapları bu kategorilere ayırabilir. Sınıflandırma algoritmaları kahve çekirdeklerinin kökenini kimyasal özelliklerden ya da tadım testlerinden tahmin etmek için de kullanılabilir. Girdi metin, görüntü ya da ses ise bir sınıflandırma modeli metindeki duyguyu (olumlu, nötr, olumsuz), fotoğraftaki hayvan türünü (köpek, kedi, fare) ya da müzik türünü (rock, pop, caz, klasik) tahmin edebilir.</p>
+
+<p>Yalnızca iki sınıfın olduğu bir örnekle başlayalım. Bu, uygulamada oldukça yaygındır: Bir e-posta ya spamdır ya değildir. Müşteri krediyi ya alır ya almaz. Hastada diyabet ya vardır ya yoktur. Örneğimizde bir partiye davet ettiğimiz arkadaşların yer aldığı bir DataFrame var. Henüz yanıt vermemiş her kişi için partiye gelip gelmeyeceğini tahmin etmek istiyoruz. Bu tahminle yemek ve diğer hazırlıkları erkenden planlamaya başlayabiliriz.</p>
+
+<p>Kitap bu bölümde kodu ChatGPT'ye ürettiriyor. Aşağıda kullanılan istem (prompt) ve modelin önerdiği kod yer alıyor:</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<code>data = {'Name': [...], 'years_of_friendship': [...], 'previous_attendance': [...], 'distance_miles': [...], 'attendance': [1, 0, 1, 0, 1, 1, 0, None]}</code>
+<em>Bu veriyi kullanarak henüz yanıt vermemiş kişilerin parti davetini kabul edip etmeyeceğini tahmin et.</em></div>
+
+<p>Yanıt özetle şöyle: <code>attendance</code> değeri <code>None</code> olan kişi(ler) için hedef etiketi tahmin etmek istiyoruz; hedef değişken ikili olduğundan (1 = evet, 0 = hayır) lojistik regresyon gibi basit bir model kullanılabilir.</p>
+
+<div class="cell" data-title="Lojistik regresyon — partiye kim gelecek?"><textarea>import pandas as pd
+from sklearn.linear_model import LogisticRegression
+
+# Veri
+data = {
+    'name': ['Anne', 'Ben', 'Chris', 'David', 'Eve', 'Frank', 'Gloria',
+             'Vincent'],
+    'years_of_friendship': [5, 2, 10, 1, 3, 7, 4, 6],
+    'previous_attendance': [3, 0, 5, 1, 2, 4, 2, 3],
+    'distance_miles': [2, 15, 1, 20, 8, 3, 5, 7],
+    'attendance': [1, 0, 1, 0, 1, 1, 0, None]   # 1=evet, 0=hayır, None=yanıt yok
+}
+df = pd.DataFrame(data)
+
+# Öznitelikler ve hedef değişken
+X = df[['years_of_friendship', 'previous_attendance', 'distance_miles']]
+y = df['attendance']
+
+# Bilinen yanıtları bilinmeyenlerden ayır
+X_train = X[y.notnull()]
+y_train = y[y.notnull()]
+X_predict = X[y.isnull()]
+
+# Modeli eğit
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+# Tahmin yap
+predictions = model.predict(X_predict)
+print("Vincent'ın gelme olasılığı:", model.predict_proba(X_predict)[0][1].round(3))
+
+# Sonuçları göster
+df.loc[y.isnull(), 'attendance'] = predictions
+print(df)
+print("\nToplam katılım:", int(df['attendance'].sum()))</textarea></div>
+
+<p>Sonda görüntülenen DataFrame'de YZ'nin Vincent'ın daveti kabul edeceğini tahmin ettiğini görüyoruz.</p>
+
+<p>Yordam bu bölümdeki önceki örneklere benzer: Önce öznitelikler <code>X</code> değişkenine yazılır. Ardından <code>X</code> iki parçaya ayrılır: modeli eğitmek için kullanılan <code>X_train</code> ve <code>X_predict</code>. İlki daveti kabul ya da reddetmiş kişilerden oluşur. İkincisi örneğimizde yalnızca Vincent'tır; henüz yanıt vermemiştir (yanıtı <code>None</code>). Onun için gelip gelmeyeceğini tahmin etmek istiyoruz. <code>fit</code> ve <code>predict</code> ile işleyişi doğrusal regresyondan tanıyorsunuz; fark, artık <code>LogisticRegression</code> algoritmasını kullanmamız, yani arkada farklı bir formül olmasıdır. Bu algoritma sonuçta bir veri noktasının belirli bir sınıfa ait olma olasılığını verir; burada Vincent'ın kabul etme olasılığı. <code>predict</code> yerine <code>predict_proba</code> yöntemini kullanarak bu olasılığı da alabiliriz, ama amacımız için Vincent'ın kabul edip (1) etmeyeceğini (0) bilmek yeterli. Tahminler kolaylık olsun diye özgün DataFrame'e geri yazılır; böylece herkesin verisi elimizde olur. <code>df['attendance'].sum()</code> ile onay sayısını hesaplayabiliriz: Dört kişi (Anne, Chris, Eve ve Frank) zaten onaylamış, YZ'ye göre Vincent da büyük olasılıkla onaylayacak; toplam beş.</p>
+
+<p>Lojistik regresyon ikiden fazla sınıfı da işleyebilir (kitapta <code>multi_class='multinomial'</code> parametresiyle). Bununla örneğin Vincent'ın partide ne yemek isteyeceğini tahmin edebilirdik: sosisli, kaşarlı tost ya da sebze? Bazı davetliler ne yemek istediklerini söylediyse YZ kalanların seçimini tahmin edebilir. Kitap bunu çok terimli lojistik regresyonla değil, <em>Rastgele Orman</em> (Random Forest) adlı bir algoritmayla yapıyor.</p>
+
+<div class="note">Güncel scikit-learn sürümlerinde <code>multi_class</code> parametresi kullanımdan kaldırılmıştır; çok sınıflı hedefte <code>LogisticRegression()</code> varsayılan olarak zaten çok terimli (multinomial) çalışır.</div>
+
+<!-- ====================== 7.4 ====================== -->
+<h2 id="s74"><span class="num">7.4</span>Karar Ağaçları ve Rastgele Ormanlar</h2>
+
+<p>Bir karar ağacı çok sayıda eğer-ise kuralından oluşur. Aşağıdaki ağaç bir parti için doğru yemeğe karar vermekte kullanılıyor:</p>
+
+<div class="widget">
+  <h4>Şekil 7.3 — Yaşa ve fitness düzeyine göre yemek öneren karar ağacı</h4>
+  <svg viewBox="0 0 640 210" role="img" aria-label="Karar ağacı">
+    <g font-family="Inter,sans-serif" font-size="13" fill="currentColor" style="color:var(--ink)">
+      <g stroke="var(--muted)" fill="none" stroke-width="1.3">
+        <path d="M320 38 L160 98"/><path d="M320 38 L480 98"/>
+        <path d="M160 118 L80 178"/><path d="M160 118 L240 178"/>
+        <path d="M480 118 L400 178"/><path d="M480 118 L560 178"/>
+      </g>
+      <g fill="var(--muted)" font-size="11.5">
+        <text x="225" y="62">evet</text><text x="395" y="62">hayır</text>
+        <text x="102" y="148">evet</text><text x="203" y="148">hayır</text>
+        <text x="422" y="148">evet</text><text x="523" y="148">hayır</text>
+      </g>
+      <g>
+        <rect x="270" y="18" width="100" height="26" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="320" y="36" text-anchor="middle">yaş &lt; 30</text>
+        <rect x="105" y="96" width="110" height="26" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="160" y="114" text-anchor="middle">fitness ≥ 7</text>
+        <rect x="425" y="96" width="110" height="26" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="480" y="114" text-anchor="middle">fitness ≥ 5</text>
+        <rect x="30" y="176" width="100" height="26" rx="6" fill="var(--paper)" stroke="var(--line)"/><text x="80" y="194" text-anchor="middle">Sebze</text>
+        <rect x="180" y="176" width="120" height="26" rx="6" fill="var(--paper)" stroke="var(--line)"/><text x="240" y="194" text-anchor="middle">Kaşarlı tost</text>
+        <rect x="340" y="176" width="120" height="26" rx="6" fill="var(--paper)" stroke="var(--line)"/><text x="400" y="194" text-anchor="middle">Kaşarlı tost</text>
+        <rect x="510" y="176" width="100" height="26" rx="6" fill="var(--paper)" stroke="var(--line)"/><text x="560" y="194" text-anchor="middle">Sosisli</text>
+      </g>
+    </g>
+  </svg>
+</div>
+
+<p>Karar ağacının her iç düğümü, belirli bir özniteliğin bir eşik değeri aşıp aşmadığını denetler. Ağacın kökünden (şemanın en üstü) başlayıp yapraklara doğru inince seçilen kategoriye varırız. Ancak hangi yolun izleneceğine karar veren ölçütleri düzey düzey kendimiz bulmak zorunda değiliz; bunu makine öğrenmesiyle yaparız. Python'da karar ağaçlarını Rastgele Orman algoritmasıyla üretebiliriz. Bu algoritma aynı anda çok sayıda ağaç oluşturur; her biri eğitim verisinden rastgele örneklemlerle eğitilir ve her karar düğümünde özniteliklerin yalnızca rastgele bir alt kümesine bakar. Ağaçların çoğunluğu Vincent'ın kaşarlı tost istediğini söylerse, Rastgele Orman algoritmasının tahmini de bu olur.</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<code>data = {'name': [...], 'age': [25, 32, 28, 45, 22, 38, 30, 40], 'fitness_level': [7, 4, 8, 5, 9, 3, 6, 8], 'food': [..., None]}</code>
+<em>Henüz yemek seçmemiş kişilerin yemek tercihini Rastgele Orman ile tahmin et.</em></div>
+
+<div class="cell" data-title="Rastgele Orman — Vincent ne yiyecek?"><textarea>import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
+
+# Veri seti
+data = {
+    'name': ['Anne', 'Ben', 'Chris', 'David', 'Eve', 'Frank', 'Gloria',
+             'Vincent'],
+    'age': [25, 32, 28, 45, 22, 38, 30, 40],
+    'fitness_level': [7, 4, 8, 5, 9, 3, 6, 8],
+    'food': ['Vegetables', 'Hot Dog', 'Vegetables', 'Grilled Cheese',
+             'Vegetables', 'Hot Dog', 'Grilled Cheese', None]
+}
+df = pd.DataFrame(data)
+
+# Eğitim ve tahmin verisini ayır
+train_df = df[df['food'].notna()].copy()
+predict_df = df[df['food'].isna()]
+
+# Hedef değişken için etiket kodlama
+le = LabelEncoder()
+train_df['food_encoded'] = le.fit_transform(train_df['food'])
+print("Kodlama:", dict(zip(le.classes_, range(len(le.classes_)))))
+
+# Öznitelikler ve hedef
+X_train = train_df[['age', 'fitness_level']]
+y_train = train_df['food_encoded']
+
+# Rastgele Orman'ı eğit
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+
+# Eksik değerleri tahmin et
+X_predict = predict_df[['age', 'fitness_level']]
+pred_encoded = rf.predict(X_predict)
+
+# Kodlanmış tahminleri etikete geri çevir
+pred_labels = le.inverse_transform(pred_encoded)
+
+# Sonuçları DataFrame'e yaz
+df.loc[df['food'].isna(), 'food'] = pred_labels
+print(df)</textarea></div>
+
+<p>Süreci zaten tanıyoruz: Veri, eğitim verisi <code>X_train</code> ve tahmin verisi <code>X_predict</code> olarak ayrılır. İkincisi, yemek tahmini yapmak istediğimiz kişilerdir; burada Vincent. Yemek adlarını <code>le.fit_transform</code> ile sayıya çevirmek için <code>LabelEncoder</code> kullanırız. <code>rf.fit</code> ile Rastgele Orman, konuklarımızın hangi koşullarda hangi yemeği seçtiğini öğrenir. Modeli test verisine uyguladığımızda <code>rf.predict</code> Vincent'ın ne yiyeceğini söyler. 0, 1 ya da 2 yerine anlamlı bir ad elde etmek için tahmin edilen sayı <code>le.inverse_transform</code> ile geri çevrilir; örneğimizde tahmin sebzedir (Vegetables).</p>
+
+<p>Burada 100 rastgele karar ağacı üretiliyor; bu yüzden tahmin değişebilir. Özellikle eğitim verimiz çok az olduğundan eğitilen model hiç de kararlı değil. Tahmin sonucu büyük ölçüde ağaçlarda hangi özniteliklerin rastgele seçildiğine bağlı. Üstelik Vincent'a neden sebze önerildiğini anlamak da çok zor.</p>
+
+<p><code>random_state=42</code> parametresini sonraki örneklerde sık sık göreceğiz. Verilen değerin kendisi o kadar önemli değil. Parametreyi tümüyle atlarsak her çalıştırmada farklı karar ağaçları oluşur; <code>random_state</code>'i sabit bir sayıya ayarlarsak her çalıştırmada aynı rastgele sayılar üretilir. Bu, farklı algoritmaları ve parametre ayarlarını daha iyi karşılaştırmak için yararlıdır. <b>Deneyin:</b> yukarıdaki kodda <code>random_state</code> değerini değiştirip birkaç kez çalıştırın.</p>
+
+<!-- ====================== 7.5 ====================== -->
+<h2 id="s75"><span class="num">7.5</span>K-En Yakın Komşu (KNN)</h2>
+
+<p>Adından da anlaşılacağı gibi <em>k-en yakın komşu</em> (KNN), <i>k</i> en yakın komşuyu bulan basit bir algoritmadır. Örneğin ABD'nin tüm büyük şehirlerini alıp <i>k</i> = 3 dersek, KNN ile haritadaki bir noktaya en yakın üç şehri bulabiliriz. Noktamız San Jose'deyse algoritma Oakland, San Francisco ve Sacramento'yu döndürür; çünkü bunlar kuş uçuşu 31, 34 ve 93 mil uzaktadır ve diğer tüm büyük şehirler daha uzaktır.</p>
+
+<p>Bu algoritmayla önceki bölümdeki yemek tahminini de yapabileceğimizi düşünmek zor olabilir. Ama KNN tam da öneri, sınıflandırma ve tahmin içeren bu tür YZ uygulamalarında sık kullanılır. Örneğimizde Vincent'ın üç yemekten (sosisli, kaşarlı tost, sebze) hangisini seçme olasılığının en yüksek olduğunu tahmin etmek istiyoruz. YZ bu öneriyi iki özniteliğe —yaş ve fitness düzeyi— ve bir eğitim verisine dayanarak yapmalı. Eğitim verisi diğer konukların yaşı, fitness düzeyi ve yemek tercihinden oluşur. Fikir, <i>k</i> en yakın komşuyu, burada <i>k</i> = 3 ile Vincent'a en çok benzeyen üç konuğu bulmaktır. Bunun için Vincent dâhil her konuk iki boyutlu bir düzlemde nokta olarak çizilir.</p>
+
+<p>KNN, iki öznitelik vektörü arasındaki uzaklığı Öklid uzaklığıyla, yani Pisagor teoremiyle belirler. Vincent 40 yaşında ve fitness düzeyi 8 olduğundan bir komşu <i>x</i>'e uzaklık şöyle hesaplanır:</p>
+
+<div class="formula">Uzaklık(Vincent, x) = √[(40 − x<sub>yaş</sub>)² + (8 − x<sub>fitness</sub>)²]</div>
+
+<div class="widget" id="knnWidget">
+  <h4>Etkileşimli: Şekil 7.4 ve 7.5 — normalleştirme farkı</h4>
+  <div class="ctrl">
+    <label><input type="checkbox" id="knnNorm"> 0–1 aralığına normalleştir</label>
+    <label>k = <input type="range" id="knnK" min="1" max="7" value="3" style="width:110px"> <b id="knnKv">3</b></label>
+  </div>
+  <svg id="knnSvg" viewBox="0 0 640 320" role="img" aria-label="KNN komşu grafiği"></svg>
+  <div class="readout" id="knnOut"></div>
+</div>
+
+<p>Örneğimizde en yakın komşuları Frank, David ve Ben'dir. Kullanım durumumuz sınıflandırma olduğundan en yakın komşuların sınıflarına (sosisli, kaşarlı tost, sosisli) bakarız; sınıfların çoğunluğu Vincent'ın yemek önerisini oluşturur. Buna göre Vincent'a sosisli önerilir. Ancak bu öneriyi olduğu gibi kabul etmemeli, mantıklı olup olmadığını sormalıyız. Az önceki formülde 8 yıllık yaş farkı, fitness düzeyindeki 8 birimlik farkla mesafeye aynı ölçüde etki eder. Oysa fitness yalnızca 0–10 arasında değiştiği için mesafeye çok daha güçlü etki etmeli. Bu yüzden burada hem yaşı hem fitness düzeyini 0–1 ölçeğine çekmek mantıklıdır: En genç konuğun yaşı artık 0, en yaşlının 1 olur; fitness için de aynısı yapılır. (Yukarıdaki kutuyu işaretleyerek farkı görün.)</p>
+
+<p>Artık Vincent'a kaşarlı tost önerilir, çünkü ona en çok benzeyen diğer üç konuğun çoğunluğunun tercihi budur. Şimdi en yakın üç komşuyu belirleyen kodu ChatGPT'ye ürettirelim.</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>Yaşı ve fitness düzeyini normalleştir, ardından food=None olan herkes için KNN ile yemek önerisi hesapla. k=3 olsun.</em></div>
+
+<div class="cell" data-title="KNN — normalleştirilmiş özniteliklerle"><textarea>import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.neighbors import KNeighborsClassifier
+
+# Veri
+data = {
+    'name': ['Anne', 'Ben', 'Chris', 'David', 'Eve', 'Frank', 'Gloria',
+             'Vincent'],
+    'age': [25, 32, 28, 45, 22, 38, 30, 40],
+    'fitness_level': [7, 4, 8, 5, 9, 3, 6, 8],
+    'food': ['Vegetables', 'Hot Dog', 'Vegetables', 'Grilled Cheese',
+             'Vegetables', 'Hot Dog', 'Grilled Cheese', None]
+}
+df = pd.DataFrame(data)
+
+# Yaş ve fitness düzeyini normalleştir
+scaler = MinMaxScaler()
+df[['age', 'fitness_level']] = scaler.fit_transform(df[['age', 'fitness_level']])
+
+# KNN için eğitim verisi: food != None olan satırlar
+train_data = df[df['food'].notna()]
+X_train = train_data[['age', 'fitness_level']]
+y_train = train_data['food']
+
+# Test verisi: food eksik olan satırlar
+test_data = df[df['food'].isna()]
+X_test = test_data[['age', 'fitness_level']]
+
+# KNN sınıflandırıcı
+knn = KNeighborsClassifier(n_neighbors=3)
+knn.fit(X_train, y_train)
+
+# Yemek önerilerini tahmin et
+predictions = knn.predict(X_test)
+
+# Hangi komşular seçildi?
+dist, idx = knn.kneighbors(X_test)
+print("En yakın komşular:", list(train_data['name'].iloc[idx[0]]))
+
+# Sonuçları DataFrame'e yaz
+df.loc[df['food'].isna(), 'food'] = predictions
+print(df.round(2))</textarea></div>
+
+<p>İlk adımda <code>age</code> ve <code>fitness_level</code> sütunlarındaki değerler <code>scaler.fit_transform</code> ile 0–1 arasına normalleştirilir. Sonra <code>X_train</code>, zaten yemek seçmiş konukların özniteliklerini (<code>age</code> ve <code>fitness_level</code>), <code>y_train</code> de yemek seçimlerini içerir. <code>X_test</code>, yemek seçimini tahmin etmek istediğimiz konukları içeren DataFrame'dir; burada yalnızca Vincent. Ardından önceki örneklerde olduğu gibi modeli eğitmek için <code>fit</code>, tahmin için <code>predict</code> çağrılır. Ortaya çıkan DataFrame'de Vincent'ın yemeği artık kaşarlı tost (Grilled Cheese) olarak görünür.</p>
+
+<p>KNN çok basit ama güçlü bir algoritmadır; temel ilkesi, bilinmeyen bir veri noktası için eğitim verisinde en benzer noktaları bulup kararı onlara göre vermektir. Vincent'a kaşarlı tost önerildi, çünkü en yakın komşularının çoğunluğu da bunu söyledi. KNN regresyon için de kullanılabilir: Sınıf yerine bir sayısal değer, örneğin Vincent'ın kaç içecek tüketeceğini tahmin ederiz. Burada yine <i>k</i> en yakın komşu belirlenir ve onların içecek sayılarının ortalaması alınır.</p>
+
+<p>KNN ile şimdiye kadar ele aldığımız algoritmalar arasındaki büyük ve önemli fark, burada bir model eğitilmemesidir. Doğrusal ve lojistik regresyonda ve Rastgele Orman'da tahmin için yalnızca eğitilmiş model gerekir. KNN'de ise en yakın komşuları aramak için eğitim verisinin tamamı gerekir. Bu bellek ister ve büyük veri setlerinde yavaş olabilir, çünkü her bir veri noktasına uzaklık hesaplanmalıdır. Öte yandan KNN'nin uygulanması kolay ve anlaşılması sezgiseldir. Rastgele Orman'da Vincent'a neden belirli bir yemeğin önerildiğini açıklamak çok zordur; KNN'de açıklama basittir: Yaş ve fitness bakımından ona en çok benzeyen Chris, David ve Gloria da çoğunlukla kaşarlı tostu tercih ediyor.</p>
+
+<!-- ====================== 7.6 ====================== -->
+<h2 id="s76"><span class="num">7.6</span>Destek Vektör Makineleri (SVM)</h2>
+
+<p>Destek vektör makineleriyle (SVM) de, Rastgele Orman ve KNN'de olduğu gibi, verinizde sınıflandırma yapacak bir model eğitebilirsiniz. Aşağıdaki grafiğe bakarsanız nasıl çalıştığını muhtemelen hemen anlarsınız.</p>
+
+<p>Örneğimizde iki sınıf var. Bu en basit durumda algoritma yalnızca evet/hayır tahmini yapar: Kişi sebze mi istiyor, yoksa başka bir şeyi mi tercih eder? YZ bunun için eğitim verisinden öznitelikler ve yemek tercihlerine göre öğrenir, sonra veriyi belirli bir noktadan ayırır. Tek boyut (yaş) kullanılsaydı ayrım belirli bir noktada olurdu; örneğin "30 yaşından gençlere sebze öneriyoruz". Bizim durumumuzda ise iki boyut var. SVM algoritması burada sınıfları olabildiğince iyi ayıran bir doğru hesaplar. Doğru, her sınıfın en yakın noktalarına olan uzaklık en büyük olacak biçimde konumlanır. Doğrunun bir tarafındaki herkese bir seçenek, diğer herkese öteki önerilir. Vincent esas olarak yaşı nedeniyle doğrunun sağ tarafında kaldığından ona sebze önerilmez. İki yerine üç öznitelik olsaydı bir doğru değil, iki sınıfı ayıran üç boyutlu uzayda bir düzlem olurdu. Algoritma elbette daha fazla öznitelikle de çalışır, ama görselleştirmek zorlaşır.</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>Yemek seçmemiş olanların sebze isteyip istemediğini SVM ile tahmin eden Python kodunu göster.</em></div>
+
+<div class="cell" data-title="Doğrusal SVM — sebze mi, değil mi?"><textarea>import pandas as pd
+from sklearn.svm import SVC
+
+# Girdi verisi
+data = {
+    'name': ['Anne', 'Ben', 'Chris', 'David', 'Eve', 'Frank', 'Gloria'],
+    'age': [25, 32, 28, 45, 22, 38, 30],
+    'fitness_level': [7, 4, 8, 5, 9, 3, 6],
+    'food': ['Vegetables', 'Hot Dog', 'Vegetables',
+             'Grilled Cheese', 'Vegetables', 'Hot Dog', 'Grilled Cheese']
+}
+df = pd.DataFrame(data)
+
+# Hedef değişken: Sebze istiyor mu? -> 1 = Evet, 0 = Hayır
+df['vegetables'] = (df['food'] == 'Vegetables').astype(int)
+
+# Öznitelikler: yaş, fitness_level
+X = df[['age', 'fitness_level']]
+y = df['vegetables']
+
+# SVM sınıflandırıcı
+clf = SVC(kernel='linear', probability=True, random_state=42)
+clf.fit(X, y)
+
+# Vincent: 40 yaşında, fitness düzeyi 8
+vincent = pd.DataFrame([[40, 8]], columns=['age', 'fitness_level'])
+
+# Tahmin
+prediction = clf.predict(vincent)[0]
+probability = clf.predict_proba(vincent)[0][1]
+
+print("Vincent için tahmin:")
+if prediction == 1:
+    print("Vincent büyük olasılıkla sebze istiyor.")
+else:
+    print("Vincent büyük olasılıkla sebze İSTEMİYOR.")
+print(f"Olasılık: {probability:.2f}")</textarea></div>
+
+<p>DataFrame'imize <code>"vegetables"</code> adlı yeni bir sütun eklendi. Eğitim verisinde sebze yemek isteyenler için bu sütunda 1, diğer herkes için 0 var. Bu artık hedef değişkeni, yani daha sonra tahmin edeceğimiz şeyi içeren sütundur. Öznitelikler önceki gibi yaş ve fitness düzeyidir. SVM sınıflandırıcımızı <code>SVC</code> ile başlatırız; ardından eğitim verimizde <code>clf.fit(X, y)</code> ile makine öğrenmesi başlar. Tahmin için <code>clf.predict</code> çağrılır ve ona iki sütun değerli (40 yaş, fitness 8) bir satır verilir. <code>predict</code>, tahmin yapılacak her satır için 0 ya da 1 içeren bir NumPy dizisi döndürür. Yalnızca bir satır (Vincent) verdiğimizden dizi tek elemanlıdır; ona <code>[0]</code> ile erişilir ve sonuç <code>prediction</code> değişkenine yazılır. Burada değer 0'dır; yani Vincent sebze almaz.</p>
+
+<p>Bu örneğin bir başka ilginç yanı SVM'de <code>probability=True</code> parametresinin ayarlanmış olmasıdır. Bu, tahminin yanında olasılıklara da erişmemizi sağlar. <code>clf.predict_proba</code> her satır için iki değer içeren bir dizi döndürür: sebzeye karşı ve sebzeden yana olasılık. Kitaptaki çalıştırmada Vincent için bunlar sırasıyla %78 ve %22'dir. (Bu olasılıklar küçük veri setinde içsel çapraz doğrulamayla hesaplandığından sizin çıktınız biraz farklı olabilir.)</p>
+
+<p><code>random_state=42</code> parametresi bu örnekte aslında anlamsızdır, çünkü doğrusal SVM'de hiçbir şey şansa bağlı değildir. Rastgele Orman'da karar ölçütleri şansa bağlıdır; burada ise veri noktaları arasına deterministik bir yaklaşımla bir doğru çizilir. Yine de parametreyi ayarlamanın zararı yoktur.</p>
+
+<p>Kodda <code>kernel="linear"</code> seçeneği ayarlandı. Bu, SVM'lerin veri noktalarını iki sınıfa ayırmak için düz bir doğru çizmekten fazlasını yapabildiğini gösterir. Aslında pek çok veri seti temiz, doğrusal bir biçimde ayrılamaz. Bu durumlarda <em>çekirdek</em> (kernel), veriyi doğrusal olarak ayrılabilir hâle geldiği daha yüksek boyutlu bir uzaya yansıtacak biçimde dönüştürür. Örneğin gençler sebzeyi, orta yaşlılar sosisliyi, yaşlılar yine sebzeyi tercih ediyor olabilir. Bu durumda örneğin <i>f(x) = (x<sub>yaş</sub> − 30)²</i> gibi bir parabol, veriyi düz bir doğrudan daha iyi ayırır. Burada <code>kernel="poly"</code> ayarlamanız gerekir.</p>
+
+<p>SVM'ler, sınıfları birbirinden ayıran net sınırlar bulunabildiğinde ve çok fazla öznitelik olmadığında küçük ve orta büyüklükteki veri setleri için çok uygundur. Doğrusal SVM'yi kullandık: Bir doğru çizer ve veriyi buna göre Evet ve Hayır'a böler: sebze ya da başka bir şey. "Başka bir şey" veri noktalarını yeni bir SVM'ye verip birinin kaşarlı tost mu yoksa yine başka bir şey mi istediğini belirleyecek biçimde eğitebilirdik. Burada "başka bir şey" artık yalnızca sosisli olduğundan, yalnızca Evet/Hayır değil birden çok sınıfı tahmin edebilen bir sınıflandırıcımız olurdu. Ancak böyle bir bire-bir karar zincirini elle programlamamız gerekmez. <em>Çok sınıflı SVM'ler</em> scikit-learn'de zaten yerleşiktir. Sıfırlar ve birler yerine yemek adlarını içeren sütunun tamamını <code>fit</code> yöntemine veririz:</p>
+
+<div class="cell" data-title="Çok sınıflı SVM (Şekil 7.7 dâhil)"><textarea># Öznitelikler: age, fitness_level
+X = df[['age', 'fitness_level']]
+# Hedef değişken: food (çok sınıflı problem)
+y = df['food']
+
+clf = SVC(kernel='linear', probability=True, random_state=42)
+clf.fit(X, y)
+print("Vincent için tahmin:", clf.predict(vincent)[0])
+
+# Karar bölgelerini çiz
+import numpy as np
+import matplotlib.pyplot as plt
+xx, yy = np.meshgrid(np.linspace(18, 50, 300), np.linspace(1, 10, 300))
+grid = pd.DataFrame({'age': xx.ravel(), 'fitness_level': yy.ravel()})
+zz = pd.Series(clf.predict(grid)).map({'Hot Dog': 0, 'Vegetables': 1,
+                                       'Grilled Cheese': 2}).values.reshape(xx.shape)
+plt.figure(figsize=(9, 4))
+plt.contourf(xx, yy, zz, levels=[-0.5, 0.5, 1.5, 2.5],
+             colors=['#fde2e2', '#e2f4e4', '#fdf6d8'])
+colors = {'Hot Dog': 'red', 'Vegetables': 'green', 'Grilled Cheese': 'gold'}
+for _, r in df.iterrows():
+    plt.scatter(r['age'], r['fitness_level'], color=colors[r['food']], edgecolor='k')
+    plt.text(r['age'] + 0.4, r['fitness_level'] + 0.2, r['name'], fontsize=8)
+plt.scatter(40, 8, marker='X', s=150, color='black')
+plt.text(40.6, 8.2, 'Vincent', fontweight='bold')
+plt.xlabel('Yaş'); plt.ylabel('Fitness düzeyi')
+plt.show()</textarea></div>
+
+<p><code>clf.predict(vincent)[0]</code> tahmini artık <code>"Grilled Cheese"</code> (kaşarlı tost) metnini döndürür. Kitaptaki bu grafik ve bir öncekisi de Matplotlib ile üretilmiş, kodunu ChatGPT oluşturmuştur. Bunun için veriyi ve SVM'yi içeren kod parçası, grafiğe ilişkin çok sayıda istekle (örneğin bölgelerin hangi renkte olacağı) birlikte isteme eklenmiştir. Birkaç yineleme ve takip istemi gerekmiş, kodda elle düzeltmeler de yapılmıştır. "Daha uzun düşün" seçeneği de ChatGPT'nin daha iyi kod üretmesine yardım edebilir.</p>
+
+<!-- ====================== 7.7 ====================== -->
+<h2 id="s77"><span class="num">7.7</span>Eğitim Verisi, Test Verisi ve Model Değerlendirme</h2>
+
+<p>Rastgele Orman örneğimizde Vincent'a sebze önerildi. <i>k</i> = 3 ile KNN algoritması kaşarlı tost önerdi. <i>k</i> = 1 seçseydik burada da sonuç sebze olurdu, çünkü yalnızca en yakın komşusu Chris'in yemek seçimi belirleyici olurdu. Hangi yöntemi seçtiğimiz ve parametreleri nasıl ayarladığımız, tahmin ve nihayetinde tahminin kalitesi için belirleyicidir. Şimdi bu kaliteyi en baştan nasıl ölçebileceğimize bakacağız. Bu, "şu yöntem bundan daha iyi, bu parametreyi şu değere ayarlamalıyız" diyebilmemizi sağlar.</p>
+
+<p>Bu bölümdeki makine öğrenmesi algoritmalarını uygulamak için her şeyin zaten bilindiği bir veri setine ihtiyacımız var: kira bedellerini bildiğimiz daireler, yanıt vermiş ve yemeğini seçmiş konuklar. Örneklerimizde bu veri hep YZ'nin öğrendiği ve modelin eğitildiği eğitim verisi oldu. Şimdi veri setimizi iki parçaya ayıracağız: eğitim verisi ve test verisi. Tüm veriyle eğitmeye göre biraz daha az eğitim verimiz olsa da test verisini daha sonra modelin ne kadar iyi çalıştığını denetlemek için kullanabiliriz. Test verisi de bir dairenin ne kadar tuttuğu ve bir konuğun gerçekte ne yemek istediği bilgisini içerir. Bunu YZ'nin tahminiyle basitçe karşılaştırabiliriz.</p>
+
+<p>Şimdi 20 daireyi içeren bir veri setini %80 eğitim, %20 test verisi olarak bölelim. Sonra kiraları tahmin etmek için doğrusal regresyonla bir model eğitip test verisi için tahmini hesaplayalım.</p>
+
+<div class="cell" data-title="80/20 bölme ve doğrusal regresyon"><textarea>import numpy as np
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+
+data = {
+    'sqm':   [24, 40, 55, 60, 73, 95, 148, 85, 120, 50,
+              65, 78, 35, 110, 130, 90, 45, 150, 33, 100],
+    'rooms': [1, 1, 2, 2, 3, 4, 5, 3, 4, 2,
+              3, 3, 1, 4, 5, 3, 1, 5, 1, 4],
+    'rent':  [320, 450, 950, 890, 1060, 1535, 2150, 1300, 1800, 800,
+              1150, 1250, 400, 1700, 2000, 1400, 420, 2200, 360, 1550]
+}
+df = pd.DataFrame(data)
+
+X = df[['sqm', 'rooms']]
+y = df['rent']
+
+# Eğitim ve test verisine böl (%80 eğitim, %20 test)
+X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                    test_size=0.2, random_state=42)
+
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+print("Test verisi:\n", X_test)
+print("Gerçek kiralar:\n", y_test)
+print("Tahmini kiralar:\n", y_pred.round(2))</textarea></div>
+
+<p>Eğitim/test bölmesi rastgeledir, ama <code>random_state=42</code> ayarı sayesinde her çalıştırmada aynı kalır. <code>y_pred</code>'de dört daire için dört tahmini kira elde ederiz ve bunları gerçek fiyatlarla karşılaştırabiliriz. Örneğin modelimiz 24 m²'lik stüdyo daire için 352,80 USD kira tahmin ediyor; gerçek kira 320 USD. Bu 32,80 USD'lik mutlak hata ya da yaklaşık %10'luk göreli hatadır.</p>
+
+<p>Modelimiz eğitim verisiyle eğitildi; 24 m²'lik stüdyomuz bu eğitim verisinin parçası değil, dolayısıyla model üzerinde etkisi olmadı. Olması gereken de budur; aksi hâlde tahmin anlamlı olmazdı. %10'luk hata YZ'mizin makul ölçüde iyi çalıştığını söylüyor. Ancak modelimizin kalitesini değerlendirebileceğimiz bir ölçüt elde etmek için bu hatayı test verisinin tamamı üzerinden hesaplamalıyız. Sonuç çok kötü çıkarsa bu <em>aşırı öğrenmenin</em> (overfitting) bir göstergesidir: Model eğitim verisinde iyi çalışır ama bilinmeyen veri setlerine uygulanamaz. O zaman gerçek dünyadaki uygulamalar için işe yaramaz.</p>
+
+<p>Modelimizi değerlendirmek için çeşitli ölçütler kullanabiliriz. Basit bir yöntem <em>kök ortalama kare hata</em>dır (RMSE). Bu değer her bir hata belirlenerek (örneğin 352,80 − 320 = 32,80), bu farkların karesi alınıp toplanarak hesaplanır. Toplam veri noktası sayısına bölünür ve karekökü alınır:</p>
+
+<div class="formula">RMSE = √[ (1/n) · Σ (test<sub>i</sub> − pred<sub>i</sub>)² ]</div>
+
+<p>Hataların karesini almak bir yandan tahminin yüksek ya da düşük olmasının önemsiz kalmasını sağlar. Öte yandan gerçek değerden (<i>test</i>) büyük sapmaların (<i>pred</i>) hata üzerinde çok sayıda küçük sapmadan daha büyük etkisi olur. RMSE'yi iki yolla hesaplayabiliriz. İlki formülü doğrudan koda yazmak:</p>
+
+<div class="cell" data-title="RMSE — iki yol (üstteki hücreyi önce çalıştırın)"><textarea># 1. yol: formülü doğrudan yazmak
+rmse = np.sqrt(np.mean((y_test - y_pred)**2))
+print("RMSE (elle):", round(rmse, 2))
+
+# 2. yol: scikit-learn işlevi
+try:
+    from sklearn.metrics import root_mean_squared_error
+    rmse2 = root_mean_squared_error(y_test, y_pred)
+except ImportError:   # eski sürümler için
+    from sklearn.metrics import mean_squared_error
+    rmse2 = mean_squared_error(y_test, y_pred) ** 0.5
+print("RMSE (sklearn):", round(rmse2, 2))</textarea></div>
+
+<p>Burada NumPy iki vektörü çıkarıp her değerin karesini almak için kullanılır. <code>np.mean</code> değerleri toplayıp sayılarına bölerek ortalamayı hesaplar. Son olarak karekök alınır. İkinci yol, bu amaçla tasarlanmış scikit-learn işlevini çağırmaktır.</p>
+
+<p>RMSE'yi ister elle ister bu işlevle hesaplayalım, sonuç aynıdır: Örneğimizde <code>57.19</code>. Bu sayıyı kullanabiliriz: Tahminlerin gerçek fiyattan ortalama 57,19 USD saptığını gösterir. Gerçekte 1.000 USD kirası olan bir daire için tahmin büyük olasılıkla 942,81 ile 1.057,19 USD arasında olur. RMSE daha büyük olsaydı daha kötü olurdu; 0 olsaydı hiç hata olmaz, her şey —en azından test verimiz için— kusursuz tahmin edilirdi.</p>
+
+<p>Artık parametreleri, YZ algoritması seçimini ya da öznitelikleri değiştirip bunun hatayı nasıl etkilediğini görebiliriz. Ancak verinin hangi %20'sinin test verisi olarak seçildiği şansa bağlı olduğundan ve bu, küçük veri setimizde hesaplanan hata üzerinde büyük etki yarattığından, <code>train_test_split</code> işlevini çağırırken <code>random_state</code> seçeneğini ayarlamamız önemlidir. Bu, verinin eğitim ve test olarak bölünmesi rastgele olsa da en azından tüm deneylerimizde tutarlı olmasını sağlar.</p>
+
+<p>Oda sayısını deneme amacıyla özniteliklerden çıkarıp modeli yalnızca dairelerin metrekaresiyle eğitirsek hata 57,19'dan 85,75'e yükselir. Her iki özniteliği 0–1 aralığına ölçeklesek hata 57,19'da kalırdı. Kiraları KNN algoritmasıyla da tahmin edebiliriz: <code>k=3</code> ile 153,47, <code>k=1</code> ile 61,23 hata elde ederiz (kitaptaki değerler; KNN'de eşit uzaklıklı komşuların seçimi sürüme göre değişebildiğinden sizin çıktınız farklı olabilir). Şimdilik doğrusal regresyonla ilk yaklaşımımız en iyi sonucu veriyor. Elbette farklı ve daha büyük veri setleriyle sonuçlar epey farklı görünebilir. Bu iddiaları aşağıdaki hücreyle kendiniz sınayın:</p>
+
+<div class="cell" data-title="Deney: öznitelikler ve algoritma karşılaştırması"><textarea>from sklearn.neighbors import KNeighborsRegressor
+from sklearn.preprocessing import MinMaxScaler
+
+def rmse_of(model, cols, scale=False):
+    Xa = df[cols]
+    if scale:
+        Xa = pd.DataFrame(MinMaxScaler().fit_transform(Xa), columns=cols)
+    Xtr, Xte, ytr, yte = train_test_split(Xa, y, test_size=0.2, random_state=42)
+    model.fit(Xtr, ytr)
+    return np.sqrt(np.mean((yte - model.predict(Xte))**2))
+
+print("Doğrusal, m² + oda       :", round(rmse_of(LinearRegression(), ['sqm', 'rooms']), 2))
+print("Doğrusal, yalnız m²      :", round(rmse_of(LinearRegression(), ['sqm']), 2))
+print("Doğrusal, ölçeklenmiş    :", round(rmse_of(LinearRegression(), ['sqm', 'rooms'], True), 2))
+print("KNN k=3                  :", round(rmse_of(KNeighborsRegressor(3), ['sqm', 'rooms']), 2))
+print("KNN k=1                  :", round(rmse_of(KNeighborsRegressor(1), ['sqm', 'rooms']), 2))</textarea></div>
+
+<p>RMSE pratik bir hata ölçüsüdür; anlaşılması ve hesaplanması kolaydır, ortaya çıkan sayı da anlamlıdır. Ancak YZ örneklerimizde yalnızca sayılarla —yani regresyonla— uğraşmadık, veri setlerimize bir sınıf tahmin etmek için sınıflandırmayı da kullandık. Bir sınıflandırmanın ne kadar iyi çalıştığını belirlemek için şimdi dört ölçüte bakacağız: <em>doğruluk</em> (accuracy), <em>kesinlik</em> (precision), <em>duyarlılık</em> (recall) ve <em>F1 puanı</em>.</p>
+
+<p>Parti konuklarımızın DataFrame'i elimizde. Her konuğun bir yaşı, bir fitness düzeyi var ve partide ne yemek istediğini (sosisli, kaşarlı tost ya da sebze) zaten belirtmiş. Yaş ve fitness düzeyi, sınıflandırma algoritmamızın birinin hangi koşullarda belirli yemekleri tercih ettiğini öğrenmek için kullanacağı özniteliklerdir.</p>
+
+<table class="data">
+<tr><th></th><th>name</th><th>age</th><th>fitness_level</th><th>food</th></tr>
+<tr><td>0</td><td>Anne</td><td>25</td><td>7</td><td>Vegetables</td></tr>
+<tr><td>1</td><td>Ben</td><td>32</td><td>4</td><td>Hot Dog</td></tr>
+<tr><td>2</td><td>Chris</td><td>28</td><td>8</td><td>Vegetables</td></tr>
+<tr><td>…</td><td>…</td><td>…</td><td>…</td><td>…</td></tr>
+</table>
+<div class="caption">Tablo 7.2 — Parti konukları ve yemek tercihlerinden örnek DataFrame</div>
+
+<p>Bunun için bu bölümde Rastgele Orman algoritmasını kullandık, süreci KNN ve SVM ile yineledik. Algoritma ve parametre seçimine bağlı olarak henüz yemek seçmemiş Vincent için biraz farklı tahminler —kaşarlı tost ya da sebze— yapıldığını gördük. Hangisinin daha iyi öneri olduğunu soralım. Elbette Vincent yanıt verene kadar bunu bilemeyiz. Bu yüzden yine önce verimizi eğitim ve test verisine ayırarak ilerliyoruz: Yemek seçimi yapmış konukları içeren DataFrame'i alıp iki DataFrame'e böleriz. Sonra modeli eğitim verisiyle eğitir ve test verisi için tahmin hesaplarız:</p>
+
+<div class="cell" data-title="Sınıflandırma değerlendirmesi — Rastgele Orman"><textarea>import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, f1_score
+
+data = {
+    'name': ['Anne', 'Ben', 'Chris', 'David', 'Eve', 'Frank',
+             'Gloria', 'Hannah', 'Ian', 'Julia', 'Kevin', 'Laura',
+             'Markus', 'Nina', 'Oliver', 'Paula', 'Quentin'],
+    'age': [25, 32, 28, 45, 22, 38, 30, 27, 34, 29, 41, 24,
+            36, 31, 39, 26, 33],
+    'fitness_level': [7, 4, 8, 5, 9, 3, 6, 6, 5, 7, 4, 8,
+                      3, 9, 4, 7, 6],
+    'food': ['Vegetables', 'Hot Dog', 'Vegetables', 'Grilled Cheese',
+             'Vegetables', 'Hot Dog', 'Grilled Cheese', 'Grilled Cheese',
+             'Hot Dog', 'Vegetables', 'Grilled Cheese', 'Vegetables',
+             'Hot Dog', 'Vegetables', 'Hot Dog', 'Grilled Cheese',
+             'Vegetables']
+}
+df = pd.DataFrame(data)
+
+# Öznitelikler ve hedef
+X = df[['age', 'fitness_level']]
+y = df['food']
+
+# 80:20 bölme
+X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                    test_size=0.2, random_state=42)
+
+# Rastgele Orman modeli
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+
+# Tahminler
+y_pred = rf.predict(X_test)
+
+# Sonuçlar
+print("Tahminler:", y_pred)
+print("\nGerçek etiketler:", y_test.values)
+print()
+print(classification_report(y_test, y_pred, zero_division=0))
+print("Macro F1:", round(f1_score(y_test, y_pred, average='macro', zero_division=0), 2))</textarea></div>
+
+<p>Bu örnekte veri seti birkaç kişi daha eklenerek genişletildi, ama hâlâ çok küçük. 17 kişi %80 eğitim (13 kişi) ve %20 test verisi (4 kişi) olarak bölündü. Bu kişilerin hepsi zaten yemek seçmiş. Model eğitim setindeki 13 kişinin öznitelikleri ve yemek seçimleriyle eğitilir; ardından test setindeki dört kişinin tahminleri ve gerçek yemek seçimleri yazdırılır. Kitaptaki çıktıda dört tahminden ikisi doğru:</p>
+
+<div class="formula">Doğruluk = Doğru tahminler / Tüm tahminler = 2 / 4 = 0,5 = %50</div>
+
+<p>Örneğimiz için <em>doğruluk</em> ilk bakışta iyi bir başarım ölçüsüdür. Tüm test verisi için doğru tahmin yapılsaydı %100 olurdu; burada ise yalnızca %50, yani tahmin vakaların ancak yarısında doğru. Ama şimdi spam e-posta tespiti içeren başka bir kullanım durumu düşünün. Algoritma 100.000 e-posta alıyor ve spam olup olmadıklarını tahmin etmesi gerekiyor. E-postaların %0,1'inin gerçekten spam olduğunu varsayalım (100.000'de 100). Algoritma hep "spam değil" derse 99.900 normal e-postada haklı olduğu için yine %99,9 doğruluğa sahiptir. 100 önemli vaka gözden kaçar. Doğruluk puanının sakıncası tam olarak budur: Bir modelin kritik küçük bir sınıfı ne kadar iyi yakaladığı hakkında hiçbir şey söylemez. Kesinlik, duyarlılık ve F1 puanı bu amaçla çok daha anlamlıdır.</p>
+
+<p><em>Kesinlik</em> ve <em>duyarlılık</em> her bir sınıf için şöyle hesaplanır:</p>
+<ul>
+<li><i>TP</i>: Doğru pozitif (sınıf doğru tahmin edildi).</li>
+<li><i>FP</i>: Yanlış pozitif (sınıf yanlışlıkla tahmin edildi).</li>
+<li><i>FN</i>: Yanlış negatif (sınıf tahmin edilmeliydi ama edilmedi).</li>
+</ul>
+<div class="formula">Kesinlik = TP / (TP + FP) &nbsp;&nbsp;&nbsp; Duyarlılık = TP / (TP + FN)</div>
+
+<p>Algoritmanın hep "spam değil" dediği spam senaryomuzda "spam" sınıfının kesinliği son derece kötü, tam olarak 0 olurdu; çünkü doğru pozitif sayısı 0'dır. Gerçekten spam olan hiçbir e-posta öyle tanımlanmadı. Duyarlılık da 0'dır, çünkü spam bir kez bile yakalanmadı.</p>
+
+<p>Yemek tahminimiz için üç sınıfımızın her birinin kesinlik ve duyarlılığını <code>classification_report(y_test, y_pred)</code> ile hesaplayabiliriz. Kitaptaki raporda sosisli sınıfının kesinliği %100'dür, çünkü sosisli seçeceği tahmin edilen herkes gerçekten onu seçmiştir (<i>TP</i> = 1, <i>FP</i> = 0). Ancak duyarlılık yalnızca %50'dir, çünkü bir kişi için daha sosisli tahmin edilmeliydi (<i>TP</i> = 1, <i>FN</i> = 1). Yani sosislide kesinlik iyi, duyarlılık o kadar iyi değil. Sebzede tam tersi. Yüksek kesinliğin düşük duyarlılık pahasına gelmesi sık görülür. Herkese sebze tahmin etseydik çok sayıda yanlış pozitif olduğu için kesinlik çok düşük, az yanlış negatif olduğu için duyarlılık çok yüksek olurdu. Kesinlik ve duyarlılığı nihayetinde anlamlı tek bir sayıya indirmek için şöyle hesaplanan <em>F1 puanını</em> kullanırız:</p>
+
+<div class="formula">F1 = 2 × (Kesinlik × Duyarlılık) / (Kesinlik + Duyarlılık)</div>
+
+<div class="widget" id="f1Widget">
+  <h4>Etkileşimli: kesinlik, duyarlılık ve F1</h4>
+  <div class="ctrl">
+    <label>TP <input type="number" id="tp" value="1" min="0" style="width:60px"></label>
+    <label>FP <input type="number" id="fp" value="0" min="0" style="width:60px"></label>
+    <label>FN <input type="number" id="fn" value="1" min="0" style="width:60px"></label>
+  </div>
+  <div class="readout" id="f1Out"></div>
+</div>
+
+<p>Formül açıkça gösteriyor: Kesinlik ya da duyarlılıktan biri 0 olsaydı F1 de 0 olurdu. Kesinlik ve duyarlılığın ikisinin de 1 olduğu kusursuz bir tahminde F1 de 1'dir. Böylece F1 ile yine 0 ile 1 arasında bir değer elde ederiz; ne kadar yüksekse tahmin o kadar iyidir. Kitaptaki raporda <code>Hot Dog</code>, <code>Vegetables</code> ve <code>Grilled Cheese</code> sınıfları için bu değerler sırasıyla 0,67, 0,5 ve 0'dır. Bunların ortalaması 0,39'dur. Bu puana <em>Macro F1</em> denir ve raporda <code>macro avg</code> satırında yer alır. <em>Weighted Avg</em> (ağırlıklı ortalama) için her bir F1 puanı, ortalama hesaplanmadan önce test setindeki gözlem sayısıyla çarpılır. Bu sayıya <em>Support</em> denir ve raporda gösterilir. Ağırlıklı F1'in avantaj ve sakıncaları doğruluğa benzer. Hep "spam değil" denen spam tahmininde ağırlıklı F1 çok yüksek olurdu, çünkü "spam değil" sınıfının verisi çok daha fazladır ve çok daha ağır tartılır. Verinin neye benzediğine ve tahminlerde neyin önemli olduğuna bağlı olarak bir ölçüt bazı durumlarda, bir başkası diğerlerinde daha yararlı olabilir. Büyük sınıfların puana hâkim olması isteniyorsa ağırlıklı F1 yararlıdır. Büyüklüğünden bağımsız tüm sınıfların etkili olması isteniyorsa Macro F1 daha iyidir. Kritik küçük sınıflar yoksa ve veri seti dengeliyse —yani kabaca eşit dağılmışsa— doğruluk yararlı bir ölçüt olabilir.</p>
+
+<p>Python programlarımızda parametreler ve algoritma seçimiyle deneyler yapıp farklı yaklaşımları sınadığımızda tek tek puanları karşılaştırıp en iyi çalışana karar verebiliriz. Rastgele Orman yerine <i>k</i> = 3 ile KNN algoritmasını seçseydik biraz daha iyi sonuç alırdık (Macro F1: 0,39 yerine 0,56). <i>k</i> = 1 ayarlarsak F1 puanı 1 bile olur, çünkü test verimizdeki tüm tahminler doğrudur. Ancak örneklerimizde veri setinin gerçekten yararlı sonuçlar çıkarmak için fazlasıyla küçük olduğunu da unutmamak gerekir.</p>
+
+<div class="cell" data-title="Deney: aynı bölmede KNN ile karşılaştır (üstteki hücreyi önce çalıştırın)"><textarea>from sklearn.neighbors import KNeighborsClassifier
+
+for name, clf in [("Rastgele Orman", RandomForestClassifier(n_estimators=100, random_state=42)),
+                  ("KNN k=3", KNeighborsClassifier(3)),
+                  ("KNN k=1", KNeighborsClassifier(1))]:
+    clf.fit(X_train, y_train)
+    pred = clf.predict(X_test)
+    print(f"{name:15s} Macro F1 = {f1_score(y_test, pred, average='macro', zero_division=0):.2f}",
+          "  tahminler:", list(pred))</textarea></div>
+
+<div class="note">Not: Rastgele bölme ve Rastgele Orman sonuçları scikit-learn sürümüne göre küçük farklılıklar gösterebilir; sayılar kitaptakiyle birebir aynı çıkmazsa bunun nedeni budur. Asıl ders, küçük veri setinde ölçütlerin çok oynak olduğudur.</div>
+
+<p>Genel olarak bu bölümde sunulan ölçütler, bir tahminin yeni ve bilinmeyen veri setlerinde ne kadar iyi çalışacağını anlamamıza yardım eder; çünkü onları modelin eğitimine hiç etkisi olmamış test verisinde zaten sınadık.</p>
+
+<!-- ====================== 7.8 ====================== -->
+<h2 id="s78"><span class="num">7.8</span>Kümeleme (Denetimsiz Öğrenme)</h2>
+
+<p>Şimdiye kadar ele alınan algoritmaların hepsi <em>denetimli öğrenme</em> kategorisine girer. Yani YZ'nin öğrenebileceği örnekleri önce sizin vermeniz gerekir. YZ'ye bazı dairelerin fiyatlarını örnek olarak vermemiz gerekti; sonra diğer dairelerin kirasını tahmin edebildi. Yemek örneğinde önce belirli kişilerin ne yemek istediğini YZ'ye söylemek zorundaydık; bundan yeni kişilere yemek önermeyi öğrendi. Yani girdi verisine ve bu veriye ait doğru yanıtlara ihtiyacımız var.</p>
+
+<p>Ancak yalnızca veriden öğrenebilen algoritmalar da vardır. Bunlar örüntüleri ya da grupları kendi başlarına bulmaya çalışır. Buna <em>denetimsiz öğrenme</em> denir. Tipik örneği kümeleme algoritmalarıdır. Bir veri noktaları kümesi verilir. Bu noktaların belirli öznitelikleri vardır (örneğin belirli yaş ve fitness düzeyindeki kişiler). YZ veriyi otomatik olarak gruplara ayırmaya çalışır. Bir küme, içindeki noktaların birbirine olabildiğince benzer, diğer kümelerdeki noktalara olabildiğince benzemez olduğu bir veri alt kümesidir.</p>
+
+<p>Kümelemeyi parti konuklarımızı iki, üç ya da daha fazla gruba ayırmak için kullanabiliriz. Partide grupları ayrı masalara oturtabiliriz; örneğin yaşı ileri ama formda olanların oturduğu bir masa olabilir. Veri kümelemede bilinen bir algoritma <em>K-ortalamalar</em> (K-means) kümelemesidir. Buradaki <i>K</i> sayısı istediğimiz küme sayısıdır. Her kümede sonuçta kaç nokta olacağı veriye göre değişir. Aşağıdaki kod Python'da K-ortalamalar kümelemesi yapar. Önce öznitelikleri —burada yaş ve fitness düzeyi— tanımlarız, sonra K-ortalamalar algoritması her nokta için hangi kümeye ait olduğu bilgisini verir.</p>
+
+<div class="cell" data-title="K-ortalamalar (Tablo 7.3)"><textarea>import pandas as pd
+from sklearn.cluster import KMeans
+
+data = {
+    'name': ['Anne', 'Ben', 'Chris', 'David', 'Eve', 'Frank', 'Gloria',
+             'Vincent'],
+    'age': [25, 32, 28, 45, 22, 38, 30, 40],
+    'fitness_level': [7, 4, 8, 5, 9, 3, 6, 8]
+}
+df = pd.DataFrame(data)
+X = df[['age', 'fitness_level']]
+kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
+df['cluster'] = kmeans.fit_predict(X)
+
+df</textarea></div>
+
+<p>Sonuçta <code>n_clusters=3</code> parametresini verdiğimiz için her kişi 0, 1 ya da 2 numaralı kümeye atanır. Kitaptaki çalıştırmada örneğin Ben, Chris ve Gloria aynı kümededir; Vincent da David ve Frank ile aynı kümededir. Bu Matplotlib ile görselleştirilebilir:</p>
+
+<div class="cell" data-title="Şekil 7.8 — Kümeleri çiz"><textarea>import matplotlib.pyplot as plt
+
+plt.figure(figsize=(10, 4))
+plt.scatter(df['age'], df['fitness_level'], c=df['cluster'], cmap='viridis')
+
+# Adları etiket olarak yaz
+for i, name in enumerate(df['name']):
+    plt.text(df['age'][i] - 0.9, df['fitness_level'][i] - 0.3, name)
+
+# Merkezleri (centroid) de göster
+c = kmeans.cluster_centers_
+plt.scatter(c[:, 0], c[:, 1], marker='+', s=200, color='red')
+
+plt.xlabel("Yaş")
+plt.ylabel("Fitness düzeyi")
+plt.show()</textarea></div>
+
+<p>K-ortalamalar kümelemesi önce grafiğin herhangi bir yerine <i>K</i> rastgele nokta yerleştirerek çalışır. Örneğimizde bunlar üç kümenin merkezini oluşturması amaçlanan üç noktadır. Bu merkezlere <em>merkezoit</em> (centroid) de denir. Ardından her veri noktası en yakın merkezoide atanır. Sonraki adımda merkezoitler, küme üyelerinin tam ortasında yer alacak biçimde kaydırılır. Bu süreç birkaç kez yinelenir; her seferinde tek tek noktalara hangi merkezoidin en yakın olduğu denetlenir ve merkezoitlerin konumu buna göre ayarlanır. Bu, hiçbir şey değişmeyene kadar sürer. Tüm süreç şansa bağlı olduğundan kümelerin oluşumu da biraz farklı ilerleyebilir. Rastgele üreteci örneğin <code>random_state=1</code> yapsaydık Frank, David ve Vincent ile değil Ben ve Gloria ile aynı kümede olurdu. <b>Deneyin:</b> üstteki hücrede değeri değiştirip iki hücreyi yeniden çalıştırın.</p>
+
+<p>Örneğimizde küme oluşumu pek çarpıcı değil, çünkü yalnızca iki özniteliğimiz var ve bunlar birbirine de biraz bağımlı: Örnek veride gençlerin fitness düzeyi en yüksek; dolayısıyla algoritma sonuçta insanları yaşa göre gruplara ayırıyor. Ancak genç Eve ve Chris'in fitness düzeyi yalnızca 1 olsaydı bu öznitelik küme oluşumunda çok daha fazla ağırlık kazanırdı.</p>
+
+<p>K-ortalamalar kümelemesi anlaşılması da kolay, basit ve hızlı bir algoritmadır. Ancak yalnızca tüm öznitelikler sayısal olduğunda çalışır. Değilse daire örneğimizde yaptığımız gibi önce kodlanmaları gerekir; örneğin Chicago'daki dairelere 0, Austin'dekilere 1 konumu atanır. Kümeleme algoritmasını uygulamadan önce sayısal değerleri 0–1 ölçeğine çekmek de yararlı olabilir.</p>
+
+<p>Kümelemenin sonucu her zaman kusursuz değildir ve algoritmanın hangi rastgele başlangıç noktalarını seçtiğine bağlıdır. Üstelik doğru küme sayısını belirlemek her zaman kolay değildir. Ama burada da doğru <i>K</i>'yı bulmaya çalışan yaklaşımlar var. Örneğin <em>dirsek yöntemi</em> (elbow method) basitçe <i>K</i> = 1 ile başlar. O zaman tüm veri noktaları tek kümededir. Ardından <i>K</i> adım adım artırılır ve her seferinde iyileşme olup olmadığı denetlenir. İyileşme yoksa en uygun küme sayısı bulunmuştur.</p>
+
+<div class="cell" data-title="Dirsek yöntemi"><textarea>inertia = []
+ks = range(1, 8)
+for k in ks:
+    km = KMeans(n_clusters=k, random_state=42, n_init=10).fit(X)
+    inertia.append(km.inertia_)   # küme içi kareler toplamı
+
+plt.figure(figsize=(7, 3.5))
+plt.plot(list(ks), inertia, marker='o')
+plt.xlabel("Küme sayısı K")
+plt.ylabel("Küme içi kareler toplamı")
+plt.title("Dirsek yöntemi: eğrinin kırıldığı nokta")
+plt.show()</textarea></div>
+
+<p>Uygulamada kümeleme müşterileri segmentlere (düzenli müşteriler, ara sıra alışveriş yapanlar vb.) ayırmak için kullanılır. Böylece örneğin müşteri gruplarına ayrı pazarlama e-postaları ya da indirim kuponları gönderilebilir. Bir başka uygulama müzik, film ya da bir çevrimiçi mağazadaki ürünleri özelliklerine ya da puanlarına göre kümelemektir. Bu, kullanıcılara önceki tercihlerine uyan kategoriden öğeler sunulmasını sağlar.</p>
+
+</article></main>
+</div>
+
+<script>
+/* ---------- Tema ---------- */
+(function(){
+  const root=document.documentElement;
+  let saved=null; try{saved=localStorage.getItem('ml-theme')}catch(e){}
+  if(saved) root.setAttribute('data-theme',saved);
+  document.getElementById('themeBtn').onclick=()=>{
+    const dark = root.getAttribute('data-theme')==='dark' ||
+      (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    const next = dark?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem('ml-theme',next)}catch(e){}
+  };
+})();
+
+/* ---------- Pyodide ---------- */
+let pyodide=null, pyReady=null, runFn=null;
+const dot=document.getElementById('pyDot'), st=document.getElementById('pyState'), msg=document.getElementById('pyMsg');
+function setState(s,t,m){dot.className='dot '+s; st.textContent=t; if(m!==undefined) msg.textContent=m;}
+
+const HELPER = `
+import sys, io, ast, base64, traceback, json
+import matplotlib
+matplotlib.use("AGG")
+import matplotlib.pyplot as plt
+plt.show = lambda *a, **k: None
+import pandas as _pd
+_pd.set_option("display.width", 140)
+_pd.set_option("display.max_columns", 30)
+NS = {"__name__": "__main__"}
+
+def _run_cell(code):
+    buf = io.StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    sys.stdout = sys.stderr = buf
+    html = None; ok = True
+    try:
+        tree = ast.parse(code)
+        last = None
+        if tree.body and isinstance(tree.body[-1], ast.Expr):
+            last = ast.Expression(tree.body.pop().value)
+        exec(compile(tree, "<hücre>", "exec"), NS)
+        if last is not None:
+            val = eval(compile(last, "<hücre>", "eval"), NS)
+            if val is not None:
+                if hasattr(val, "to_html"):
+                    html = val.to_html(max_rows=40)
+                else:
+                    print(repr(val))
+    except Exception:
+        ok = False
+        traceback.print_exc()
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
+    imgs = []
+    for n in plt.get_fignums():
+        fig = plt.figure(n)
+        b = io.BytesIO()
+        fig.savefig(b, format="png", dpi=110, bbox_inches="tight")
+        imgs.append(base64.b64encode(b.getvalue()).decode())
+    plt.close("all")
+    return json.dumps({"out": buf.getvalue(), "html": html, "imgs": imgs, "ok": ok})
+`;
+
+function loadPython(){
+  if(pyReady) return pyReady;
+  setState('loading','Python yükleniyor…','Pyodide çekirdeği indiriliyor.');
+  pyReady = (async()=>{
+    pyodide = await loadPyodide();
+    setState('loading','Paketler yükleniyor…','pandas, scikit-learn, matplotlib indiriliyor (ilk sefer birkaç dakika sürebilir).');
+    await pyodide.loadPackage(['pandas','scikit-learn','matplotlib']);
+    await pyodide.runPythonAsync(HELPER);
+    runFn = pyodide.globals.get('_run_cell');
+    const ver = pyodide.runPython('import sklearn, pandas; f"scikit-learn {sklearn.__version__} · pandas {pandas.__version__}"');
+    setState('ready','Python hazır',ver);
+    document.getElementById('preload').style.display='none';
+  })().catch(e=>{ setState('','Yükleme başarısız','İnternet bağlantısını kontrol edip sayfayı yenileyin. '+e); pyReady=null; throw e;});
+  return pyReady;
+}
+document.getElementById('preload').onclick=loadPython;
+
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+/* ---------- Kod hücreleri ---------- */
+document.querySelectorAll('.cell').forEach((cell,i)=>{
+  const ta=cell.querySelector('textarea');
+  const original=ta.value;
+  ta.spellcheck=false;
+  ta.rows=Math.min(ta.value.split('\n').length+1,40);
+  const head=document.createElement('div'); head.className='cell-head';
+  head.innerHTML=`<span class="title">In [${i+1}] · ${cell.dataset.title||'Python'}</span>`;
+  const run=document.createElement('button'); run.className='btn primary'; run.textContent='▶ Çalıştır';
+  const reset=document.createElement('button'); reset.className='btn'; reset.textContent='↺'; reset.title='Özgün koda dön';
+  head.append(run,reset); cell.prepend(head);
+  const out=document.createElement('div'); out.className='out'; cell.append(out);
+
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Tab'){e.preventDefault();const s=ta.selectionStart;ta.setRangeText('    ',s,ta.selectionEnd,'end');}
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run.click();}
+  });
+  reset.onclick=()=>{ta.value=original; out.className='out'; out.innerHTML='';};
+  run.onclick=async()=>{
+    run.disabled=true; out.className='out show'; out.textContent='⏳ Çalışıyor…';
+    try{
+      await loadPython();
+      out.textContent='⏳ Çalışıyor…';
+      await new Promise(r=>setTimeout(r,20));
+      const res=JSON.parse(runFn(ta.value));
+      let h='';
+      if(res.out) h+=esc(res.out);
+      if(res.html) h+=`<div>${res.html}</div>`;
+      res.imgs.forEach(b=>h+=`<img alt="grafik" src="data:image/png;base64,${b}">`);
+      if(!h) h='<span style="color:var(--ok)">✓ Çalıştı (çıktı yok)</span>';
+      out.innerHTML=h; out.className='out show'+(res.ok?'':' err');
+    }catch(e){ out.className='out show err'; out.textContent=String(e); }
+    run.disabled=false;
+  };
+});
+
+/* ---------- Etkileşimli: regresyon ---------- */
+(function(){
+  const xs=[24,40,55,60,73,95,148], ys=[320,450,950,890,1060,1535,2150];
+  const n=xs.length, mx=xs.reduce((a,b)=>a+b)/n, my=ys.reduce((a,b)=>a+b)/n;
+  let sxy=0,sxx=0; xs.forEach((x,i)=>{sxy+=(x-mx)*(ys[i]-my); sxx+=(x-mx)**2;});
+  const a=sxy/sxx, b=my-a*mx;
+  const svg=document.getElementById('regSvg'), sl=document.getElementById('regSlider'), outEl=document.getElementById('regOut');
+  const W=640,H=300,L=56,R=16,T=14,B=40, x0=10,x1=180,y0=0,y1=2500;
+  const px=x=>L+(x-x0)/(x1-x0)*(W-L-R), py=y=>H-B-(y-y0)/(y1-y0)*(H-T-B);
+  function draw(){
+    const v=+sl.value, p=a*v+b;
+    let s=`<g font-family="Inter,sans-serif" font-size="11" fill="var(--muted)">`;
+    for(let y=0;y<=2500;y+=500){s+=`<line x1="${L}" x2="${W-R}" y1="${py(y)}" y2="${py(y)}" stroke="var(--line)"/><text x="${L-6}" y="${py(y)+4}" text-anchor="end">${y}</text>`;}
+    for(let x=20;x<=180;x+=20){s+=`<text x="${px(x)}" y="${H-B+16}" text-anchor="middle">${x}</text>`;}
+    s+=`<text x="${(W+L)/2}" y="${H-6}" text-anchor="middle">Yaşam alanı (m²)</text><text transform="translate(14,${(H-B)/2}) rotate(-90)" text-anchor="middle">Kira (USD)</text></g>`;
+    s+=`<line x1="${px(x0)}" y1="${py(a*x0+b)}" x2="${px(x1)}" y2="${py(a*x1+b)}" stroke="#d1453b" stroke-width="2"/>`;
+    xs.forEach((x,i)=>s+=`<circle cx="${px(x)}" cy="${py(ys[i])}" r="5" fill="#2f6fd6"/>`);
+    s+=`<line x1="${px(v)}" x2="${px(v)}" y1="${py(0)}" y2="${py(p)}" stroke="var(--accent)" stroke-dasharray="4 3"/><line x1="${L}" x2="${px(v)}" y1="${py(p)}" y2="${py(p)}" stroke="var(--accent)" stroke-dasharray="4 3"/><circle cx="${px(v)}" cy="${py(p)}" r="7" fill="none" stroke="var(--accent)" stroke-width="2.5"/>`;
+    svg.innerHTML=s;
+    outEl.innerHTML=`${v} m² → tahmini kira <b>${p.toLocaleString('tr-TR',{maximumFractionDigits:2})} USD</b> &nbsp; <span style="color:var(--muted)">(y = ${a.toFixed(2)} × x ${b<0?'−':'+'} ${Math.abs(b).toFixed(2)})</span>`;
+  }
+  sl.oninput=draw; draw();
+})();
+
+/* ---------- Etkileşimli: KNN ---------- */
+(function(){
+  const P=[['Anne',25,7,'Vegetables'],['Ben',32,4,'Hot Dog'],['Chris',28,8,'Vegetables'],['David',45,5,'Grilled Cheese'],['Eve',22,9,'Vegetables'],['Frank',38,3,'Hot Dog'],['Gloria',30,6,'Grilled Cheese']];
+  const V=['Vincent',40,8];
+  const TR={'Vegetables':'Sebze','Hot Dog':'Sosisli','Grilled Cheese':'Kaşarlı tost'};
+  const COL={'Vegetables':'#2f8f4e','Hot Dog':'#d1453b','Grilled Cheese':'#d4a017'};
+  const all=[...P.map(p=>[p[1],p[2]]),[V[1],V[2]]];
+  const amin=Math.min(...all.map(a=>a[0])),amax=Math.max(...all.map(a=>a[0])),fmin=Math.min(...all.map(a=>a[1])),fmax=Math.max(...all.map(a=>a[1]));
+  const svg=document.getElementById('knnSvg'), nb=document.getElementById('knnNorm'), kk=document.getElementById('knnK'), kv=document.getElementById('knnKv'), out=document.getElementById('knnOut');
+  const W=640,H=320,L=50,R=20,T=16,B=42;
+  function draw(){
+    const norm=nb.checked,k=+kk.value; kv.textContent=k;
+    const tf=(a,f)=>norm?[(a-amin)/(amax-amin),(f-fmin)/(fmax-fmin)]:[a,f];
+    const [xa,xb,ya,yb]=norm?[-0.05,1.05,-0.05,1.05]:[20,50,2,10];
+    const px=x=>L+(x-xa)/(xb-xa)*(W-L-R), py=y=>H-B-(y-ya)/(yb-ya)*(H-T-B);
+    const v=tf(V[1],V[2]);
+    const d=P.map(p=>{const q=tf(p[1],p[2]);return {p,q,d:Math.hypot(q[0]-v[0],q[1]-v[1])};}).sort((a,b)=>a.d-b.d);
+    const nn=d.slice(0,k);
+    const votes={}; nn.forEach(n=>votes[n.p[3]]=(votes[n.p[3]]||0)+1);
+    let best=null,bc=-1; nn.forEach(n=>{if(votes[n.p[3]]>bc){bc=votes[n.p[3]];best=n.p[3];}});
+    let s=`<g font-family="Inter,sans-serif" font-size="11" fill="var(--muted)"><rect x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}" fill="none" stroke="var(--line)"/>`;
+    s+=`<text x="${(W+L)/2}" y="${H-8}" text-anchor="middle">Yaş${norm?' (normalleştirilmiş)':''}</text><text transform="translate(14,${(H-B)/2}) rotate(-90)" text-anchor="middle">Fitness${norm?' (norm.)':''}</text>`;
+    const ticksX=norm?[0,.2,.4,.6,.8,1]:[20,25,30,35,40,45,50], ticksY=norm?[0,.2,.4,.6,.8,1]:[2,4,6,8,10];
+    ticksX.forEach(t=>s+=`<text x="${px(t)}" y="${H-B+15}" text-anchor="middle">${t}</text>`);
+    ticksY.forEach(t=>s+=`<text x="${L-6}" y="${py(t)+4}" text-anchor="end">${t}</text>`);
+    s+='</g>';
+    nn.forEach(n=>s+=`<line x1="${px(v[0])}" y1="${py(v[1])}" x2="${px(n.q[0])}" y2="${py(n.q[1])}" stroke="var(--muted)" stroke-dasharray="4 3"/>`);
+    d.forEach(n=>s+=`<circle cx="${px(n.q[0])}" cy="${py(n.q[1])}" r="7" fill="${COL[n.p[3]]}"/><text x="${px(n.q[0])+10}" y="${py(n.q[1])+4}" font-family="Inter,sans-serif" font-size="12" fill="var(--ink)">${n.p[0]}</text>`);
+    s+=`<rect x="${px(v[0])-7}" y="${py(v[1])-7}" width="14" height="14" fill="var(--ink)" transform="rotate(45 ${px(v[0])} ${py(v[1])})"/><text x="${px(v[0])+12}" y="${py(v[1])+4}" font-family="Inter,sans-serif" font-size="12" font-weight="600" fill="var(--ink)">Vincent</text>`;
+    let lx=L+10; Object.keys(COL).forEach(c=>{s+=`<circle cx="${lx+5}" cy="${T+14}" r="5" fill="${COL[c]}"/><text x="${lx+14}" y="${T+18}" font-family="Inter,sans-serif" font-size="11" fill="var(--ink)">${TR[c]}</text>`; lx+=110;});
+    svg.innerHTML=s;
+    out.innerHTML=`En yakın ${k} komşu: ${nn.map(n=>`${n.p[0]} (${TR[n.p[3]]}, d=${n.d.toFixed(norm?2:1)})`).join(', ')}<br>Çoğunluk oyu → Vincent'a önerilen: <b>${TR[best]}</b>`;
+  }
+  nb.onchange=draw; kk.oninput=draw; draw();
+})();
+
+/* ---------- Etkileşimli: F1 ---------- */
+(function(){
+  const ids=['tp','fp','fn'], o=document.getElementById('f1Out');
+  function calc(){
+    const [tp,fp,fn]=ids.map(i=>Math.max(0,+document.getElementById(i).value||0));
+    const p=tp+fp?tp/(tp+fp):0, r=tp+fn?tp/(tp+fn):0, f=p+r?2*p*r/(p+r):0;
+    o.innerHTML=`Kesinlik = ${tp}/(${tp}+${fp}) = <b>${p.toFixed(2)}</b> &nbsp;·&nbsp; Duyarlılık = ${tp}/(${tp}+${fn}) = <b>${r.toFixed(2)}</b> &nbsp;·&nbsp; F1 = <b>${f.toFixed(2)}</b>`;
+  }
+  ids.forEach(i=>document.getElementById(i).oninput=calc); calc();
+})();
+
+/* ---------- İçindekiler vurgusu ---------- */
+(function(){
+  const links=[...document.querySelectorAll('nav.toc a')];
+  const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.remove('active'));links[secs.indexOf(e.target)].classList.add('active');}}),{rootMargin:'-10% 0px -80% 0px'});
+  secs.forEach(s=>io.observe(s));
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Veri Analizi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+<style>
+:root{
+  --bg:#f7f5f0; --paper:#ffffff; --ink:#1d1f24; --muted:#5d6270; --line:#e2ded4;
+  --accent:#1f5f8b; --accent-soft:#e3eef6; --warn:#9a5b00; --warn-soft:#fbf1dc;
+  --code-bg:#f2f0ea; --code-ink:#22252b; --ok:#2f7a4a; --err:#b3261e;
+  --prompt-bg:#efece4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+    --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+    --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171b; --paper:#1c1f24; --ink:#e6e4df; --muted:#9aa0ab; --line:#2e323a;
+  --accent:#6fb0dd; --accent-soft:#1d2e3b; --warn:#e2a64a; --warn-soft:#2f2617;
+  --code-bg:#121418; --code-ink:#dfe3ea; --ok:#6cc48d; --err:#f08a80; --prompt-bg:#23262c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Serif 4",Georgia,serif;font-size:18px;line-height:1.65}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1200px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:28px 18px;border-right:1px solid var(--line);font-family:Inter,sans-serif;font-size:14px}
+nav.toc .brand{font-weight:600;color:var(--accent);font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;padding:6px 8px;border-radius:6px}
+nav.toc a:hover,nav.toc a.active{background:var(--accent-soft);color:var(--ink)}
+.status{margin-top:22px;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;color:var(--muted);background:var(--paper)}
+.status b{color:var(--ink)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#999;margin-right:6px;vertical-align:middle}
+.dot.loading{background:var(--warn);animation:pulse 1s infinite}
+.dot.ready{background:var(--ok)}
+@keyframes pulse{50%{opacity:.3}}
+.toc button,.btn{font-family:Inter,sans-serif;font-size:13px;font-weight:500;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:6px 12px;border-radius:6px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.5;cursor:wait}
+main{padding:40px 48px 120px;min-width:0}
+article{max-width:780px}
+h1{font-size:2.4rem;line-height:1.15;margin:0 0 .3em;color:var(--accent)}
+h2{font-size:1.55rem;margin:2.6em 0 .6em;padding-top:.4em;border-top:1px solid var(--line);color:var(--accent)}
+h3{font-size:1.2rem;margin:2em 0 .5em;color:var(--ink);font-family:Inter,sans-serif;font-weight:600}
+h2 .num{font-family:Inter,sans-serif;font-weight:600;font-size:.8em;color:var(--muted);margin-right:.4em}
+.lead{font-style:italic;color:var(--muted);font-size:1.08rem;border-left:3px solid var(--accent);padding-left:16px;margin:1.2em 0 2em}
+code{font-family:"JetBrains Mono",monospace;font-size:.82em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.terms{display:grid;gap:12px;margin:1.2em 0}
+.term{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+.term b{font-family:Inter,sans-serif;color:var(--accent)}
+.note{background:var(--warn-soft);border-left:3px solid var(--warn);padding:12px 16px;border-radius:0 8px 8px 0;font-size:.95rem;margin:1.2em 0}
+.formula{font-family:"JetBrains Mono",monospace;background:var(--paper);border:1px dashed var(--line);padding:12px 16px;border-radius:8px;text-align:center;font-size:.95rem;margin:1em 0;overflow-x:auto}
+.prompt{background:var(--prompt-bg);border-radius:10px;padding:14px 18px;margin:1.2em 0;font-size:.95rem}
+.prompt .lbl{font-family:Inter,sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.prompt em{display:block;margin-top:6px}
+/* Kod hücresi */
+.cell{margin:1.3em 0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--paper)}
+.cell-head{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--code-bg);border-bottom:1px solid var(--line);font-family:Inter,sans-serif;font-size:12px;color:var(--muted)}
+.cell-head .title{flex:1}
+.cell textarea{display:block;width:100%;border:0;resize:vertical;padding:14px 16px;background:var(--code-bg);color:var(--code-ink);font-family:"JetBrains Mono",monospace;font-size:13.5px;line-height:1.55;tab-size:4;outline:none;min-height:80px;white-space:pre;overflow:auto}
+.out{display:none;border-top:1px solid var(--line);padding:12px 16px;font-family:"JetBrains Mono",monospace;font-size:13px;white-space:pre-wrap;overflow-x:auto}
+.out.show{display:block}
+.out.err{color:var(--err)}
+.out img{max-width:100%;background:#fff;border-radius:6px;margin-top:8px;display:block}
+.out table{border-collapse:collapse;font-size:12.5px;margin:6px 0;white-space:nowrap}
+.out th,.out td{border:1px solid var(--line);padding:3px 8px;text-align:right}
+.out th{background:var(--code-bg)}
+/* Tablo */
+table.data{border-collapse:collapse;font-family:Inter,sans-serif;font-size:14px;margin:1em 0}
+table.data th,table.data td{border:1px solid var(--line);padding:6px 10px}
+table.data th{background:var(--code-bg)}
+.caption{font-family:Inter,sans-serif;font-size:13px;color:var(--muted);margin-top:-4px}
+/* Widget */
+.widget{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px;margin:1.5em 0}
+.widget h4{margin:0 0 6px;font-family:Inter,sans-serif;font-size:14px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.widget .ctrl{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-family:Inter,sans-serif;font-size:14px;margin:10px 0}
+.widget svg{width:100%;height:auto;display:block}
+.widget .readout{font-family:Inter,sans-serif;font-size:15px}
+.widget .readout b{color:var(--accent)}
+input[type=range]{accent-color:var(--accent)}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  main{padding:24px 16px 80px}
+  h1{font-size:1.9rem}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" id="toc">
+  <div class="brand">Bölüm 5</div>
+  <a href="#giris">Giriş: veri temizliği</a>
+  <a href="#s51">5.1 NumPy</a>
+  <a href="#s52">5.2 Pandas</a>
+  <a href="#s53">5.3 Dosyadan veri yükleme</a>
+  <a href="#s54">5.4 Veri temizliği</a>
+  <a href="#s541" style="padding-left:20px">5.4.1 Filtreleme</a>
+  <a href="#s542" style="padding-left:20px">5.4.2 Eksik değerler</a>
+  <a href="#s543" style="padding-left:20px">5.4.3 Yinelenenler</a>
+  <a href="#s544" style="padding-left:20px">5.4.4 Hatalar, aykırı değerler</a>
+  <a href="#s545" style="padding-left:20px">5.4.5 Dönüştürme</a>
+  <a href="#s546" style="padding-left:20px">5.4.6 Kodlama</a>
+  <a href="#s547" style="padding-left:20px">5.4.7 Normalleştirme</a>
+  <a href="#s55">5.5 Hesaplama ve analiz</a>
+  <a href="#s56">5.6 Veri birleştirme</a>
+  <div class="status">
+    <div><span class="dot" id="pyDot"></span><b id="pyState">Python yüklenmedi</b></div>
+    <div id="pyMsg" style="margin:6px 0 8px">Kodlar tarayıcıda Pyodide ile çalışır. İlk çalıştırmada pandas, NumPy ve matplotlib indirilir; openpyxl (Excel desteği) PyPI'den micropip ile kurulur (bir kez).</div>
+    <button class="btn" id="preload">Python'u şimdi yükle</button>
+    <div style="margin-top:8px"><button class="btn" id="themeBtn">Tema değiştir</button></div>
+  </div>
+  <div class="status">
+    <b>Dosyalar</b> <span style="font-size:11.5px">(sanal klasör — tıklayınca iner)</span>
+    <div id="fileList" style="margin:6px 0;max-height:220px;overflow:auto"><i>Python yüklenince görünür.</i></div>
+    <label class="btn" style="display:inline-block">Dosya yükle<input type="file" id="fileUp" multiple style="display:none"></label>
+    <button class="btn" id="fileRefresh">Yenile</button>
+  </div>
+</nav>
+
+<main><article>
+<h1 id="giris">5 · Veri Analizi</h1>
+<p class="lead">NumPy ve pandas adlı iki Python modülü, dosyalardan ve başka kaynaklardan veri yüklemeyi, bu veriyi filtreleyip dönüştürmeyi ve üzerinde analiz yapmayı mümkün kılar.</p>
+
+<p>Python'un özellikle bilgisayar bilimci olmayanlar arasında en yaygın kullanım alanlarından biri veri analizidir. Bunun için veri genellikle dosyalardan okunur ya da İnternet üzerinden erişilir. Ancak asıl analize başlamadan önce <em>ön işleme</em> (preprocessing) adımlarını, diğer adıyla <em>veri temizliğini</em> yapmanız gerekir; çünkü veri nadiren tam ihtiyacınız olan biçimde gelir. Tipik ön işleme adımları şunlardır:</p>
+<ul>
+<li><b>Veriyi filtrelemek:</b> Yalnızca ilgili veriyi tutmak, gerisini dışarıda bırakmak</li>
+<li><b>Eksik değerleri</b> belirlemek ve silmek ya da doldurmak</li>
+<li><b>Yinelenen kayıtları kaldırmak:</b> Aynı içeriğe sahip birden çok kaydı silmek ya da birleştirmek</li>
+<li><b>Hataları ve aykırı değerleri</b> belirleyip düzeltmek: yazım hataları, yanlış tarih biçimleri, uç değerler vb.</li>
+<li><b>Veriyi istenen biçime</b> dönüştürmek</li>
+<li><b>Kategorileri kodlamak/kod çözmek:</b> örneğin 0'ı <code>"iPhone"</code>, 1'i <code>"Android"</code> değerine çevirmek</li>
+<li><b>Normalleştirmek/karşılaştırılabilir kılmak:</b> Birimleri tutarlı hâle getirmek; <code>[0, 1]</code> aralığına ölçeklemek</li>
+</ul>
+<p>Bu adımlar ham veriyi temiz, tutarlı ve çözümlenebilir bir biçime getirmek için gereklidir. Veri temizliği çoğu zaman bir veri analizinin en çok zaman alan kısmıdır. Bu iş bitince asıl çalışma başlayabilir: İstatistikler (ortalama, medyan vb.) hesaplanabilir, görselleştirme için grafikler oluşturulabilir ya da veri sonraki analiz adımlarına veya makine öğrenmesine hazırlanabilir. Son olarak sonuçlar ve veriden çıkan içgörüler değerlendirilip yorumlanarak çıkarımlar yapılır ve öneriler türetilir.</p>
+
+<p>Bu bölümde NumPy ve pandas modüllerine bakacağız. Bu iki araç Python'da hem basit hem karmaşık veri analizinin temelini oluşturur. Veri yüklemenizi ve kaydetmenizi, çok büyük veri setlerinde bile veri temizliği ve hesaplama yapmanızı sağlarlar.</p>
+
+<div class="note"><b>Bu sayfa nasıl kullanılır?</b> Her kod kutusu düzenlenebilir; <b>▶ Çalıştır</b> kodu tarayıcıda gerçek Python (Pyodide) ile çalıştırır. Değişkenler hücreler arasında paylaşılır (Jupyter gibi), bu yüzden bir bölümdeki hücreleri yukarıdan aşağıya sırayla çalıştırın. Kısayol: <code>Ctrl/⌘ + Enter</code>.<br><br>
+<b>Örnek dosyalar:</b> Kitaptaki kodların okuduğu <code>climatedata.tsv</code>, <code>climatedata.xlsx</code> ve <code>dwd/</code> klasöründeki dosyalar Python yüklenirken sanal dosya sistemine otomatik olarak yazılır. <code>climatedata.tsv</code> kitaptaki üç satırın aynısıdır. DWD dosyalarında kitabın görsellerinde görünen satırlar birebir korunmuş, geri kalan değerler ise <b>gösterim amaçlı yapay (sentetik)</b> olarak üretilmiştir; gerçek analiz için Alman Hava Servisi'nin açık veri portalından özgün dosyaları indirip sol paneldeki <b>Dosya yükle</b> ile kendi dosyalarınızı ekleyebilirsiniz.</div>
+
+<!-- ====================== 5.1 ====================== -->
+<h2 id="s51"><span class="num">5.1</span>NumPy</h2>
+
+<p><code>numpy</code> modülü <em>NumPy dizisi</em> (NumPy array) adı verilen önemli bir veri türü sağlar. Sayılardan oluşan vektörleri ve matrisleri saklamak için kullanılır. Bunlara sonraki bölümlerde, örneğin grafik çizerken ihtiyacımız olacak.</p>
+
+<div class="cell" data-title="Vektör ve matris"><textarea>import numpy as np
+a = np.array([7, 8, 9])
+b = np.array([[1, 2, 3], [4, 5, 6]])
+
+print("a[0]      :", a[0])
+print("a[0:2]    :", a[0:2])
+print("b[0, 0]   :", b[0, 0])
+print("b[0]      :", b[0])
+print("b[:, 0]   :", b[:, 0])
+print("b.shape   :", b.shape)</textarea></div>
+
+<p><code>numpy</code> modülünü içe aktarırken ona kısa <code>np</code> takma adını vermek için <code>import numpy as np</code> yazmak bir gelenektir. Bundan sonra kısaca <code>np.array</code> yazabilirsiniz.</p>
+
+<p><code>a</code> değişkenimiz artık tek boyutlu bir NumPy dizisi, yani üç sayılık bir vektör içerir: a = (7, 8, 9)ᵀ. Vektörün bileşenlerine liste elemanları gibi erişilir: <code>a[0]</code> ilk sayıyı, yani 7'yi döndürür. <code>a[0:2]</code> ile yalnızca ilk iki girdiden oluşan bir NumPy dizisi elde ederiz. Başlangıç konumu (0) dâhildir, bitiş konumu (2) dâhil değildir. Bu yüzden 0 ve 1 numaralı konumlardaki girdileri, yani <code>[7, 8]</code>'i döndürür.</p>
+
+<p><code>b</code> değişkeni iki boyutlu bir NumPy dizisidir ve bir liste listesiyle başlatılır. Sütunlardaki değerleri satır satır vererek matrisimizi tanımlarız:</p>
+<div class="formula">b = ⎛ 1 2 3 ⎞<br>&nbsp;&nbsp;&nbsp;&nbsp;⎝ 4 5 6 ⎠</div>
+<p>Artık bir değere <code>b[satır_indeksi, sütun_indeksi]</code> ile erişebiliriz. <code>b[0, 0]</code> sol üstteki değerdir, burada 1. <code>b[0]</code> ilk satırın tamamını, <code>b[:, 0]</code> ilk sütunun tamamını verir; ikisi de NumPy dizisi olarak.</p>
+
+<p>Son derece kullanışlı bir özellik, NumPy dizilerindeki girdileri filtreleyebilmektir. Köşeli parantez içinde yalnızca doğrudan bir indeks <code>[0]</code> ya da bir aralık <code>[0:2]</code> değil, bir filtre koşulu da verebiliriz. Bu, yalnızca koşulu sağlayan girdileri içeren bir NumPy dizisi döndürür. Aşağıdaki istem örneğinde NumPy dizimiz bir haftadaki günlük adım sayılarını içeriyor.</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<code>steps = np.array([8234, 11789, 3120, 10054, 7422, 4821, 15337])</code>
+<em>Yalnızca adım hedefimin (günde 7.500 adım) tutturulduğu girdileri istiyorum.</em></div>
+
+<div class="cell" data-title="Filtre koşuluyla süzme"><textarea>import numpy as np
+steps = np.array([8234, 11789, 3120, 10054, 7422, 4821, 15337])
+target = 7500
+met = steps[steps >= target]
+print(met)
+print("Hedefin tutturulduğu gün sayısı:", len(met))</textarea></div>
+
+<p>Program <code>[ 8234 11789 10054 15337]</code> NumPy dizisini yazdırır. <code>len(met)</code> ile adım hedefinin tutturulduğu gün sayısını, yani 4'ü elde ederiz.</p>
+
+<div class="widget" id="stepsWidget">
+  <h4>Etkileşimli: <code>steps[steps &gt;= target]</code></h4>
+  <div class="ctrl"><label>Hedef (target): <input type="range" id="stepsSlider" min="2000" max="16000" step="250" value="7500"></label> <span class="readout" id="stepsOut"></span></div>
+  <svg id="stepsSvg" viewBox="0 0 640 230" role="img" aria-label="Günlük adım sayıları"></svg>
+</div>
+
+<p>NumPy'de, daha sonra pandas'ta da, tüm veri seti üzerinde bir döngüyle dolaşıp her elemanı tek tek denetlemek ya da hesaplamak neredeyse hiç gerekmez. Çünkü NumPy hesaplamaları dizinin tamamı üzerinde bir kerede yapmanıza izin verir. Örneğin <code>steps += 1</code> (yani <code>steps = steps + 1</code>) yazsaydık, her sayının özgün dizidekinden bir fazla olduğu yeni bir NumPy dizisi oluşurdu. Hem bu dönüşümde hem girdileri filtrelerken NumPy yeni sayılarla dizinin bir kopyasını oluşturur. Ancak diziyi <code>[0:2]</code> ile daha küçük bir diziye dilimlersek bu yalnızca sanal bir kopyadır (görünüm/view). Özgün dizideki girdiler sonradan değişirse bu sanal kopyada da değişir:</p>
+
+<div class="cell" data-title="Dilim bir görünümdür (view)"><textarea>a = np.array([7, 8, 9])
+b = a[0:2]          # array([7, 8])
+a[0] = 0
+print(b)            # array([0, 8])
+
+# Bağımsız bir kopya istiyorsanız:
+c = a[0:2].copy()
+a[1] = 99
+print(c, "← kopya değişmedi")</textarea></div>
+
+<p>İki NumPy dizisi toplanabilir; matris çarpımı yapılabilir, determinant hesaplanabilir ve çok daha fazlası. Ama şimdilik bunlara girmeyeceğiz; böyle bir şeye ihtiyacınız olursa çevrimiçi araştırın ya da bir sohbet robotuna sorun. Mevcut bilgimizle sonraki bir bölümde Matplotlib ile grafik çizebileceğiz.</p>
+
+<!-- ====================== 5.2 ====================== -->
+<h2 id="s52"><span class="num">5.2</span>Pandas</h2>
+
+<p><em>pandas</em> adının aynı adlı hayvanla ilgisi yoktur; <em>panel data</em> (panel verisi) teriminden gelir. Bu, pandas ile veri analizi yaparken çoğunlukla uğraştığımız iki boyutlu veriyi ifade eder. İhtiyacımız olan iki en önemli veri yapısı Series ve DataFrame'dir.</p>
+
+<p>Bir pandas <em>Series</em>'i, liste ya da NumPy dizisine benzeyen tek boyutlu bir veri yapısıdır. Ancak bir Series'i en iyi bir tablodaki sütun olarak düşünebilirsiniz. Örneğin dünya ülkelerini listeleyen bir tabloda her sütun ayrı bir Series'tir: biri ülke adlarını, biri nüfusları içerir vb. NumPy dizisinin aksine burada yalnızca sayılarla uğraşmayız; bir Series metin, tarih değerleri ve daha fazlasını da içerebilir. Series ile çalışmak yine de NumPy dizileriyle alıştığımız şeye çok benzer:</p>
+
+<div class="cell" data-title="Series"><textarea>import pandas as pd
+
+steps = pd.Series([8234, 11789, 3120, 10054, 7422, 4821, 15337])
+
+print(steps[0])               # ilk girdi (8234)
+print(steps[0:2])             # ilk iki girdiyi içeren Series
+print(steps[steps > 7500])    # 7500'den büyük girdileri içeren Series</textarea></div>
+
+<p>Bir Series'te her girdinin bir indeksi vardır. Varsayılan olarak bu 0'dan başlar ve artan sırayla numaralanır. Ancak girdilere farklı indeksler, hatta metin atamak da mümkündür. Bu durumda Series bir listeden çok bir sözlüğe (dictionary) benzer:</p>
+
+<div class="cell" data-title="Metin indeksli Series"><textarea>data = {"Mon": 8234, "Tue": 11789, "Wed": 3120, "Thu": 10054,
+        "Fri": 7422, "Sat": 4821, "Sun": 15337}
+steps = pd.Series(data)
+print(steps["Wed"])</textarea></div>
+
+<p>Ancak pandas'ta daha da önemli veri yapısı <em>DataFrame</em>'dir. DataFrame'i bir tablo olarak düşünebiliriz. Tablonun sabit sütunları vardır, her sütunun bir adı vardır ve DataFrame'in her satırı her sütunda belirli bir veri türünde bir değer içerir.</p>
+
+<p>Series'te olduğu gibi DataFrame'deki her satırın da onu tanımlayan bir indeksi vardır; varsayılan olarak 0, 1, 2 vb. Kesin söylemek gerekirse bir DataFrame, aynı indekse sahip birden çok Series'in dizisidir.</p>
+
+<div class="cell" data-title="DataFrame (Şekil 5.1)"><textarea>import pandas as pd
+df = pd.DataFrame([["Albania", 28000000, "Europe", 28748],
+                   ["Brazil", 214800000, "South America", 8514877],
+                   ["Germany", 83300000, "Europe", 357022]],
+                  columns=["country", "population", "continent", "area"])
+df</textarea></div>
+
+<p><code>df</code> adını verdiğimiz DataFrame oluşturulduğuna göre içindeki veriye şöyle erişebiliriz. Aşağıdaki ifadelerden birini seçip çalıştırın:</p>
+
+<div class="widget" id="dfWidget">
+  <h4>Etkileşimli: DataFrame erişim ifadeleri (üstteki hücreyi önce çalıştırın)</h4>
+  <div class="ctrl" style="flex-direction:column;align-items:stretch;gap:6px" id="dfExprs"></div>
+  <div class="out show" id="dfOut" style="border:1px solid var(--line);border-radius:8px">Bir ifadeye tıklayın.</div>
+</div>
+
+<p>Kesin söylemek gerekirse <code>df.loc[0]</code> aslında ilk satırı değil (bu <code>df.iloc[0]</code> ile yapılırdı; <code>i</code> "integer-based", yani tamsayı tabanlı demektir), indeks değeri 0 olan satırı döndürür. Ancak örneklerimizde indeksler otomatik üretildiği —her zaman 0'dan başlayıp ardışık numaralandığı— için <code>df.loc[0]</code> ve <code>df.iloc[0]</code> bizim durumumuzda aynıdır.</p>
+
+<p>Bir DataFrame'i değiştirmek, örneğin sütunları yeniden adlandırmak istiyorsanız yeni bir DataFrame döndüren uygun yöntemler vardır. Bunu özgün değişkene geri atayarak DataFrame'in üzerine yazabiliriz:</p>
+
+<div class="cell" data-title="Yeniden adlandırma"><textarea>df = df.rename(columns={"population": "population count"})
+df</textarea></div>
+
+<p>Sonraki örneklerde birden çok yöntemi zincirlemenin yaygın olduğunu göreceksiniz, örneğin <code>df.rename(…).sort_values(…).drop(…)</code>. Bu mümkündür, çünkü her işlem üzerinde çalışmaya devam edebileceğiniz yeni bir DataFrame döndürür. Çoğu durumda bu DataFrame özgününün değiştirilmiş bir kopyasıdır. Dolayısıyla özgün DataFrame'de sonradan değişiklik yaparsanız, sütunların yeniden adlandırılıp kaldırıldığı ve değerlerin sıralandığı yeni DataFrame bundan etkilenmez.</p>
+
+<p>DataFrame'lerin tipik bir özelliği, girdiler üzerinde döngüyle dolaşmanın nadiren gerekmesidir. Neredeyse her şey için tüm DataFrame üzerinde tek seferde iş yapan komutlar vardır.</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>country, population, continent ve area sütunlarına sahip bir pandas DataFrame'im var. Alan km² cinsinden. İki yeni sütun ekle:</em>
+<ul style="margin:.4em 0 0"><li><code>population_per_km2</code></li><li><code>category</code> (10 milyondan az nüfus için "small", 100 milyon ve üzeri için "large")</li></ul></div>
+
+<div class="cell" data-title="Hesaplanmış sütunlar ve apply"><textarea>import pandas as pd
+
+# Örnek DataFrame
+df = pd.DataFrame({
+    "country": ["Germany", "USA", "China", "Switzerland"],
+    "population": [84_000_000, 331_000_000, 1_400_000_000, 8_700_000],
+    "continent": ["Europe", "North America", "Asia", "Europe"],
+    "area": [357_000, 9_834_000, 9_597_000, 41_000]   # km² cinsinden
+})
+# Yeni sütun: km² başına nüfus
+df["population_per_km2"] = df["population"] / df["area"]
+
+# Yeni sütun: nüfusa göre kategori
+def category(population):
+    if population < 10_000_000:
+        return "small"
+    elif population >= 100_000_000:
+        return "large"
+    else:
+        return "medium"
+
+df["category"] = df["population"].apply(category)
+
+print(df)</textarea></div>
+
+<p>İlk dikkat çeken, bu programda DataFrame'in sütun sütun oluşturulmasıdır: önce tüm ülke adları, sonra tüm nüfus rakamları vb. Önceki örneğimizde bunu satır satır yapmıştık; iki yaklaşım da mümkündür. Ayrıca ChatGPT istemine veri vermediğimiz için artık farklı ülkeler var. <code>10_000_000</code> biçiminde yazılmış sayı da dikkatinizi çekmiş olabilir. Python'da okunabilirliği artırmak için sayılarda alt çizgiyi serbestçe kullanabilirsiniz; içeride yok sayılır ve hiçbir anlamı yoktur.</p>
+
+<p>Var olmayan bir sütuna değer atayarak kolayca yeni bir sütun ekleyebiliriz: <code>df["population_per_km2"] = df["population"] / df["area"]</code>. Yani bir Series'in tamamını başka bir Series'e bölüyoruz. Sonuç, her değerin karşılık gelen değere bölündüğü yeni bir Series'tir. Böylece pandas km² başına nüfusu anında hesaplayıp yeni sütuna yazar.</p>
+
+<p>Diğer sütun, <code>category</code>, biraz daha karmaşıktır. Bu sütunun değeri basit bir matematik formülüyle hesaplanamayıp <code>if</code>, <code>elif</code> ve <code>else</code> ile belirlendiğinden önce bu işi üstlenen <code>category</code> adlı bir işlev oluştururuz. Bir nüfus sayısı, örneğin <code>84,000,000</code> alır ve bu durumda <code>"medium"</code> metnini döndürür. pandas, <code>apply</code> yöntemiyle bir işlevi bir Series'teki tüm değerlere uygulamanızı sağlar. İşlevi ona veririz —bizim durumumuzda <code>apply(category)</code>— ve ortaya çıkan Series yeni <code>category</code> sütunumuzu oluşturur. Bu sütun her ülke için karşılık gelen kategoriyi saklar: <code>"small"</code>, <code>"medium"</code> ya da <code>"large"</code>.</p>
+
+<!-- ====================== 5.3 ====================== -->
+<h2 id="s53"><span class="num">5.3</span>Dosyalardan Pandas DataFrame'lerine Veri Yükleme</h2>
+
+<p>Pandas çeşitli dosya türlerinden veri yükleyip doğrudan DataFrame oluşturabilir: CSV, Excel, SQL, JSON, HTML, Pickle, Parquet, Feather, Optimized Row Columnar (ORC), Stata, SAS, SPSS, OpenDocument Spreadsheet (ODS) ve daha fazlası. Burada CSV ve Excel dosyalarından içe aktarmanın nasıl işlediğine bakacağız; geri kalan her şey için çevrimiçi araştırabilir ya da bir sohbet YZ'sine sorabilirsiniz. İlke her zaman aynıdır: <code>pd.read_xxx</code> gibi bir işlevi (örneğin <code>pd.read_csv</code>) çağırır ve dosya yolunu ek seçeneklerle birlikte verirsiniz. Bir CSV dosyası için bu seçenekler örneğin sütun ayırıcıyı (virgül, noktalı virgül, sekme vb.) ya da dosyanın en üstünde sütun etiketlerini içeren bir başlık satırı olup olmadığını belirtmeyi içerir. Ardından dosyanızdaki tüm veriyi içeren bir DataFrame alırsınız. Sütun adları ve veri türleri de genellikle dosyadan alınır.</p>
+
+<p>Bir DataFrame'i dosyaya geri kaydetmek için pandas <code>to_</code> ile başlayan yöntemler sunar. Örneğin <code>df.to_excel("table.xlsx")</code> çağırırsanız pandas bir Excel dosyası oluşturup DataFrame'deki veriyi içine yazar.</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>climatedata.tsv dosyası şu veriyi içeriyor:</em>
+<pre style="font-family:'JetBrains Mono',monospace;font-size:13px;margin:.6em 0;overflow-x:auto">Date        Location   Temperature_F   Precipitation_in
+2026-01-01  Chicago    36.5            0.0
+2026-01-01  Seattle    35.2            0.2
+2026-01-02  Chicago    33.8            0.11</pre>
+<em>Bana pandas ile genel istatistikler ver.</em></div>
+
+<div class="cell" data-title="TSV okuma, info() ve describe() (Şekil 5.2–5.3)"><textarea>import pandas as pd
+
+# TSV dosyasını oku
+df = pd.read_csv("climatedata.tsv", sep="\t")
+
+# DataFrame hakkında genel bilgi
+print("Genel bilgi:")
+df.info()
+print("\n")
+# Sayısal sütunlar için temel istatistikler
+print("Betimleyici istatistikler:")
+print(df.describe())
+print("\nOrtalama sıcaklık:", df["Temperature_F"].mean())</textarea></div>
+
+<div class="note">Kitaptaki kodda <code>print(df.info())</code> yazılı; <code>info()</code> çıktısını zaten kendisi yazdırıp <code>None</code> döndürdüğü için bu, sona fazladan bir <code>None</code> satırı ekler. Burada yalnızca <code>df.info()</code> kullanıldı.</div>
+
+<p>Bu arada TSV, <em>tab-separated values</em> (sekmeyle ayrılmış değerler) demektir. Değerlerin sekme karakterleriyle ayrıldığı CSV dosyaları için yaygın bir terimdir. Sütun ayırıcıyı <code>pd.read_csv</code> işlevine <code>sep</code> parametresiyle verirsiniz; örneğin <code>sep=";"</code> ya da burada olduğu gibi sekme anlamına gelen <code>sep="\t"</code>. <code>sep</code> parametresini atlarsanız pandas dosyadaki değerlerin virgülle ayrıldığını varsayar.</p>
+
+<p>Ayrıca pandas bir CSV ya da TSV dosyasının ilk satırının sütun adlarını içerdiğini varsayar. İstemde verilen örnek satırlar da bunu gösteriyor: İlk satır henüz veri değil, <code>Date</code>, <code>Location</code>, <code>Temperature_F</code> ve <code>Precipitation_in</code> etiketlerini içeriyor. Pandas DataFrame'in sütun adlarını otomatik olarak bu etiketlere ayarlar ve asıl veriyi ikinci satırdan itibaren okur. Dosyamızda başlık satırı olmasaydı bunu pandas'a bildirip sütun adlarını elle vermemiz gerekirdi:</p>
+
+<div class="cell" data-title="Başlık satırı olmayan dosya"><textarea># Bu örnekte başlığı olmayan bir dosya oluşturalım:
+with open("climatedata_noheader.tsv", "w") as f:
+    f.write("2026-01-01\tChicago\t36.5\t0.0\n2026-01-01\tSeattle\t35.2\t0.2\n")
+
+df_nh = pd.read_csv("climatedata_noheader.tsv", sep="\t", header=None)
+df_nh.columns = ["Date", "Location", "Temperature_F", "Precipitation_in"]
+df_nh</textarea></div>
+
+<p>Programımızda <code>df.info()</code> ve <code>df.describe()</code> çağrıldı. İlki bize DataFrame hakkında meta veri (sütun adları, veri türleri vb.) ve girdi sayısı gibi genel bilgiler verir. <code>df.describe()</code> her sayısal sütun için ortalama, en küçük ve en büyük değerleri, standart sapmayı ve daha fazlasını hesaplar.</p>
+
+<p><code>"3 non-null"</code> ya da <code>"count 3.000000"</code> iletisi, DataFrame'deki sıcaklık ve yağış sütunlarının her birinde üç değer olduğunu gösterir. Bazı günler ya da şehirler için sıcaklığın eksik olması da mümkündür; çünkü dosyadaki ilgili hücreler boş bırakılmış ya da DataFrame'de <code>"None"</code> veya <code>"NaN"</code> olarak ayarlanmış olabilir. %25, %50 ve %75 satırları değerlerin çeyreklerini gösterir. Örneğimizde sıcaklık sütununda %25 çeyreğinin 34.5 göstermesi, satırların %25'inin 34,5 °F'nin altında sıcaklık içerdiği anlamına gelir. %50 çeyreğine <em>medyan</em> da denir: Ölçülen sıcaklıkların yarısı 35,2 °F'nin altında, diğer yarısı üstündedir.</p>
+
+<p><code>df.info()</code> ve <code>df.describe()</code> DataFrame'e hızlı bir genel bakış sağlamak için tasarlanmışken, gösterilen istatistikleri ve çok daha fazlasını hesaplayan özel yöntemler de vardır; örneğin <code>average_temperature = df["Temperature_F"].mean()</code>.</p>
+
+<p>Bizim durumumuzda veri bir CSV (ya da TSV) dosyasında saklıydı. Elimizde bir Excel dosyası olsaydı pandas bunun için de bir işlev sunar:</p>
+
+<div class="cell" data-title="Excel'den okuma"><textarea>df = pd.read_excel("climatedata.xlsx")
+print(df, "\n")
+
+# Sayfa adına göre ve yalnızca bazı sütunlar:
+df = pd.read_excel("climatedata.xlsx", sheet_name="Climate 2026",
+                   usecols=["Date", "Location", "Temperature_F"])
+df</textarea></div>
+
+<p>Burada ilk sayfa dışında bir sayfanın açılacağını belirtmek için <code>sheet_name</code> seçeneğini kullanabiliriz: <code>sheet_name=1</code> ikinci sayfa olurdu (saymaya 0'dan başladığımız için); <code>sheet_name="Climate 2026"</code> ile sayfayı adıyla belirtebiliriz. <code>usecols</code> seçeneği de sütun seçmek için çok kullanışlıdır: Excel tablosunu okurken yalnızca belirli sütunlara ihtiyacınız olduğunu belirtirsiniz; ilgisiz sütunlar atlanır ve DataFrame'e girmez.</p>
+
+<p>DataFrame'i değiştirdikten sonra onu nihayet bir dosyaya geri yazabiliriz. Bunun için istenen dosya türüne göre uygun <code>to_</code> yöntemini kullanırız:</p>
+
+<div class="cell" data-title="Dosyaya yazma"><textarea>df.to_csv("climatedata.csv")
+df.to_csv("climatedata_out.tsv", sep="\t")
+df.to_excel("climatedata_out.xlsx")
+df.to_excel("climatedata_noindex.xlsx", index=False)
+
+with open("climatedata.csv") as f:
+    print(f.read())
+print("index=False ile:")
+print(pd.read_excel("climatedata_noindex.xlsx"))</textarea></div>
+
+<p><code>index=False</code> seçeneğini atlarsak dosyanın en solunda satır indeksini, yani 0, 1, 2, 3 vb. içeren bir sütun olur. Bu DataFrame'in parçasıdır ve bu yüzden varsayılan olarak dışa aktarılır. Bu sütuna ihtiyacınız yoksa <code>index=False</code> yapmanız yeterli. (Oluşturulan dosyaları sol paneldeki <b>Dosyalar</b> listesinden indirebilirsiniz.)</p>
+
+<!-- ====================== 5.4 ====================== -->
+<h2 id="s54"><span class="num">5.4</span>Pandas ile Veri Temizliği</h2>
+
+<p>Veriyi bir dosyadan pandas DataFrame'ine yükledikten sonraki adım veri temizliğidir. Bu, verinin kolayca analiz edilebilmesi, görselleştirilebilmesi ve daha fazla işlenebilmesi için filtrelenmesini, hazırlanmasını ve dönüştürülmesini kapsar. Genellikle çok sayıda adım gerektirdiği için zaman zaman uzun sürse de pandas her şey için pratik araçlar sunar; şimdi bunlara bakacağız.</p>
+
+<h3 id="s541">5.4.1 Veriyi Filtreleme</h3>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>Date, Location, Temperature_F ve Precipitation_in içeren bir pandas DataFrame'im var. Yalnızca Seattle verisine ihtiyacım var.</em></div>
+
+<div class="cell" data-title="Seattle verisini süz"><textarea>import pandas as pd
+import numpy as np
+df = pd.read_csv("climatedata.tsv", sep="\t")
+
+df_seattle = df[df["Location"] == "Seattle"]
+df_seattle</textarea></div>
+
+<p>Pandas ile filtrelemek çok kolaydır, çünkü köşeli parantez içinde filtre koşulu sözdizimini kullanabilirsiniz. Bu, birden çok koşulu <code>&amp;</code> (ve) ve <code>|</code> (veya) ile birleştirmenize bile izin verir. Bu tür karmaşık koşullarda her koşulun mutlaka parantez içine alınması önemlidir:</p>
+
+<div class="cell" data-title="Birleşik koşullar"><textarea>df_f = df.loc[(df["Location"] == "Seattle") & ((df["Temperature_F"] < 50)
+                                             | (df["Temperature_F"] > 80))]
+print(df_f, "\n")
+
+# Filtrelerken yalnızca gereken sütunları tutmak:
+df_s = df.loc[df["Location"] == "Seattle",
+              ["Date", "Temperature_F", "Precipitation_in"]]
+df_s</textarea></div>
+
+<p>Daha önce DataFrame'i yeni bir <code>df_seattle</code> değişkenine atamıştık; kitaptaki bu örnekte ise özgün <code>df</code> DataFrame'inin doğrudan üzerine yazılıyor (burada karşılaştırma kolay olsun diye <code>df_f</code> kullandık). Filtrelemeden sonra yalnızca Seattle'ın iklim verisi kaldığından <code>Location</code> sütununa aslında artık ihtiyacımız yok. Onu <code>df.drop(columns="Location")</code> ile silebilir ya da filtreleme sırasında hangi sütunları tutmak istediğimizi doğrudan belirtebiliriz (yukarıdaki ikinci ifade).</p>
+
+<h3 id="s542">5.4.2 Eksik Değerleri Belirleme ve Ele Alma</h3>
+
+<p>Daha önce <code>df.info()</code> ve <code>df.describe()</code> ile DataFrame hakkında genel bilgi ve istatistiklere baktığımızda, bir sütunda kaç kaydın gerçekten değer içerdiğini zaten görebiliyorduk. Aşağıdaki örnekler için ilk satırdaki sıcaklığı "bilinmiyor" (<code>None</code>) olarak ayarlayalım:</p>
+
+<div class="cell" data-title="Eksik değer oluştur ve say"><textarea>df = pd.read_csv("climatedata.tsv", sep="\t")
+df.loc[0, "Temperature_F"] = None
+print(df, "\n")
+
+print(df.isna().sum())                    # sütun başına eksik değer sayısı
+print(df["Temperature_F"].isna().sum())   # … ya da yalnızca bu sütunda</textarea></div>
+
+<p>DataFrame'i <code>df</code> ya da <code>print(df)</code> ile incelersek <code>Temperature_F</code> sütununun ilk satırında artık <code>NaN</code> (not a number, sayı değil) değerini görürüz. Bu tür eksik veriler uygulamada oldukça sık görülür. Bu yüzden şimdiki iş onları belirlemek ve nasıl ele alınacağını düşünmektir.</p>
+
+<p><code>isna()</code> yöntemi bir Series'e (yani tek bir sütuna) ya da tüm DataFrame'e uygulanabilir. Önceden değerin eksik olduğu her yerde <code>True</code>, diğer girdilerde <code>False</code> bulunan bir Series ya da DataFrame döndürür. <code>sum</code> yöntemiyle de <code>True</code> değerlerini, yani eksik değerleri sayarız.</p>
+
+<p>Eksik değerleri ele almanın olası bir yolu, boşluk içeren satırların tamamını silmektir. Bundan sonra herhangi bir sütunda değeri eksik olan her satır gider. <code>df.dropna(subset=["Temperature_F"])</code> ile yalnızca belirli sütunların denetlenmesini de belirtebilirsiniz. Satırları silmek yerine eksik değerleri basitçe doldurabiliriz de:</p>
+
+<div class="cell" data-title="dropna() ve fillna()"><textarea>print("dropna():")
+print(df.dropna(), "\n")
+
+df = df.fillna({
+    "Temperature_F": df["Temperature_F"].mean(),
+    "Precipitation_in": 0,
+    "Date": "2026-01-01"
+})
+print("fillna():")
+df</textarea></div>
+
+<p>Örnek veri setimizde sıcaklığın eksik olduğu her yere sütunun tamamının ortalaması yazılır. Bir yağış değeri eksikse 0 yaparız. Tarih sütunundaki eksik değerler için basitçe 1 Ocak 2026'yı seçeriz. Bunun mantıklı olup olmadığı tartışmaya açıktır. Her durumda artık hem ilgili satırları sildikten sonra hem de eksik değerleri doldurduktan sonra eksiksiz bir verimiz var.</p>
+
+<h3 id="s543">5.4.3 Yinelenen Kayıtları Kaldırma</h3>
+
+<p>Yinelenen kayıtlar (duplicates), bir DataFrame'de aynı gerçek dünya nesnesini ya da aynı gözlemi tanımlayan çift girdilerdir. İklim verimiz için bu, örneğin her şehirde her gün için yalnızca bir satır istediğimiz anlamına gelir. İlk adım yine yinelenenleri belirlemek, sonra onlarla ne yapacağımıza karar vermektir:</p>
+
+<div class="cell" data-title="Yinelenenleri bul"><textarea>df = pd.read_csv("climatedata.tsv", sep="\t")
+duplicates = df.duplicated(["Date", "Location"])
+print("Yinelenen sayısı:", duplicates.sum())</textarea></div>
+
+<p><code>duplicated</code> yöntemi her satırın yinelenen olup olmadığını denetler. <code>duplicates.sum()</code> ile bu tür satırların sayısını alırız. 0 dönerse yinelenen yok demektir; tarih ve konum birleşimi her satırda benzersizdir.</p>
+
+<p>Sonraki deneyler için DataFrame'e tarihi 2 Ocak 2026 ve konumu Chicago olan yeni bir satır ekleyelim. Artık bu tarih-konum birleşimine sahip iki satırımız olur. Satır eklemek için önce yalnızca bu yeni satırdan oluşan yeni bir DataFrame oluşturup onu <code>pd.concat</code> işleviyle özgün DataFrame'imize ekleriz:</p>
+
+<div class="cell" data-title="Satır ekle ve yinelenenleri sil"><textarea>df = pd.concat([df, pd.DataFrame({"Date": ["2026-01-02"], "Location":
+    ["Chicago"], "Temperature_F": [32.9], "Precipitation_in": [0.5]})],
+    ignore_index=True)
+print(df, "\n")
+print("Yinelenen sayısı:", df.duplicated(["Date", "Location"]).sum(), "\n")
+
+print(df.drop_duplicates(["Date", "Location"]))</textarea></div>
+
+<p>Şimdi <code>df.duplicated(["Date", "Location"])</code> çalıştırırsak yeni satırımız yinelenen olarak tanımlanır; <code>sum()</code> yinelenen sayısını döndürür: 1. <code>drop_duplicates</code> komutu bu yinelenenleri kaldırır.</p>
+
+<p>Bu komut tarih ve konumun eşleştiği tüm satırları silmez; ilk geçişi tutar ve diğer yinelenenleri kaldırır. Bu tekilleştirmeden sonra her tarih-konum birleşimi yalnızca bir kez görünür; tam olması gerektiği gibi!</p>
+
+<p>Bazen hangi yinelenen satırların tutulacağı ve hangilerinin silineceği üzerinde biraz daha denetim istersiniz. Bizim durumumuzda hep ilkini tutuyoruz. Bunun nedeni <code>drop_duplicates</code>'in varsayılan davranışı <code>keep="first"</code> olan bir <code>keep</code> seçeneğine sahip olmasıdır. Bunu <code>keep="last"</code> ya da <code>keep=False</code> da yapabilirsiniz; o zaman son yinelenen satır ya da hiçbiri tutulmaz.</p>
+
+<p>Yinelenenleri kaldırmadan önce DataFrame'i sıralayalım. Böylece belirli kurallar uygulayıp hangi satırların tutulacağını daha kesin belirleyebiliriz; örneğin her zaman sıcaklığı en yüksek satırı:</p>
+
+<div class="cell" data-title="Sırala, sonra en sıcak satırı tut"><textarea>print(df.sort_values("Temperature_F")
+        .drop_duplicates(["Date", "Location"], keep="last"))</textarea></div>
+
+<p>Tekilleştirme süreci üzerinde daha da fazla denetim istiyorsak onu elle de yapabiliriz. Elbette bu yalnızca az sayıda yinelenen varsa mantıklıdır. Önce DataFrame'e tüm yinelenenler için <code>True</code> değerini içeren yeni bir sütun ekleyerek onları işaretleriz:</p>
+
+<div class="cell" data-title="Yinelenenleri işaretle (Şekil 5.4)"><textarea>df["is_duplicate"] = df.duplicated(["Date", "Location"], keep=False)
+df[df["is_duplicate"]]</textarea></div>
+
+<p>Burada <code>keep=False</code>, tarih ve konum birleşiminin DataFrame'de birden çok kez geçtiği her satırın —ilk geçiş dâhil— <code>True</code> ile işaretlenmesini sağlar. İkinci komut <code>df[df["is_duplicate"]]</code> yinelenen olarak işaretlenmiş satırları gösterir. Bu çıktıda özgün indeks de görünür olduğundan (yinelenenler örneğin 2 ve 3 numaralı satırlarda), artık bu satırlarda elle değişiklik yapıp onları silebiliriz:</p>
+
+<div class="cell" data-title="Elle düzelt ve sil"><textarea>df.loc[2, "Temperature_F"] = 32.9
+df = df.drop(index=3)
+df</textarea></div>
+
+<p><code>combine_first</code> yöntemi de kullanışlıdır; bir DataFrame'deki iki satırı tek satırda birleştirir. Bu yöntemi DataFrame'imizin bir satırına (<code>df.loc[2]</code>) uygulayıp ona ikinci bir satır verirsek, sonuç ilk satıra benzer; ama <code>NaN</code> olan yerlerde diğer satırın değerleri kullanılır. Örneğin bir satırda sıcaklık, diğerinde yağış eksik olsaydı <code>combine_first</code> bu iki satırı, yağış değerinin birinden, sıcaklık değerinin ötekinden alındığı tek satırda birleştirirdi:</p>
+
+<div class="cell" data-title="combine_first ile birleştirme"><textarea>df = pd.read_csv("climatedata.tsv", sep="\t")
+df.loc[2, "Precipitation_in"] = np.nan          # 2. satırda yağış eksik
+df = pd.concat([df, pd.DataFrame({"Date": ["2026-01-02"], "Location": ["Chicago"],
+                "Temperature_F": [np.nan], "Precipitation_in": [0.5]})],
+               ignore_index=True)                # 3. satırda sıcaklık eksik
+print(df, "\n")
+
+df.loc[2] = df.loc[2].combine_first(df.loc[3])
+df = df.drop(index=3)
+df</textarea></div>
+
+<p>Burada da birleştirmeden sonra 3 indeksli satırı sileriz; çünkü o yinelenendir ve artık gerekmez.</p>
+
+<p>Yinelenenlerle uğraşırken bu satırlardan herhangi birini kolayca silmeyi, eksik değerlerde onları tek satırda birleştirmeyi ve sıralayıp tekilleştirerek belirli bir sütunda en büyük ya da en küçük değere sahip satırları tutmayı gördünüz. Elbette çok daha karmaşık kurallar da düşünebiliriz: <code>NaN</code> değerleri olan yerleri birleştirmek, sıcaklığı en yüksek olduğu satırdan almak, en düşük yağış değerini almak ve artık yıllarda 13'üne denk gelen cumalarda yağış değerini her zaman en sıcak konumdan almak gibi. Hayal gücünüzün sınırı yok; ama gerçekten böyle bir şeye ihtiyacınız olursa en iyisi bir sohbet YZ'sine sormaktır. Son kısa bir örnek (<code>groupby</code> yöntemine veri analizini ele alırken ayrıca değineceğiz):</p>
+
+<div class="cell" data-title="groupby + agg ile tekilleştirme"><textarea>df = pd.read_csv("climatedata.tsv", sep="\t")
+df = pd.concat([df, pd.DataFrame({"Date": ["2026-01-02"], "Location": ["Chicago"],
+                "Temperature_F": [32.9], "Precipitation_in": [0.5]})], ignore_index=True)
+
+df = df.groupby(["Date", "Location"], as_index=False).agg({
+    "Temperature_F": "mean",
+    "Precipitation_in": "sum"
+})
+df</textarea></div>
+
+<p>DataFrame'imizde aynı tarih ve konumu paylaşan satırlar tek satırda birleştirilir. Tek tek sıcaklık değerlerinden ortalama hesaplanır, yağış değerleri ise toplanır.</p>
+
+<h3 id="s544">5.4.4 Hataları ve Aykırı Değerleri Belirleme ve Düzeltme</h3>
+
+<p>Verideki iki hata türüne zaten baktık: eksik değerler ve yinelenen kayıtlar. Ancak veride gizlenen pek çok başka hata türü vardır. Hataları ayıklayıp düzeltmeye başlamadan önce verimizde ne tür hataların ortaya çıkabileceğini bilmemiz gerekir. Ne yazık ki "hatalı"nın ne demek olduğu baştan açık değilse bize hatalı satırları verecek sihirli bir komut yoktur. Bir e-posta adresinde @ işaretinin olmaması bir hatadır; sıcaklık değerleri her zaman belirli bir aralıkta kalmalıdır; birinin evlendiği tarih de doğum tarihinden sonra olmalıdır. Ancak bu tür hata durumlarını tanımladıktan sonra bu hataları içeren satırları özel olarak arayabilir ve nasıl düzelteceğimize bakabiliriz.</p>
+
+<p>Aşağıdaki örnekler için önce birkaç hata içeren bir DataFrame oluşturalım:</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>Diğerlerinin yanı sıra 'Location' sütunu olan bir df DataFrame'im var. Konumun küçük harfle yazıldığı satırları bul ve ilk harfi büyüterek hatayı düzelt, örneğin "chicago" → "Chicago".</em></div>
+
+<div class="cell" data-title="Küçük harfli konumları bul ve düzelt"><textarea>import pandas as pd
+import numpy as np
+
+df = pd.DataFrame({
+    'Date': ['2026-01-01', '2026-01-01', '2026-02-30'],
+    'Location': ['Chicago', 'Seattle ', 'chicago'],
+    'Temperature_F': [36.5, 35.2, 525.47],
+    'Precipitation_in': [0.0, 0.2, 0.1]
+})
+
+# Konumun küçük harfle yazıldığı satırları bul
+mask = df['Location'].str[0].str.islower()
+print("Konumu küçük harfle yazılmış satırlar:")
+print(df[mask])
+
+# Küçük harfli konumları düzelt (ilk karakteri büyüt)
+df.loc[mask, 'Location'] = df.loc[mask, 'Location'].str.capitalize()
+
+print("\nDüzeltmeden sonra DataFrame:")
+print(df)
+print("\nKonum değerleri (tırnak içinde):", list(df['Location']))</textarea></div>
+
+<p>Önceki örneklerde hep doğrudan köşeli parantez içine yazdığımız filtre koşulu burada bir <code>mask</code> değişkeninde saklanıyor. Şunu da yazabilirdik: <code>df[df['Location'].str[0].str.islower()]</code>. Bu, şehir adının küçük harfle başladığı satırları bulur. <code>df['Location']</code> tüm konum sütunudur (kitap metninde yanlışlıkla <code>df['City']</code> yazıyor). <code>str</code> bize metin yöntemlerine erişim sağlar; bizim durumumuzda <code>[0]</code> ilk karakteri verir, <code>islower()</code> da onun küçük harf olup olmadığını denetlememizi sağlar. <code>capitalize</code> yöntemi bir metni ilk harfi büyük olacak biçimde dönüştürür; <code>"chicago"</code>, <code>"Chicago"</code> olur.</p>
+
+<p>Verimizde "Seattle"dan sonra bir boşluk olduğunu fark ettiniz mi (<code>"Seattle "</code>)? Ne yazık ki bu, uygulamada çok sık gözden kaçan bir şeydir; özellikle veri TSV, Excel ya da benzeri dosyalardan yüklendiğinde. Sonraki adımlarda neden bir yinelenenin yakalanmadığını ve neden aynı gün için hâlâ "Seattle" konumlu iki satır olduğunu merak edersiniz. Uzun bir hata ayıklama oturumundan sonra birinin <code>"Seattle"</code>, ötekinin görünmez boşluklu <code>"Seattle "</code> olduğunu fark edersiniz. Bunu düzeltmenin en iyi yolu en başta <code>strip()</code> yöntemini kullanmaktır. <code>strip()</code> bir metnin başındaki ve sonundaki boşlukları kaldırır.</p>
+
+<p>Şimdi sayısal sütunlardaki aykırı değerleri ele alalım. Sıcaklıkların her zaman belirli bir aralıkta kalmasını ve yağış değerlerinin asla negatif olmamasını istiyoruz. Böyle değerler bulursak, sonraki veri analizlerinde hesaplamalarımızı çarpıtmasınlar diye onları <code>NaN</code> ile değiştiririz:</p>
+
+<div class="cell" data-title="Boşlukları temizle, aykırı değerleri NaN yap"><textarea>df["Location"] = df["Location"].str.strip()
+
+df.loc[(df["Temperature_F"] < -60) | (df["Temperature_F"] > 140),
+       "Temperature_F"] = np.nan
+df.loc[df["Precipitation_in"] < 0, "Precipitation_in"] = np.nan
+
+print(df)
+print("\nKonum değerleri:", list(df['Location']))</textarea></div>
+
+<p><code>np.nan</code> değeri NumPy paketinden gelir. Bu yüzden Python programının başında ya da Jupyter defterinin en üstünde onu önce <code>import numpy as np</code> ile içe aktarmalıyız.</p>
+
+<p>Örnek veri setimize sızmış son bir hata da geçersiz tarih değeri <code>"2026-02-30"</code>'dur. Tarih ve saatler zaten bir DataFrame'de metin olarak saklanmamalı; bunun yerine <code>datetime</code> veri türünü kullanmak daha iyidir. Bu, tarih değerleri üzerinde hesap yapmamızı da sağlar; örneğin bir tarihe bir hafta eklemek ya da bir tarihin belirli bir aralıkta olup olmadığını denetlemek. Bu arada tarih içeren metinleri dönüştürürken o tarihin geçersiz olup olmadığını da görebiliriz:</p>
+
+<div class="cell" data-title="Geçersiz tarihleri NaT yap"><textarea>df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+print(df)
+print()
+print(df.dtypes)</textarea></div>
+
+<p>Bundan sonra tarih sütunundaki değerler artık metin değil, <code>datetime</code> veri türündedir. <code>errors="coerce"</code> seçeneği geçersiz tarih değerlerinin <em>NaT</em>'ye (not a timestamp, zaman damgası değil) dönüştürülmesini sağlar. Bu seçenek olmadan DataFrame'de geçersiz tarih değerleri varsa bir hata oluşur ve program sonlanır. (Deneyin: <code>errors="coerce"</code> kısmını silip hücreyi en baştan yeniden çalıştırın.)</p>
+
+<h3 id="s545">5.4.5 Veriyi İstenen Biçime Dönüştürme</h3>
+
+<p>Şimdiye kadar veriden hataları ayıklamaya odaklandık. Artık hatasız bir verimiz olduğunu söyleyebiliriz. Ancak veri, yeterli ve rahat bir analiz için istediğimiz biçimde değildir. Örneğin Celsius cinsinden bir sıcaklık hata değildir, ama onu Fahrenhayt'a çevirmeyi tercih ederiz:</p>
+
+<div class="cell" data-title="Celsius → Fahrenhayt"><textarea>df = pd.DataFrame({
+    'Date': ['2026-01-01', '2026-01-01', '2026-01-02'],
+    'Location': ['Chicago', 'Seattle', 'Chicago'],
+    'Temperature_C': [2.5, 1.8, 1],
+    'Precipitation_in': [0.0, 0.2, 0.11]
+})
+
+df["Temperature_F"] = df["Temperature_C"] * 9/5 + 32
+df</textarea></div>
+
+<p>Bu dönüşümden sonra DataFrame'imiz hem Celsius cinsinden eski <code>Temperature_C</code> sütununu hem de <code>Temperature_F</code> sütununda hesaplanan Fahrenhayt değerlerini içerir. İlkini tutabilir ya da <code>df = df.drop(columns=["Temperature_C"])</code> ile DataFrame'den kaldırabiliriz.</p>
+
+<p>Tüm sütunlarda yalnızca <code>+</code>, <code>-</code>, <code>*</code> vb. ile hesap yapılmaz; matematiksel işlevler de uygulanabilir, örneğin sayıları yuvarlamak. <code>round</code> yöntemiyle <code>Precipitation_in</code> sütunundaki değerleri bir ondalık basamağa yuvarlayabiliriz. Bu, 0.11'i 0.1'e çevirir. Bu tür veri türüne özgü yöntemler sayılar (örneğin <code>round</code>) ve metinler (örneğin baştaki ve sondaki boşlukları kaldıran <code>strip()</code>) için olduğu kadar tarih ya da zaman damgası içeren sütunlar için de vardır. Aşağıdaki komut tarihten haftanın gününü hesaplayıp yeni bir sütuna yazar:</p>
+
+<div class="cell" data-title="Yuvarlama, haftanın günü ve map"><textarea>df["Precipitation_in"] = df["Precipitation_in"].round(1)
+df["Day of Week"] = pd.to_datetime(df["Date"]).dt.day_name()
+
+state_map = {
+    "Chicago": "IL",
+    "Seattle": "WA",
+    "New York": "NY",
+    "Los Angeles": "CA",
+    "Houston": "TX"
+}
+df["State"] = df["Location"].map(state_map)
+df</textarea></div>
+
+<p>Daha karmaşık dönüşümler, değerlerin tam olarak nasıl dönüştürüleceğini tanımladığımız bir işlev oluşturarak yapılabilir. Bunu daha önce Bölüm 5.2'de ülkeleri nüfuslarına göre <code>"small"</code>, <code>"medium"</code> ya da <code>"large"</code> kategorilerine atamak için yapmıştık. Daha basit durumlarda ise hangi değerlerin hangi yeni değerlere eşleneceğini belirten bir sözlük oluşturmak yeterlidir (yukarıdaki <code>state_map</code>).</p>
+
+<p>Verimizde <code>state_map</code>'te bulunmayan bir yer adı geçseydi bu satırların <code>State</code> sütununda <code>NaN</code> görünürdü.</p>
+
+<p>Gösterilen dönüşümler yalnızca örnek ve ilham verme amaçlıdır. Elbette çok daha karmaşık olanlar da dâhil pek çok başka dönüşüm mümkündür. Sohbet tabanlı YZ araçları burada büyük yardımcıdır. En iyisi isteme sütun adlarını —hatta <code>df.info()</code> çıktısının tamamını— eklemek ve neyin nasıl dönüştürüleceğini tam olarak tarif etmektir. İstemdeki örnekler de her zaman yararlıdır, örneğin "Houston için eyalet TX olmalı." Böylece YZ verideki tipik değerlerin neye benzediğini ve eyaletlerin kısaltılması gerektiğini anlar.</p>
+
+<h3 id="s546">5.4.6 Kategorileri Kodlama ve Kod Çözme</h3>
+
+<p>Kod çözme (decoding), veride bir tür kod ya da kısaltma olduğu ve bunu kısaltmanın neyi temsil ettiğine çevirmek istediğimiz anlamına gelir. Aşağıdaki DataFrame'de 0 konumu Chicago'yu, 1 Seattle'ı temsil ediyor. Tam yer adlarını DataFrame'de görmek istiyorsak bunu <code>map</code> yöntemine hangi kısaltmanın hangi konuma karşılık geldiğini belirten bir sözlük vererek yapabiliriz:</p>
+
+<div class="cell" data-title="Kod çözme (decoding)"><textarea>df = pd.DataFrame({
+    'Date': ['2026-01-01', '2026-01-01', '2026-01-02'],
+    'Location': [0, 1, 0],
+    'Temperature_F': [36.5, 35.2, 33.8],
+    'Precipitation_in': [0.0, 0.2, 0.11]
+})
+
+location_map = {0: "Chicago", 1: "Seattle"}
+df["Location"] = df["Location"].map(location_map)
+df</textarea></div>
+
+<p>Tersi işleme <em>kodlama</em> (encoding) denir: <code>"Location"</code> sütununda yer adları var ama bunun yerine sayılar üretmek istiyoruz; örneğin Chicago için 0, Seattle için 1. Bu durumda bir eşleme vermemiz gerekmez; kodları otomatik olarak ürettirebiliriz:</p>
+
+<div class="cell" data-title="Kodlama (encoding)"><textarea>df["Location"] = df["Location"].astype("category").cat.codes
+df</textarea></div>
+
+<div class="note"><b>Küçük düzeltme:</b> Kitap, ilk görünen değerin 0 kodunu aldığını söylüyor. Aslında <code>astype("category")</code> kategorileri varsayılan olarak <em>alfabetik</em> sıralar; Chicago burada yalnızca alfabede önce geldiği için 0 alıyor. İlk görünme sırasını istiyorsanız <code>pd.factorize(df["Location"])[0]</code> kullanın. Deneyin: Hücredeki veride Seattle'ı ilk satıra alıp iki yöntemi karşılaştırın.</div>
+
+<p>Elbette bunu neden yapmanız gerektiğini sorabilirsiniz. Veri temizliğinin ve veri dönüşümlerinin amacı, sonuçta veriyi en iyi biçimde çalışabileceğiniz bir biçime getirmektir; kategori numaraları ya da sayısal kodlarla çalışmanın tam metin değerlerle çalışmaktan daha kolay olduğu kullanım durumları vardır. Bu özellikle makine öğrenmesi algoritmalarında yararlıdır. Bu algoritmalar çoğu zaman birinin Chicago'da mı yoksa 0 konumunda mı yaşadığını umursamaz; hatta pek çoğu verinin sayısal biçimde olmasını gerektirir. Bu yüzden böyle bir kodlamayı önceden yapmanız gerekir; algoritma daha sonra bir sonuç verdiğinde onu yeniden çözmek gerekebilir. Örneğin bir YZ algoritması bir müşterinin büyük olasılıkla 0 konumunda yaşadığını tahmin ederse, ifadenin anlam kazanması için bu değeri "Chicago" yer adına geri çevirmelisiniz.</p>
+
+<p>Ayrıca sayılar metinlere göre depolama alanından tasarruf sağlar. Bu, daha karmaşık analizlerin daha az depolama gereksinimiyle ve dolayısıyla potansiyel olarak daha hızlı yapılmasına olanak tanır. Bir başka kullanım durumu veri anonimleştirmedir: Veri kodlandıktan sonra (eşleme tablosu saklanmadıysa) sayısal kodları özgün değerlerine geri çevirmek artık mümkün değildir.</p>
+
+<h3 id="s547">5.4.7 Normalleştirme: Değerleri Karşılaştırılabilir Kılmak</h3>
+
+<p>Elmalarla armutları karşılaştırmamak için değerleri birbirleriyle karşılaştırılabilecek biçimde dönüştürmeli ve böylece anlamlı hesaplamaları mümkün kılmalıyız. Örneğin farklı kaynaklardan gelen iki DataFrame'i birleştiriyorsak ve biri sıcaklıkları °C, diğeri °F cinsinden kullanıyorsa, birleştirmeden önce tek tip bir biçime karar vermeliyiz. Böylece verimizdeki heterojenliği aşar ve veriyi homojen hâle getiririz.</p>
+
+<p>Normalleştirme de benzerdir: Veriyi bir normal biçime, yani değerlerin gerçek anlamını değiştirmeden karşılaştırılabilir olacak biçimde belirli bir şekilde standartlaştırılmış bir forma getiririz. Bilinen bir örnek min-maks normalleştirmesidir. Bunun arkasında, bir sütundaki en küçük ve en büyük değerleri bulan, sonra en küçük değerin her geçişini 0, en büyüğünü 1 ile değiştiren bir algoritma vardır. Aradaki tüm değerlere de buna göre 0 ile 1 arasında bir değer atanır. Arkasındaki formül biraz tuhaf görünebilir, ama sonuçta tam olarak bunu yapar:</p>
+
+<div class="formula">x' = (x − min) / (max − min)</div>
+
+<div class="cell" data-title="Min-maks normalleştirme"><textarea>df = pd.DataFrame({"Temperature_F": [31, 68, 105, 50, 89]})
+df["Temp_minmax"] = (df["Temperature_F"] - df["Temperature_F"].min()) / \
+                    (df["Temperature_F"].max() - df["Temperature_F"].min())
+
+# Diğer yöntemlerden örnekler:
+df["Temp_z"] = (df["Temperature_F"] - df["Temperature_F"].mean()) / df["Temperature_F"].std()
+df["Temp_log"] = np.log(df["Temperature_F"])
+df["Temp_share"] = df["Temperature_F"] / df["Temperature_F"].sum()
+df.round(3)</textarea></div>
+
+
+
+<p>Veri setimizdeki en düşük sıcaklık 31 °F ve en yüksek 105 °F olsaydı 31 °F 0, 68 °F 0.5 (çünkü (68 − 31) / (105 − 31) = 0,5) ve 105 °F 1 olurdu.</p>
+
+<div class="widget" id="mmWidget">
+  <h4>Etkileşimli: min-maks normalleştirme</h4>
+  <div class="ctrl"><label style="flex:1">Değerler (virgülle): <input type="text" id="mmIn" value="31, 68, 105, 50, 89" style="width:100%;font-family:'JetBrains Mono',monospace;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--code-bg);color:var(--ink)"></label></div>
+  <svg id="mmSvg" viewBox="0 0 640 120" role="img" aria-label="Normalleştirilmiş değerler"></svg>
+  <div class="readout" id="mmOut"></div>
+</div>
+
+<p>Bu tür normalleştirmeler YZ algoritmaları kullanılırken de sık yapılır. Pek çok makine öğrenmesi algoritması verinin önceden normalleştirilmesini gerektirir. Ayrıca 0 ile 1 arasındaki değerler çoğu zaman daha kolay anlaşılır. Örneğin 103 °F çok mu? Bu bağlama bağlı. 0,98 (0–1 ölçeğinde) çok mu? Evet, kesinlikle! Ortalamanın hem altındaki hem üstündeki aykırı değerler normalleştirilmiş değerlerde daha kolay fark edilir; grafik ve görselleştirme oluştururken de normalleştirilmiş değerler kutudan çıktığı gibi yararlı ve tutarlı bir ölçek sağlar.</p>
+
+<p>Min-maks normalleştirmenin yanı sıra Z-puanı, L2 normu, log normalleştirme, toplam içindeki payı hesaplamak ve daha pek çok normalleştirme yöntemi vardır (yukarıdaki hücrede birkaçını görebilirsiniz). Her birinin artıları ve eksileri var. Örneğin log normalleştirmede aykırı değerler daha çok göze çarpar. Ama burada ayrıntıya girmeye gerek yok; böyle bir şey yapmak istiyorsanız muhtemelen ne yaptığınızı zaten biliyorsunuzdur.</p>
+
+<!-- ====================== 5.5 ====================== -->
+<h2 id="s55"><span class="num">5.5</span>Pandas ile Hesaplamalar ve Analizler</h2>
+
+<p>Bu bölüm, bir DataFrame'e yüklediğimiz ve temizlediğimiz veriyi yeni içgörüler çıkarmak için analiz etmeye odaklanıyor. Tüm veri seti üzerinde istatistiksel ölçülerin basit hesaplamalarıyla başlayacak, ardından veriyi nasıl gruplayacağımızı ve tek tek gruplar üzerinde nasıl hesap yapacağımızı keşfedeceğiz.</p>
+
+<h3 id="s551">5.5.1 Satır Satır Hesaplamalar</h3>
+
+<p>Önceki alt bölümlerde öğrendiğiniz yöntemlerle pek çok veri analizi yapabilirsiniz:</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>Date, Location, Temperature_F ve Precipitation_in sütunlarına sahip bir pandas DataFrame'im var. Her satır için bir puan hesaplamak istiyorum. Sıcaklık ne kadar yüksek ve yağış ne kadar azsa puan o kadar yüksek olmalı. Yüksek puan böylece daha iyi havayı gösterir.</em></div>
+
+<div class="cell" data-title="Hava puanı"><textarea>import pandas as pd
+df = pd.DataFrame({
+    'Date': ['2026-01-01', '2026-01-01', '2026-01-02'],
+    'Location': ['Chicago', 'Seattle', 'Chicago'],
+    'Temperature_F': [36.5, 35.2, 33.8],
+    'Precipitation_in': [0.0, 0.2, 0.11]
+})
+
+# 0 ile 1 arasına normalleştir
+df['Temp_norm'] = ((df['Temperature_F'] - df['Temperature_F'].min()) /
+                   (df['Temperature_F'].max() -
+                    df['Temperature_F'].min()))
+df['Rain_norm'] = 1 - ((df['Precipitation_in'] -
+                        df['Precipitation_in'].min()) /
+                       (df['Precipitation_in'].max() -
+                        df['Precipitation_in'].min()))
+
+# Puanı hesapla (basit ortalama)
+df['Score'] = (df['Temp_norm'] + df['Rain_norm']) / 2
+print(df[['Date', 'Location', 'Score']])
+
+# Ağırlıklı ortalama
+df['Score_w'] = df['Temp_norm'] * 0.7 + df['Rain_norm'] * 0.3
+print()
+print(df[['Date', 'Location', 'Score', 'Score_w']].round(3))</textarea></div>
+
+<p>Burada hem sıcaklık hem yağış değerleri 0 ile 1 arasına normalleştiriliyor. Yağış için formül <code>1 -</code> ile başlıyor, böylece en düşük yağış değeri 1 alıyor. Sonuçta az yağışın daha iyi olması gerekiyor ve değer ne kadar yüksekse hava o kadar iyi. Hem sıcaklığı hem yağışı içeren nihai puan burada basitçe iki değerin ortalaması olarak hesaplanıyor. Örneğin sıcaklığın puan üzerinde daha büyük etkisi olsun istiyorsak bunun yerine ağırlıklı ortalama da kullanabiliriz: <code>df['Score'] = df['Temp_norm'] * 0.7 + df['Rain_norm'] * 0.3</code>. Ağırlıkların toplamı 0,7 + 0,3 = 1 olduğundan puan yine 0 ile 1 aralığına düşer.</p>
+
+<h3 id="s552">5.5.2 Önceki Değerden Farklar</h3>
+
+<p><code>diff()</code> yöntemi bir sütun içinde ardışık satırların değerleri arasındaki farkı hesaplar. Örneğin sıcaklık değerleri arasındaki farkı yeni bir sütuna yazarsak, bununla sıcaklığın önceki güne göre arttığını mı azaldığını mı belirleyebiliriz. Fark pozitifse artmıştır; negatifse önceki gün sıcaklık daha yüksekti. Anlamlı değerler elde etmek için önce veriyi yalnızca Chicago şehrinin sıcaklık değerlerine bakacak biçimde filtreler ve tarihe göre artan sırada sıralarız:</p>
+
+<div class="cell" data-title="diff() (Şekil 5.5) ve cumsum() (Şekil 5.6)"><textarea>df = pd.read_csv("climatedata.tsv", sep="\t")
+
+df_chicago = df[df['Location'] == 'Chicago'].sort_values('Date')
+df_chicago['Temp_diff'] = df_chicago['Temperature_F'].diff()
+df_chicago['Precipitation_cumsum'] = df_chicago['Precipitation_in'].cumsum()
+df_chicago</textarea></div>
+
+<p>İlk satırda yeni <code>Temp_diff</code> sütunu <code>NaN</code> değerini içerir, çünkü henüz karşılaştırılacak bir değer yoktur.</p>
+
+<h3 id="s553">5.5.3 Değerleri Toplulaştırma</h3>
+
+<p>Toplulaştırma (aggregation), çok sayıda değerden tek bir değer hesaplamak demektir. Bir sütundaki tüm değerlerden ortalamayı ya da toplamı hesaplamak buna örnektir. <code>mean()</code> ve <code>sum()</code> hesaplamaları sütunun tamamı üzerinde yapılır; sonuç her durumda tek bir sayıdır. Kitapta kullanılan daha büyük veri setinde bunlar ortalama sıcaklık için 54.8 ve toplam yağış için 369.27'dir. İkinci sayı muhtemelen pek anlamsızdır, çünkü pek çok gün ve konumdan gelen pek çok değeri toplar. Ancak örneğin önceden belirli bir şehir için filtreleyip zaman aralığını daraltsaydık toplam yağış yeniden anlam kazanırdı:</p>
+
+<div class="cell" data-title="Toplulaştırma ve tarih filtresi"><textarea>df = pd.read_csv("climatedata.tsv", sep="\t")
+df["Date"] = pd.to_datetime(df["Date"])
+
+average_temperature = df['Temperature_F'].mean()
+total_precipitation = df['Precipitation_in'].sum()
+print("Ortalama sıcaklık:", round(average_temperature, 2))
+print("Toplam yağış     :", round(total_precipitation, 2))
+
+df_jan2026_chicago = df[(df['Location'] == 'Chicago') &
+                        (df['Date'].dt.year == 2026) &
+                        (df['Date'].dt.month == 1)]
+total_precipitation = df_jan2026_chicago['Precipitation_in'].sum()
+print("Chicago, Ocak 2026 toplam yağış:", total_precipitation)</textarea></div>
+
+<p>Tarih sütunundan yıl ve ayı çıkarmak için tarihin önce Bölüm 5.4'te anlatıldığı gibi <code>pd.to_datetime</code> ile metin değerlerden <code>datetime</code> veri türündeki değerlere dönüştürülmesi gerekir.</p>
+
+<h3 id="s554">5.5.4 Kümülatif Toplamlar</h3>
+
+<p>Tüm yağış değerlerinin toplamını bir kerede hesaplamak yerine bu hesabı her satır için adım adım da yapabiliriz. Sonuca <em>kümülatif toplam</em> denir ve ilgili güne kadarki toplam yağış olarak yorumlanabilir. İlk satır için kümülatif toplam yalnızca o günün yağış değeridir; ikinci satır için ilk satırın değeri artı ikinci satırdaki değerdir. Üçüncü satır için onun değeri de eklenir ve böyle sürer. Pandas'ta bunun için <code>cumsum</code> yöntemi kullanılır: <code>df_chicago['Precipitation_cumsum'] = df_chicago['Precipitation_in'].cumsum()</code>. (Bu satır 5.5.2'deki hücrede zaten çalıştırıldı.)</p>
+
+<h3 id="s555">5.5.5 Veriyi Gruplama</h3>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>Date, Location, Temperature_F ve Precipitation_in sütunlarına sahip bir pandas DataFrame'im var. Her bir konum için ortalama sıcaklığı hesapla.</em></div>
+
+<div class="cell" data-title="groupby (Şekil 5.7)"><textarea>import pandas as pd
+
+df = pd.DataFrame({
+    'Date': ['2026-01-01', '2026-01-01', '2026-01-02'],
+    'Location': ['Chicago', 'Seattle', 'Chicago'],
+    'Temperature_F': [36.5, 35.2, 33.8],
+    'Precipitation_in': [0.0, 0.2, 0.11]
+})
+
+# Konum başına ortalama sıcaklığı hesapla
+avg_temp = df.groupby("Location")["Temperature_F"].mean()
+
+print(avg_temp)</textarea></div>
+
+<p><code>groupby</code> yöntemi bir DataFrame değil, indeksi gruplamada kullanılan sütunun değerlerinden (yani şehir adlarından), karşılık gelen değerleri de o şehirlerdeki ortalama sıcaklıklardan oluşan bir Series döndürür.</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>Bu Series'i "Location" ve "Average Temperature" adlı iki sütunlu bir DataFrame'e nasıl geri çeviririm?</em></div>
+
+<div class="cell" data-title="reset_index ve çoklu toplulaştırma"><textarea># DataFrame'e çevir
+df_average = avg_temp.reset_index()
+# Sütunu yeniden adlandır (isteğe bağlı)
+df_average = df_average.rename(columns={"Temperature_F":
+                                        "Average_Temperature"})
+print(df_average, "\n")
+
+# Kitapta değinilip gösterilmeyen: aynı anda birden çok toplulaştırma
+print(df.groupby("Location")["Temperature_F"].agg(["min", "max", "mean", "count"]))</textarea></div>
+
+<p><code>reset_index()</code> yöntemi indeksi <code>Location</code> adlı normal bir sütuna geri çevirir. Yeni oluşturulan DataFrame'in böylece iki sütunu olur: <code>Location</code> ve <code>Temperature_F</code>. İkincisini <code>rename</code> ile yeniden adlandırabiliriz.</p>
+
+<p>Gruplamamızda ortalama sıcaklıkları hesaplamak için <code>mean()</code> çağırdık. Diğer toplulaştırma işlevleri arasında <code>sum</code>, <code>min</code>, <code>max</code> ya da <code>count</code> vardır. Sonuncusu ilgili gruptaki sütunda boş olmayan değerleri sayar. Birden çok toplulaştırma işlevini aynı anda hesaplamak, örneğin şehir başına en yüksek ve en düşük sıcaklıkları bulmak da mümkündür (yukarıdaki hücrenin son satırı). Birden çok sütuna göre de gruplayabilirsiniz.</p>
+
+<h3 id="s556">5.5.6 Veriyi Sıralama ve Derecelendirme</h3>
+
+<p>Bir DataFrame'deki veriyi <code>sort_values</code> yöntemiyle kolayca sıralayabilirsiniz. Varsayılan olarak veri artan sırada sıralanır; DataFrame'in ilk satırı artık sıcaklığı en düşük olandır. <code>ascending=False</code> seçeneğiyle veri setini azalan sırada sıralayabiliriz. Sütun adlarını metin olarak değil de metin listesi olarak verirsek birden çok sütuna göre de sıralayabiliriz:</p>
+
+<div class="cell" data-title="Sıralama"><textarea>print(df.sort_values('Temperature_F'), "\n")
+print(df.sort_values(['Date', 'Temperature_F'],
+                     ascending=[True, False]))</textarea></div>
+
+<p>Önce her şey tarihe göre artan sırada sıralanır. Birden çok satır aynı tarihe sahipse sıcaklığı yüksek olan satır listede daha yukarıda görünür. Sıralama yalnızca sayısal sütunlarda değil, konum adı gibi metin sütunlarında ya da tarih/saat verisi içeren sütunlarda da çalışır.</p>
+
+<p><code>rank()</code> yöntemi her satır için bir <em>derece</em> (sıra numarası) hesaplar. 1 derecesi, o satırın belirtilen sütundaki değerinin tüm değerler arasında en küçüğü olduğu anlamına gelir. 2 derecesi ikinci en küçük değere karşılık gelir ve böyle sürer. Burada da <code>ascending=False</code> seçeneği derecelendirmeyi tersine çevirmek için kullanılabilir; o zaman 1 en büyük değere karşılık gelir. Derecelendirme gruplamadan sonra yapılırsa her bir grup için ayrı bir derece hesaplanır. Bu durumda 1 artık en düşük sıcaklığı değil, Chicago'daki ya da Seattle'daki en düşük sıcaklığı temsil eder:</p>
+
+<div class="cell" data-title="rank() ve grup içi derece (Şekil 5.8)"><textarea>df['Temp_Rank'] = df['Temperature_F'].rank()
+df['Rank_Location'] = df.groupby('Location')['Temperature_F'].rank()
+df = df.sort_values(['Location', 'Rank_Location'])
+df</textarea></div>
+
+<p>Ancak <code>rank</code> yöntemini çağırmak veriyi yalnızca derecelendirir, sıralamaz. Bu yüzden genellikle dereceyi hesaplamak için kullanılan sütuna göre, derece uygulanmadan önce ya da sonra sıralamak mantıklıdır. Elbette doğrudan dereceye göre de sıralayabilirsiniz (yukarıdaki hücre).</p>
+
+<!-- ====================== 5.6 ====================== -->
+<h2 id="s56"><span class="num">5.6</span>Birden Çok Kaynaktan Veri Birleştirme</h2>
+
+<p>Veri nadiren hatasız ve tam ihtiyacınız olan biçimde gelir; veri temizliğini bu yüzden yaparız. Tek bir dosyanın ihtiyacınız olan tüm veriyi içermesi de nadirdir. Çoğu zaman birden çok dosyanın ya da çeşitli başka veri kaynaklarının içeriğini birleştirmeniz, kaynaştırmanız ya da bağlamanız gerekir. İşte üç örnek:</p>
+<div class="terms">
+<div class="term"><b>Örnek 1</b><br>Birkaç yılı kapsayan hava verisini analiz etmek istiyoruz. Her yıl için ayrı dosyalarımız var. Ancak biçim her seferinde aynı: aynı sütunlar, aynı veri türleri, aynı birimler.</div>
+<div class="term"><b>Örnek 2</b><br>Farklı şehirlerin hava verisini karşılaştırmak istiyoruz. Veri farklı kaynaklardan geliyor; öznitelikler farklı adlara sahip ve aynı ölçüm türü için farklı birimler ve veri türleri kullanılıyor. Ayrıca dosyalar farklı biçimlerde; örneğin biri Excel, diğeri CSV. Yine de iki kaynak da aynı şeyle ilgili: belirli bir günde belirli bir şehirde belirli bir sıcaklık ölçüldü.</div>
+<div class="term"><b>Örnek 3</b><br>Bir dosya hava verisini içeriyor ama ilgili değerlerin ölçüldüğü konumu içermiyor. Bunun yerine veride yalnızca meteoroloji istasyonlarının kimlikleri (ID) var, örneğin 13667. İkinci bir dosya her istasyonla ilgili ayrıntıları içeriyor; örneğin 13667 kimlikli istasyonun Almanya'nın Freiburg kentinde olduğunu.</div>
+</div>
+
+<p>Tüm bu durumlarda sonunda çeşitli kaynaklardan gelen tüm verinin bütünleştirildiği tek bir pandas DataFrame'i istiyoruz. Şimdi bunu yapacağız.</p>
+
+<p>Örnek 1 ve Örnek 2 için yordam esasen aynıdır; tek fark ilk örnekte 2. adımda yapacak pek bir şey olmamasıdır:</p>
+<ol>
+<li>Veri ayrı DataFrame'lere yüklenir (örneğin <code>df1</code> ve <code>df2</code>).</li>
+<li><code>df1</code> ve <code>df2</code> sonrasında homojen olsun diye veri temizliği yapılır.</li>
+<li>DataFrame'ler tek bir DataFrame'de birleştirilir: <code>df = pd.concat([df1, df2], ignore_index=True)</code>.</li>
+</ol>
+
+<p><code>pd.concat</code> işlevi <code>len(df1)+len(df2)</code> satırlı yeni bir DataFrame oluşturur. Birleştirilecek iki DataFrame'in aynı sütunlara sahip olması önemlidir; aksi hâlde sonuç her iki DataFrame'in tüm sütunlarını içerir ve pek çok hücre <code>NaN</code> değerleriyle dolar. <code>ignore_index=True</code> seçeneği birleştirirken satır numaralandırmasının atılması için önemlidir. Onsuz birden çok 0 numaralı satırımız olurdu vb. Bu seçenekle satırlar birleştirmeden sonra yeniden numaralandırılır.</p>
+
+<div class="cell" data-title="concat: aynı ve farklı sütunlar"><textarea>import pandas as pd
+df1 = pd.DataFrame({"Date": ["2026-01-01"], "Location": ["Chicago"], "Temperature_F": [36.5]})
+df2 = pd.DataFrame({"Date": ["2026-01-01"], "Location": ["Seattle"], "Temperature_F": [35.2]})
+df3 = pd.DataFrame({"Datum": ["2026-01-01"], "Ort": ["Freiburg"], "Temp_C": [3.1]})
+
+print(pd.concat([df1, df2]), "\n")                       # indeks 0, 0
+print(pd.concat([df1, df2], ignore_index=True), "\n")    # indeks 0, 1
+print(pd.concat([df1, df3], ignore_index=True))          # farklı sütunlar → NaN</textarea></div>
+
+<p>Üçüncü örneğe daha sonra döneceğiz. O durumda DataFrame'ler tümüyle farklı türde veri içerir; onları doğrudan birleştiremeyiz, veriyi uygun bir biçimde bağlamamız gerekir. Şimdilik farklı kaynaklardan ya da farklı veri setlerinden gelen veriyi birleştirdiğimiz senaryoda kalalım.</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>dwd klasöründe Alman Hava Servisi'nden 12 dosyam var: regional_averages_tm_01.txt vb., her ay için bir dosya. Tüm veriyi içeren bir pandas DataFrame'ine ihtiyacım var. Her dosyanın ilk satırları şöyle görünüyor:</em>
+<pre style="font-family:'JetBrains Mono',monospace;font-size:12px;margin:.6em 0;white-space:pre-wrap">Time series for regional averages for federal states and combinations of federal states, created on: 20250904
+Year;Month;Brandenburg/Berlin;Brandenburg;Baden-Wuerttemberg;Bavaria;Hesse;Mecklenburg-Western Pomerania;Lower Saxony;Lower Saxony/Hamburg/Bremen;North Rhine-Westphalia;Rhineland-Palatinate;Schleswig-Holstein;Saarland;Saxony;Saxony-Anhalt;Thuringia/Saxony-Anhalt;Thuringia;Germany;
+1881;01;  -5.54;  -5.56;  -4.89;  -6.51;  -5.68;  -5.07;  -4.55;  -4.55;  -4.21;  -4.49;  -4.06;  -4.15;  -6.22;  -5.89;  -6.28;  -6.76;  -5.36;</pre></div>
+
+<div class="cell" data-title="12 aylık dosyayı birleştir (Şekil 5.9)"><textarea>import pandas as pd
+from pathlib import Path
+
+# DWD dosyalarını içeren klasör
+folder = Path("dwd")
+
+# İlgili tüm dosyaları seç (aya göre sıralı)
+files = sorted(folder.glob("regional_averages_tm_*.txt"))
+print(len(files), "dosya bulundu")
+
+# Tüm dosyaları oku ve bir DataFrame listesinde topla
+dfs = []
+for f in files:
+    df = pd.read_csv(f, sep=";", skiprows=1, na_values=["-"])
+    # Sondaki noktalı virgül yüzünden son sütun boş -> sil
+    df = df.drop(columns=df.columns[-1])
+    dfs.append(df)
+
+# Hepsini tek bir DataFrame'de birleştir
+df = pd.concat(dfs, ignore_index=True)
+
+# Veri türlerini ayarla
+df["Year"] = df["Year"].astype(int)
+df["Month"] = df["Month"].astype(int)
+
+print(df.head())
+print(df.shape)</textarea></div>
+
+<p>Bir döngü içinde CSV dosyalarının her biri <code>pd.read_csv</code> ile okunur. ChatGPT istemine örnek satırlar eklediğimiz için YZ sütun ayırıcıyı doğru biçimde noktalı virgüle ayarlar; sütun adı ya da veri içermediği için ilk satırı atlar ve yalnızca <code>"-"</code> karakterinden oluşan değerleri <code>NaN</code>'a çevirir. Sonuncusu bir tahmindi, çünkü verilen örnekte böyle bir <code>"-"</code> değeri yoktu. Ancak ChatGPT bir şeyi fark etti: Her satırın sonunda, ardından değer gelmese de bir noktalı virgül var. Bu, DataFrame'de tümüyle boş bir sütuna yol açardı; bu yüzden onu kaldırıyoruz. Bir listede toplanan tek tek DataFrame'ler yine <code>pd.concat</code> ile birleştirilir.</p>
+
+<p>Programımızın sonunda ürettiği DataFrame'de <code>Year</code> (örneğin 1881), <code>Month</code> (örneğin 1) ve her eyalet için o eyaletin sıcaklığını içeren birer sütun var. Ancak analiz için çok daha iyi olurdu ki, birincisi yıl ve ay iki ayrı sütunda değil tek bir tarih sütununda (örneğin <code>"1881-01-01"</code>) olsun; ikincisi eyaletler ayrı sütunlar olmasın, her eyalet için ayrı bir satır olsun. Böyle bir dönüşüm kolay değil, ama işi ChatGPT'ye yaptırabiliriz:</p>
+
+<div class="prompt"><div class="lbl">İstem</div>
+<em>DataFrame şöyle görünmeli: Date, State, Temperature. Bana yalnızca eklemem gereken kod satırlarını göster.</em></div>
+
+<div class="cell" data-title="Geniş → uzun biçim: melt (Şekil 5.10)"><textarea># Geniş → Uzun: tarih ve eyalet başına bir satır
+df_long = df.melt(
+    id_vars=["Year", "Month"],
+    var_name="State",
+    value_name="Temperature"
+)
+
+# Yıl + aydan tarih sütunu oluştur
+df_long["Date"] = pd.to_datetime({"year": df_long["Year"],
+                                  "month": df_long["Month"],
+                                  "day": 1})
+
+# Yalnızca istenen sütunları tut
+df_long = df_long[["Date", "State", "Temperature"]]
+print(df_long.head())
+print(df_long.shape)</textarea></div>
+
+<p>Nasıl yapıldığını bilince her şeyi eyaletler artık satırlarda olacak biçimde <code>melt</code> yöntemiyle dönüştürmek o kadar zor değil. <code>id_vars=["Year", "Month"]</code> sütunları DataFrame'de kalması gerekenlerdir. <code>var_name="State"</code> ve <code>value_name="Temperature"</code> sütunları eklenecek olanlardır. <code>State</code> sütunu özgün DataFrame'deki sütun adını, örneğin <code>Bavaria</code>'yı; yeni <code>Temperature</code> sütunu da tam o sütundaki değeri içerir.</p>
+
+<div class="widget" id="meltWidget">
+  <h4>Etkileşimli: melt ne yapar?</h4>
+  <div class="ctrl"><button class="btn" id="meltBtn">Geniş → Uzun</button> <span class="readout" style="color:var(--muted);font-size:13px">Sütun adları satırlara iner, değerler tek sütunda toplanır.</span></div>
+  <div id="meltView" style="overflow-x:auto"></div>
+</div>
+
+<p>Elimizde farklı zaman dilimlerini, eyaletleri ya da şehirleri kapsayan başka kaynaklardan hava verisi içeren ek dosyalar olsaydı ve bunları DataFrame'imizle birleştirmek isteseydik, önce uygun veri dönüşüm adımlarıyla (sütunları yeniden adlandırma, birimleri dönüştürme vb.) onları aynı biçime getirmemiz gerekirdi. Ardından ayrı DataFrame'leri <code>pd.concat</code> ile yeniden tek bir DataFrame'de birleştirebilirdik.</p>
+
+<p>Şimdi daha önce anlatılan üçüncü örnekteki duruma bakalım. Bunun için yine Alman Hava Servisi'nden gelen şu iki dosyayı kullanacağız:</p>
+<pre class="formula" style="text-align:left">Station_id;Reference_period;Data_source;Jan;Feb;Mar;…
+1;          1981–2010;     46;  -.4; .7; 4.7;…</pre>
+<div class="caption">Liste 5.1 — Temperature_1981-2010.txt dosyası</div>
+<pre class="formula" style="text-align:left">Station_id;Station_name;Latitude;Longitude;Elevation;State;
+1;         Aach;     47.841299;  8.849299;  478;  Baden-Württemberg;</pre>
+<div class="caption">Liste 5.2 — Temperature_1981-2010_StationList.txt dosyası</div>
+
+<p>Önce ikisi de iki ayrı DataFrame'e okunur. Jupyter defterlerini kullanmanın pratik yanı, tek tek adımlar arasında DataFrame'in o ana kadar nasıl göründüğünü her zaman gösterebilmemizdir. Örneğin ilk DataFrame'i yükler, <code>head()</code> ile ilk birkaç satırı gösterir, sonra aynısını ikinci DataFrame için yaparız. Böylece her şeyin amaçlandığı gibi çalışıp çalışmadığını hemen görürüz. Ayrıca gereksiz sütunları doğrudan kaldırmak ve sütunları yeniden adlandırmak gibi dönüşümler de yapabiliriz.</p>
+
+<div class="cell" data-title="Sıcaklık dosyasını oku (Şekil 5.11)"><textarea>import pandas as pd
+df_temperature = pd.read_csv("dwd/Temperature_1981-2010.txt", sep=";",
+                             skipinitialspace=True, encoding="latin1")
+df_temperature = df_temperature[["Station_id", 'Jan', 'Feb', 'Mar',
+    'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']]
+df_temperature.head()</textarea></div>
+
+<p>Veri yine elverişsiz bir biçimde, her ay için ayrı bir sütunla. Bu yüzden onu yeniden ayrı satırlara çevirmek için <code>melt</code> kullanırız. Bu sıcaklık DataFrame'i üzerinde son bir dönüşüm yapacağız: Ay adları (<code>Jan</code> vb.) işlenmesi ve sıralanması zor değerlerdir. Bu yüzden onları ay numaralarına çeviririz:</p>
+
+<div class="cell" data-title="melt ve ay adlarını sayıya çevir (Şekil 5.12–5.13)"><textarea>df_temperature = df_temperature.melt(id_vars=["Station_id"],
+                    var_name="Month", value_name="Temperature")
+print(df_temperature.head(), "\n")
+
+df_temperature["Month"] = df_temperature["Month"].map({'Jan': 1,
+ 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7,
+ 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12})
+df_temperature.head()</textarea></div>
+
+<p>Şimdi sıra istasyon dosyasında. Bu DataFrame çok daha az dönüşüm adımı gerektirir. Gerekmeyen sütunları kaldırır, bir sütunu yeniden adlandırır ve boşlukları sileriz:</p>
+
+<div class="cell" data-title="İstasyon listesini oku (Şekil 5.14)"><textarea>df_stations = pd.read_csv("dwd/Temperature_1981-2010_StationList.txt",
+                          sep=";", skipinitialspace=True,
+                          encoding="latin1")
+df_stations = df_stations[["Station_id", "Station_name",
+                           "State"]]
+df_stations = df_stations.rename(columns={"Station_name": "Location"})
+df_stations["Location"] = df_stations["Location"].astype(str).str.strip()
+df_stations.head()</textarea></div>
+
+<p>Şimdi iki DataFrame'in asıl birleştirilmesi geliyor. Pandas'ta bu <code>pd.merge</code> ile yapılır. İşlev iki DataFrame'i ve diğer DataFrame'de eşleşen satırları bulmak için kullanılan sütunun adını alır; bizim durumumuzda bu <code>Station_id</code>'dir:</p>
+
+<div class="cell" data-title="merge (Şekil 5.15)"><textarea>df = pd.merge(df_temperature, df_stations, on="Station_id", how="left")
+df.head()</textarea></div>
+
+<p><code>merge</code>'ü kullanmanın en kolay yolu, birleştirme için tek bir sütun kullanıldığında ve bu sütunun her iki DataFrame'de aynı adı taşıdığında ortaya çıkar. O zaman basitçe <code>on="Station_id"</code> yazabiliriz. <code>how="left"</code> seçeneği soldaki DataFrame'in (<code>df_temperature</code>) ana tablo olduğunu belirtir. <code>Station_id</code> sütununda ne olduğuna bakar ve sağdaki tabloda (<code>df_stations</code>) kendi <code>Station_id</code> sütununda tam o değeri içeren satırı arar. Son olarak sonuç satırı bu iki satırdan derlenir. Bulunan <code>Station_id</code>'ye sahip istasyon sağdaki DataFrame'de olmasaydı <code>Location</code> ve <code>State</code> sütunları basitçe <code>NaN</code> ile doldurulurdu.</p>
+
+<div class="widget" id="joinWidget">
+  <h4>Etkileşimli: <code>how</code> parametresi</h4>
+  <div class="ctrl" id="joinCtrl">
+    <label><input type="radio" name="how" value="left" checked> left</label>
+    <label><input type="radio" name="how" value="inner"> inner</label>
+    <label><input type="radio" name="how" value="right"> right</label>
+    <label><input type="radio" name="how" value="outer"> outer</label>
+  </div>
+  <div id="joinView" style="display:flex;flex-wrap:wrap;gap:18px;overflow-x:auto"></div>
+  <div class="readout" id="joinOut" style="margin-top:8px;font-size:14px"></div>
+</div>
+
+<p>Böylece nihai DataFrame'imizde her satır ayı, şehir adını ve ölçülen sıcaklığı içeriyor. Bu amaçlarımız için mükemmel. Bu DataFrame'i bir sonraki bölümde Matplotlib ile grafik üretmek için kullanacağız. Ondan önce DataFrame'imizi, yine Alman Hava Servisi'nin sağladığı bir dosyadan gelen yağış değerlerini içeren bir sütunla genişletelim. Dönüşüm adımları sıcaklık verisindekilerle aynı. Son olarak DataFrame'imizi <em>weather.csv</em> dosyasına kaydedeceğiz:</p>
+
+<div class="cell" data-title="Yağışı ekle ve weather.csv olarak kaydet"><textarea># Dosyayı oku
+df_precipitation = pd.read_csv("dwd/Precipitation_1981-2010.txt",
+                               sep=";", skipinitialspace=True, encoding="latin1")
+
+# Gereksiz sütunları kaldır
+df_precipitation = df_precipitation[["Station_id", 'Jan.', 'Feb.', 'Mar.',
+    'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sept.', 'Oct.', 'Nov.', 'Dec.']]
+
+# Önce: her ay için sütun; şimdi ay ve yağış sütunları
+df_precipitation = df_precipitation.melt(id_vars=["Station_id"],
+                    var_name="Month", value_name="Precipitation")
+
+# Ay adlarını sayılara çevir
+df_precipitation["Month"] = df_precipitation["Month"].map({'Jan.': 1,
+ 'Feb.': 2, 'Mar.': 3, 'Apr.': 4, 'May': 5, 'Jun.': 6, 'Jul.': 7,
+ 'Aug.': 8, 'Sept.': 9, 'Oct.': 10, 'Nov.': 11, 'Dec.': 12})
+
+# Yağış verisini DataFrame'imize ekle
+df = pd.merge(df, df_precipitation, on=["Station_id", "Month"],
+              how="left")
+
+# Dosyaya kaydet
+df.to_csv("weather.csv", index=False)
+print(df.head(8))
+print("\nweather.csv kaydedildi:", df.shape)</textarea></div>
+
+<p>Kaydedilen <code>weather.csv</code> dosyasını sol paneldeki <b>Dosyalar</b> listesinden indirebilirsiniz.</p>
+
+<div class="cell" data-title="Bonus: sonucu çiz (sonraki bölüme bir bakış)"><textarea>import matplotlib.pyplot as plt
+
+fig, ax1 = plt.subplots(figsize=(9, 4))
+for loc, g in df.groupby("Location"):
+    ax1.plot(g["Month"], g["Temperature"], marker="o", label=loc)
+ax1.set_xlabel("Ay")
+ax1.set_ylabel("Sıcaklık (°C, 1981–2010 ortalaması)")
+ax1.set_xticks(range(1, 13))
+ax1.legend(fontsize=8)
+plt.show()</textarea></div>
+
+</article></main>
+</div>
+
+<script>
+/* ---------- Tema ---------- */
+(function(){
+  const root=document.documentElement;
+  let saved=null; try{saved=localStorage.getItem('ml-theme')}catch(e){}
+  if(saved) root.setAttribute('data-theme',saved);
+  document.getElementById('themeBtn').onclick=()=>{
+    const dark = root.getAttribute('data-theme')==='dark' ||
+      (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    const next = dark?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem('ml-theme',next)}catch(e){}
+  };
+})();
+
+/* ---------- Pyodide ---------- */
+let pyodide=null, pyReady=null, runFn=null;
+const dot=document.getElementById('pyDot'), st=document.getElementById('pyState'), msg=document.getElementById('pyMsg');
+function setState(s,t,m){dot.className='dot '+s; st.textContent=t; if(m!==undefined) msg.textContent=m;}
+
+const HELPER = `
+import sys, io, ast, base64, traceback, json
+import matplotlib
+matplotlib.use("AGG")
+import matplotlib.pyplot as plt
+plt.show = lambda *a, **k: None
+import pandas as _pd
+_pd.set_option("display.width", 140)
+_pd.set_option("display.max_columns", 30)
+NS = {"__name__": "__main__"}
+
+def _run_cell(code):
+    buf = io.StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    sys.stdout = sys.stderr = buf
+    html = None; ok = True
+    try:
+        tree = ast.parse(code)
+        last = None
+        if tree.body and isinstance(tree.body[-1], ast.Expr):
+            last = ast.Expression(tree.body.pop().value)
+        exec(compile(tree, "<hücre>", "exec"), NS)
+        if last is not None:
+            val = eval(compile(last, "<hücre>", "eval"), NS)
+            if val is not None:
+                if hasattr(val, "to_html"):
+                    html = val.to_html(max_rows=40)
+                else:
+                    print(repr(val))
+    except Exception:
+        ok = False
+        traceback.print_exc()
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
+    imgs = []
+    for n in plt.get_fignums():
+        fig = plt.figure(n)
+        b = io.BytesIO()
+        fig.savefig(b, format="png", dpi=110, bbox_inches="tight")
+        imgs.append(base64.b64encode(b.getvalue()).decode())
+    plt.close("all")
+    return json.dumps({"out": buf.getvalue(), "html": html, "imgs": imgs, "ok": ok})
+`;
+
+const SETUP = "import os, numpy as np, pandas as pd\nos.makedirs(\"dwd\", exist_ok=True)\nwith open(\"climatedata.tsv\", \"w\") as f:\n    f.write(\"Date\\tLocation\\tTemperature_F\\tPrecipitation_in\\n\"\n            \"2026-01-01\\tChicago\\t36.5\\t0.0\\n2026-01-01\\tSeattle\\t35.2\\t0.2\\n2026-01-02\\tChicago\\t33.8\\t0.11\\n\")\ntry:\n    import openpyxl\n    pd.read_csv(\"climatedata.tsv\", sep=\"\\t\").to_excel(\"climatedata.xlsx\", sheet_name=\"Climate 2026\", index=False)\nexcept ImportError:\n    print(\"Uyar\u0131: openpyxl kurulamad\u0131; Excel h\u00fccreleri \u00e7al\u0131\u015fmayacak.\")\n\n_states = [\"Brandenburg/Berlin\",\"Brandenburg\",\"Baden-Wuerttemberg\",\"Bavaria\",\"Hesse\",\"Mecklenburg-Western Pomerania\",\"Lower Saxony\",\"Lower Saxony/Hamburg/Bremen\",\"North Rhine-Westphalia\",\"Rhineland-Palatinate\",\"Schleswig-Holstein\",\"Saarland\",\"Saxony\",\"Saxony-Anhalt\",\"Thuringia/Saxony-Anhalt\",\"Thuringia\",\"Germany\"]\n_book_1881 = [-5.54,-5.56,-4.89,-6.51,-5.68,-5.07,-4.55,-4.55,-4.21,-4.49,-4.06,-4.15,-6.22,-5.89,-6.28,-6.76,-5.36]\n_book_jan_first3 = {1882:[1.43,1.42,0.65], 1883:[0.41,0.42,0.09], 1884:[3.35,3.34,2.34], 1885:[-2.15,-2.16,-3.88]}\n_clim = [-0.5,0.5,3.5,7.5,12.0,15.5,17.0,16.5,13.5,9.0,4.5,1.0]\n_rng = np.random.default_rng(1881)\n_off = _rng.normal(0, 0.5, len(_states))\nfor m in range(1, 13):\n    lines = [\"Time series for regional averages for federal states and combinations of federal states, created on: 20250904\",\n             \"Year;Month;\" + \";\".join(_states) + \";\"]\n    for y in range(1881, 2025):\n        anom = _rng.normal(0, 1.6 if m in (12, 1, 2) else 1.0)\n        vals = [_clim[m-1] + 0.012*(y-1881) + anom + o + _rng.normal(0, 0.25) for o in _off]\n        if m == 1 and y == 1881:\n            vals = _book_1881\n        elif m == 1 and y in _book_jan_first3:\n            vals[:3] = _book_jan_first3[y]\n        lines.append(f\"{y};{m:02d};\" + \";\".join(f\"{v:8.2f}\" for v in vals) + \";\")\n    with open(f\"dwd/regional_averages_tm_{m:02d}.txt\", \"w\") as f:\n        f.write(\"\\n\".join(lines) + \"\\n\")\n\n_mon = [\"Jan\",\"Feb\",\"Mar\",\"Apr\",\"May\",\"Jun\",\"Jul\",\"Aug\",\"Sep\",\"Oct\",\"Nov\",\"Dec\"]\n_temp = {1:[-0.4,0.7,4.7,8.7,13.3,16.5,18.5,17.9,13.8,9.2,3.7,0.7],\n         3:[3.0,3.2,6.4,9.5,13.6,16.2,18.4,18.0,14.6,11.0,6.6,3.7],\n         44:[1.7,1.9,4.9,8.7,12.9,15.3,17.6,17.2,13.6,9.6,5.4,2.3],\n         52:[1.2,1.5,4.2,8.1,12.5,15.1,17.6,17.1,13.4,9.3,5.0,1.9],\n         61:[-1.4,-0.3,4.3,8.8,13.9,16.5,18.5,18.0,13.6,8.7,3.4,-0.2]}\nwith open(\"dwd/Temperature_1981-2010.txt\", \"w\", encoding=\"latin1\") as f:\n    f.write(\"Station_id;Reference_period;Data_source;\" + \";\".join(_mon) + \";Year;\\n\")\n    for sid, v in _temp.items():\n        f.write(f\"{sid};          1981-2010;     46;  \" + \"; \".join(str(x) for x in v) + f\"; {np.mean(v):.1f};\\n\")\nwith open(\"dwd/Temperature_1981-2010_StationList.txt\", \"w\", encoding=\"latin1\") as f:\n    f.write(\"Station_id;Station_name;Latitude;Longitude;Elevation;State;\\n\")\n    f.write(\"1;         Aach;     47.841299;  8.849299;  478;  Baden-W\u00fcrttemberg;\\n\")\n    for sid, name, st in [(3,\"Aachen\",\"Nordrhein-Westfalen\"),(44,\"Gro\u00dfenkneten\",\"Niedersachsen\"),\n                          (52,\"Ahrensburg-Wulfsdorf\",\"Schleswig-Holstein\"),(61,\"Aiterhofen\",\"Bayern\")]:\n        f.write(f\"{sid};         {name};  ;  ;  ;  {st};\\n\")\n_pmon = [\"Jan.\",\"Feb.\",\"Mar.\",\"Apr.\",\"May\",\"Jun.\",\"Jul.\",\"Aug.\",\"Sept.\",\"Oct.\",\"Nov.\",\"Dec.\"]\nwith open(\"dwd/Precipitation_1981-2010.txt\", \"w\", encoding=\"latin1\") as f:\n    f.write(\"Station_id;Reference_period;Data_source;\" + \";\".join(_pmon) + \";Year;\\n\")\n    for sid in _temp:\n        p = np.round(_rng.uniform(40, 95, 12), 1)\n        f.write(f\"{sid};          1981-2010;     46;  \" + \"; \".join(str(x) for x in p) + f\"; {p.sum():.1f};\\n\")\ndel _states, _book_1881, _book_jan_first3, _clim, _rng, _off, _mon, _temp, _pmon\n";
+
+function loadPython(){
+  if(pyReady) return pyReady;
+  setState('loading','Python yükleniyor…','Pyodide çekirdeği indiriliyor.');
+  pyReady = (async()=>{
+    pyodide = await loadPyodide();
+    setState('loading','Paketler yükleniyor…','pandas, NumPy, openpyxl, matplotlib indiriliyor (ilk sefer birkaç dakika sürebilir).');
+    await pyodide.loadPackage(['pandas','matplotlib','micropip']);
+    setState('loading','openpyxl kuruluyor…','Excel desteği için openpyxl PyPI üzerinden micropip ile kuruluyor.');
+    try{
+      await pyodide.runPythonAsync("import micropip\nawait micropip.install('openpyxl')");
+    }catch(e){ console.warn('openpyxl kurulamadı:', e); }
+    await pyodide.runPythonAsync(SETUP);
+    await pyodide.runPythonAsync(HELPER);
+    runFn = pyodide.globals.get('_run_cell');
+    const ver = pyodide.runPython('import numpy, pandas; f"pandas {pandas.__version__} · NumPy {numpy.__version__}"');
+    if(window.refreshFiles) refreshFiles();
+    setState('ready','Python hazır',ver);
+    document.getElementById('preload').style.display='none';
+  })().catch(e=>{ setState('','Yükleme başarısız','İnternet bağlantısını kontrol edip sayfayı yenileyin. '+e); pyReady=null; throw e;});
+  return pyReady;
+}
+document.getElementById('preload').onclick=loadPython;
+
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+/* ---------- Kod hücreleri ---------- */
+document.querySelectorAll('.cell').forEach((cell,i)=>{
+  const ta=cell.querySelector('textarea');
+  const original=ta.value;
+  ta.spellcheck=false;
+  ta.rows=Math.min(ta.value.split('\n').length+1,40);
+  const head=document.createElement('div'); head.className='cell-head';
+  head.innerHTML=`<span class="title">In [${i+1}] · ${cell.dataset.title||'Python'}</span>`;
+  const run=document.createElement('button'); run.className='btn primary'; run.textContent='▶ Çalıştır';
+  const reset=document.createElement('button'); reset.className='btn'; reset.textContent='↺'; reset.title='Özgün koda dön';
+  head.append(run,reset); cell.prepend(head);
+  const out=document.createElement('div'); out.className='out'; cell.append(out);
+
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Tab'){e.preventDefault();const s=ta.selectionStart;ta.setRangeText('    ',s,ta.selectionEnd,'end');}
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run.click();}
+  });
+  reset.onclick=()=>{ta.value=original; out.className='out'; out.innerHTML='';};
+  run.onclick=async()=>{
+    run.disabled=true; out.className='out show'; out.textContent='⏳ Çalışıyor…';
+    try{
+      await loadPython();
+      out.textContent='⏳ Çalışıyor…';
+      await new Promise(r=>setTimeout(r,20));
+      const res=JSON.parse(runFn(ta.value));
+      let h='';
+      if(res.out) h+=esc(res.out);
+      if(res.html) h+=`<div>${res.html}</div>`;
+      res.imgs.forEach(b=>h+=`<img alt="grafik" src="data:image/png;base64,${b}">`);
+      if(!h) h='<span style="color:var(--ok)">✓ Çalıştı (çıktı yok)</span>';
+      out.innerHTML=h; if(window.refreshFiles) refreshFiles(); out.className='out show'+(res.ok?'':' err');
+    }catch(e){ out.className='out show err'; out.textContent=String(e); }
+    run.disabled=false;
+  };
+});
+
+/* ---------- Dosya paneli ---------- */
+(function(){
+  const up=document.getElementById('fileUp'), list=document.getElementById('fileList'), ref=document.getElementById('fileRefresh');
+  async function refresh(){
+    if(!pyodide){ list.innerHTML='<i>Python yüklenince görünür.</i>'; return; }
+    const files=JSON.parse(pyodide.runPython(`import os, json
+_r=[]
+for _d,_s,_fs in os.walk('.'):
+    _s[:]=[x for x in _s if not x.startswith('.')]
+    for _f in sorted(_fs):
+        _p=os.path.join(_d,_f)[2:]
+        _r.append([_p, os.path.getsize(_p)])
+json.dumps(sorted(_r))`));
+    list.innerHTML='';
+    files.forEach(([p,sz])=>{
+      const a=document.createElement('a'); a.href='#'; a.textContent=`${p} (${sz<1024?sz+' B':(sz/1024).toFixed(1)+' KB'})`;
+      a.style.cssText='display:block;padding:2px 0;font-size:12px;color:var(--accent);word-break:break-all';
+      a.onclick=e=>{e.preventDefault();const data=pyodide.FS.readFile(p);const blob=new Blob([data]);const u=URL.createObjectURL(blob);const l=document.createElement('a');l.href=u;l.download=p.split('/').pop();l.click();setTimeout(()=>URL.revokeObjectURL(u),2000);};
+      list.append(a);
+    });
+  }
+  window.refreshFiles=refresh;
+  ref.onclick=async()=>{await loadPython();refresh();};
+  up.onchange=async()=>{
+    await loadPython();
+    for(const f of up.files){ const buf=new Uint8Array(await f.arrayBuffer()); pyodide.FS.writeFile(f.name,buf); }
+    up.value=''; refresh();
+  };
+})();
+
+/* ---------- Adım hedefi ---------- */
+(function(){
+  const steps=[8234,11789,3120,10054,7422,4821,15337], days=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+  const svg=document.getElementById('stepsSvg'), sl=document.getElementById('stepsSlider'), out=document.getElementById('stepsOut');
+  const W=640,H=230,L=50,B=30,T=12,mx=16500, py=v=>H-B-v/mx*(H-B-T), bw=56, gap=(W-L-20-7*bw)/6;
+  function draw(){
+    const t=+sl.value, met=steps.filter(s=>s>=t);
+    let s=`<g font-family="Inter,sans-serif" font-size="11" fill="var(--muted)">`;
+    [0,5000,10000,15000].forEach(v=>s+=`<line x1="${L}" x2="${W-10}" y1="${py(v)}" y2="${py(v)}" stroke="var(--line)"/><text x="${L-6}" y="${py(v)+4}" text-anchor="end">${v}</text>`);
+    s+='</g>';
+    steps.forEach((v,i)=>{const x=L+10+i*(bw+gap), ok=v>=t;
+      s+=`<rect x="${x}" y="${py(v)}" width="${bw}" height="${H-B-py(v)}" rx="4" fill="${ok?'#2f8f4e':'var(--line)'}"/><text x="${x+bw/2}" y="${H-10}" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" fill="var(--ink)">${days[i]}</text><text x="${x+bw/2}" y="${py(v)-5}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10.5" fill="var(--muted)">${v}</text>`;});
+    s+=`<line x1="${L}" x2="${W-10}" y1="${py(t)}" y2="${py(t)}" stroke="#d1453b" stroke-width="2" stroke-dasharray="6 4"/>`;
+    svg.innerHTML=s;
+    out.innerHTML=`target = <b>${t}</b> → <code>[${met.join(' ')}]</code>, len = <b>${met.length}</b>`;
+  }
+  sl.oninput=draw; draw();
+})();
+
+/* ---------- DataFrame erişim ifadeleri ---------- */
+(function(){
+  const exprs=[['df','Tüm DataFrame'],['df.head()','İlk beş satır'],['df.tail()','Son beş satır'],['df["country"]','"country" sütunu (Series)'],['df[["country", "population"]]','Yalnızca bu iki sütun'],['df[0:1]','Yalnızca ilk satır'],['df[df["population"]>100000000]','100 milyondan fazla nüfuslu ülkeler'],['df.loc[0]','İlk satır, Series olarak'],['df.loc[0, "country"]','İlk satırdaki "country" değeri'],['df.loc[df["population"]>100000000, "country"]','Büyük ülkelerin adları (Series)'],['df.iloc[0]','Konuma göre ilk satır']];
+  const box=document.getElementById('dfExprs'), out=document.getElementById('dfOut');
+  exprs.forEach(([e,d])=>{const b=document.createElement('button');b.className='btn';b.style.textAlign='left';b.innerHTML=`<code>${e.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code> <span style="color:var(--muted)">— ${d}</span>`;
+    b.onclick=async()=>{out.className='out show';out.textContent='⏳';try{await loadPython();
+      const code="import pandas as pd\n_dfc = pd.DataFrame([['Albania', 28000000, 'Europe', 28748],['Brazil', 214800000, 'South America', 8514877],['Germany', 83300000, 'Europe', 357022]], columns=['country', 'population', 'continent', 'area'])\n"+e.replace(/\bdf\b/g,'_dfc');
+      const r=JSON.parse(runFn(code));
+      out.innerHTML=(r.out?r.out.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])):'')+(r.html||'');out.className='out show'+(r.ok?'':' err');}catch(err){out.textContent=String(err);}};
+    box.append(b);});
+})();
+
+/* ---------- Min-maks ---------- */
+(function(){
+  const inp=document.getElementById('mmIn'), svg=document.getElementById('mmSvg'), out=document.getElementById('mmOut');
+  function draw(){
+    const v=inp.value.split(/[,;\s]+/).map(Number).filter(x=>!isNaN(x)&&inp.value.trim()!=='');
+    if(v.length<2){out.textContent='En az iki sayı girin.';svg.innerHTML='';return;}
+    const mn=Math.min(...v), mxv=Math.max(...v), r=mxv-mn||1, L=30,R=30,W=640;
+    const px=t=>L+t*(W-L-R);
+    let s=`<line x1="${L}" x2="${W-R}" y1="60" y2="60" stroke="var(--muted)" stroke-width="2"/>`;
+    [0,.25,.5,.75,1].forEach(t=>s+=`<line x1="${px(t)}" x2="${px(t)}" y1="54" y2="66" stroke="var(--muted)"/><text x="${px(t)}" y="86" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="var(--muted)">${t}</text>`);
+    v.forEach((x,i)=>{const t=(x-mn)/r;s+=`<circle cx="${px(t)}" cy="60" r="7" fill="var(--accent)" opacity=".85"/><text x="${px(t)}" y="${i%2?42:30}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="11" fill="var(--ink)">${x}</text>`;});
+    svg.innerHTML=s;
+    out.innerHTML=`min = <b>${mn}</b>, max = <b>${mxv}</b> → `+v.map(x=>`<code>${((x-mn)/r).toFixed(2)}</code>`).join(' ');
+  }
+  inp.oninput=draw; draw();
+})();
+
+/* ---------- melt ---------- */
+(function(){
+  const wide=[[1881,1,-5.54,-5.56,-4.89],[1882,1,1.43,1.42,0.65]], cols=['Year','Month','Brandenburg/Berlin','Brandenburg','Baden-Wuerttemberg'];
+  const view=document.getElementById('meltView'), btn=document.getElementById('meltBtn'); let long=false;
+  const tbl=(h,rows,hl)=>`<table class="data" style="font-size:13px"><tr>${h.map((c,i)=>`<th${hl&&hl.includes(i)?' style="color:var(--accent)"':''}>${c}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</table>`;
+  function draw(){
+    if(!long){view.innerHTML=tbl(cols,wide,[2,3,4]);btn.textContent='Geniş → Uzun (melt)';}
+    else{const rows=[];for(let c=2;c<cols.length;c++)wide.forEach(r=>rows.push([r[0],r[1],cols[c],r[c]]));
+      view.innerHTML=tbl(['Year','Month','State','Temperature'],rows,[2,3]);btn.textContent='← Geniş biçime dön';}
+  }
+  btn.onclick=()=>{long=!long;draw();}; draw();
+})();
+
+/* ---------- merge how ---------- */
+(function(){
+  const left=[[1,'Jan',-0.4],[3,'Jan',3.0],[44,'Jan',1.7],[99,'Jan',2.2]], right=[[1,'Aach'],[3,'Aachen'],[44,'Großenkneten'],[52,'Ahrensburg-Wulfsdorf']];
+  const view=document.getElementById('joinView'), out=document.getElementById('joinOut');
+  const tbl=(t,h,rows)=>`<div><div style="font-family:Inter,sans-serif;font-size:12px;color:var(--muted);margin-bottom:4px">${t}</div><table class="data" style="font-size:13px;margin:0"><tr>${h.map(c=>`<th>${c}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map(c=>`<td${c==='NaN'?' style="color:var(--err)"':''}>${c}</td>`).join('')}</tr>`).join('')}</table></div>`;
+  function draw(){
+    const how=document.querySelector('input[name=how]:checked').value;
+    const lm=new Map(left.map(r=>[r[0],r])), rm=new Map(right.map(r=>[r[0],r]));
+    let ids;
+    if(how==='left') ids=left.map(r=>r[0]);
+    else if(how==='right') ids=right.map(r=>r[0]);
+    else if(how==='inner') ids=left.map(r=>r[0]).filter(i=>rm.has(i));
+    else ids=[...new Set([...left.map(r=>r[0]),...right.map(r=>r[0])])].sort((a,b)=>a-b);
+    const res=ids.map(i=>{const l=lm.get(i),r=rm.get(i);return [i,l?l[1]:'NaN',l?l[2]:'NaN',r?r[1]:'NaN'];});
+    view.innerHTML=tbl('df_temperature (sol)',['Station_id','Month','Temperature'],left)+tbl('df_stations (sağ)',['Station_id','Location'],right)+tbl(`pd.merge(…, on="Station_id", how="${how}")`,['Station_id','Month','Temperature','Location'],res);
+    out.innerHTML={left:'Soldaki tüm satırlar kalır; 99 numaralı istasyonun sağda karşılığı olmadığı için <code>Location</code> = NaN.',inner:'Yalnızca iki tabloda da bulunan kimlikler kalır.',right:'Sağdaki tüm satırlar kalır; 52 numaralı istasyonun sıcaklık verisi yok.',outer:'İki tablodaki tüm kimlikler; eşleşmeyen tarafta NaN.'}[how];
+  }
+  document.querySelectorAll('input[name=how]').forEach(r=>r.onchange=draw); draw();
+})();
+
+/* ---------- İçindekiler vurgusu ---------- */
+(function(){
+  const links=[...document.querySelectorAll('nav.toc a')];
+  const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.remove('active'));links[secs.indexOf(e.target)].classList.add('active');}}),{rootMargin:'-10% 0px -80% 0px'});
+  secs.forEach(s=>io.observe(s));
+})();
+</script>
+</body>
+</html>
